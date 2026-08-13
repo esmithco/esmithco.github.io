@@ -34,7 +34,7 @@ const page = `<!doctype html>
 </head>
 <body>
   <main class="library">
-    <a class="home-link" href="../">← Brian's home</a>
+    <a class="home-link" href="../">← Brayan's home</a>
     <p class="eyebrow">Personal reading library</p>
     <h1>Book notes</h1>
     <p class="intro">${entries.length} note${entries.length === 1 ? "" : "s"}. Open one to read it like a document, then use arrows or swipe to move through the collection.</p>
