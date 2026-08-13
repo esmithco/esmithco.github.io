@@ -1,4 +1,4 @@
-# Brayan Mendoza's Notes & Routines
+# Brayan Mendoza's Personal Site
 
 Personal home site: https://esmithco.github.io
 
