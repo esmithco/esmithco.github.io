@@ -314,6 +314,12 @@
 
   function loadWeights(){ try { return JSON.parse(localStorage.getItem(WEIGHT_KEY)) || {}; } catch(e){ return {}; } }
   function saveWeights(w){ localStorage.setItem(WEIGHT_KEY, JSON.stringify(w)); }
+  document.querySelectorAll('.weight-input').forEach(inp=>{
+    inp.type = 'text';
+    inp.inputMode = 'decimal';
+    inp.pattern = '[0-9]+([,.][0-9]+)?';
+    inp.setAttribute('aria-label', 'Peso en kilogramos');
+  });
   function applyWeights(){
     const w = loadWeights();
     document.querySelectorAll('.weight-input').forEach(inp=>{
