@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forecasting — First Principles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAF7;
+    --grid:#E4E7E1;
+    --ink:#20232A;
+    --ink-soft:#5B6067;
+    --berry:#A6356B;
+    --berry-soft:#F3E3EB;
+    --sage:#3E7A52;
+    --sage-soft:#E4EFE6;
+    --steel:#35526E;
+    --steel-soft:#E7EDF2;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:#E9E9E4;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+  }
+
+  body{
+    display:flex;
+    justify-content:center;
+    padding:32px 16px 64px;
+  }
+
+  .page{
+    position:relative;
+    width:100%;
+    max-width:760px;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+      var(--paper);
+    background-size:24px 24px;
+    border:1px solid #D9DBD3;
+    border-radius:4px;
+    box-shadow:0 24px 60px -20px rgba(32,35,42,0.25);
+    padding:44px 42px 40px;
+    animation:rise .5s ease-out;
+  }
+
+  @keyframes rise{
+    from{opacity:0; transform:translateY(10px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-family:'Caveat',cursive;
+    font-size:20px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+
+  .eyebrow .dots span{
+    display:inline-block;
+    width:7px; height:7px;
+    border-radius:50%;
+    margin-left:4px;
+  }
+  .dots span:nth-child(1){background:var(--berry);}
+  .dots span:nth-child(2){background:var(--sage);}
+  .dots span:nth-child(3){background:var(--steel);}
+
+  h1{
+    font-family:'Fraunces',serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:clamp(28px,5vw,38px);
+    line-height:1.08;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+
+  .source{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:22px;
+  }
+  .source a{color:var(--steel); text-decoration:none; border-bottom:1px solid var(--steel-soft);}
+
+  hr{
+    border:none;
+    border-top:1px solid #DCDFD8;
+    margin:22px 0;
+  }
+
+  /* ---------- Hero definition ---------- */
+  .definition{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:clamp(19px,3.2vw,23px);
+    line-height:1.42;
+    color:var(--ink);
+    padding-left:18px;
+    border-left:3px solid var(--ink);
+  }
+  .definition .accent{
+    text-decoration:underline;
+    text-decoration-color:var(--berry);
+    text-decoration-thickness:2px;
+    text-underline-offset:3px;
+  }
+
+  /* ---------- Section labels ---------- */
+  .label{
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:14px;
+  }
+
+  /* ---------- Conditions list ---------- */
+  .conditions{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .conditions li{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    font-size:15px;
+    line-height:1.5;
+  }
+  .conditions .num{
+    flex:0 0 auto;
+    width:22px; height:22px;
+    border-radius:50%;
+    border:1.5px solid var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:600;
+    margin-top:1px;
+  }
+  .conditions .chip{
+    display:inline-block;
+    font-size:12px;
+    color:var(--steel);
+    background:var(--steel-soft);
+    border-radius:999px;
+    padding:2px 9px;
+    margin-left:6px;
+    white-space:nowrap;
+  }
+  .conditions li.strong{
+    background:var(--sage-soft);
+    border-radius:6px;
+    padding:10px 12px;
+    margin-top:2px;
+  }
+  .conditions li.strong .num{
+    background:var(--sage);
+    border-color:var(--sage);
+    color:#fff;
+  }
+  .conditions li.strong .tag{
+    font-family:'Caveat',cursive;
+    font-size:16px;
+    color:var(--sage);
+    margin-left:6px;
+  }
+
+  /* ---------- Takeaways ---------- */
+  .takeaways{
+    list-style:none;
+    margin:0; padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .takeaways li{
+    display:flex;
+    gap:10px;
+    font-size:14.5px;
+    line-height:1.55;
+    color:var(--ink);
+  }
+  .takeaways .mark{
+    font-family:'Caveat',cursive;
+    font-weight:600;
+    font-size:19px;
+    color:var(--berry);
+    flex:0 0 auto;
+  }
+
+  /* ---------- Diagram ---------- */
+  .diagram{
+    margin-top:6px;
+  }
+  .flow{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .box{
+    font-size:13px;
+    font-weight:600;
+    padding:10px 14px;
+    border-radius:6px;
+    border:1.5px solid var(--ink);
+    background:#fff;
+    text-align:center;
+  }
+  .box.pair{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    border-color:var(--steel);
+    color:var(--steel);
+  }
+  .box.pair .vs{
+    font-family:'Caveat',cursive;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .box.goal{
+    border-color:var(--berry);
+    color:var(--berry);
+  }
+  .arrow{
+    font-size:16px;
+    color:var(--ink-soft);
+  }
+  .down-wrap{
+    display:flex;
+    justify-content:center;
+    margin:6px 0;
+  }
+  .down{
+    font-size:16px;
+    color:var(--ink-soft);
+  }
+  .plan-row{
+    display:flex;
+    justify-content:center;
+  }
+  .box.plan{
+    border-color:var(--sage);
+    color:var(--sage);
+    font-size:13px;
+  }
+  .diagram-note{
+    text-align:center;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-top:8px;
+    font-style:italic;
+  }
+
+  /* ---------- Horizons footer ---------- */
+  .horizons{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .horizon{
+    flex:1 1 150px;
+    border-radius:6px;
+    padding:10px 12px;
+    font-size:13px;
+  }
+  .horizon .h-term{
+    font-weight:700;
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+  }
+  .horizon .h-what{
+    margin-top:2px;
+    color:var(--ink);
+  }
+  .horizon.short{background:var(--berry-soft);}
+  .horizon.short .h-term{color:var(--berry);}
+  .horizon.medium{background:#F1E9DC;}
+  .horizon.medium .h-term{color:#8A5A22;}
+  .horizon.long{background:var(--sage-soft);}
+  .horizon.long .h-term{color:var(--sage);}
+
+  /* ---------- Footer / page number ---------- */
+  .footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:30px;
+    padding-top:14px;
+    border-top:1px solid #DCDFD8;
+  }
+  .footer .next{
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .pagenum{
+    font-family:'Fraunces',serif;
+    font-size:14px;
+    color:var(--ink-soft);
+  }
+
+  @media (max-width:480px){
+    .page{padding:30px 20px 30px;}
+    .flow{justify-content:center;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="eyebrow">
+    <span>reading notes · ch. 01, §1–2</span>
+    <span class="dots"><span></span><span></span><span></span></span>
+  </div>
+
+  <h1>Forecasting — First Principles</h1>
+  <div class="source">Hyndman &amp; Athanasopoulos, <em>Forecasting: Principles and Practice</em> (3rd ed.) · OTexts, otexts.com/fpp3</div>
+
+  <div class="definition">
+    Forecasting is <span class="accent">predicting</span> future — or cyclical — events, using
+    <span class="accent">science and data</span>.
+  </div>
+
+  <hr>
+
+  <div class="label">It's easier when —</div>
+  <ul class="conditions">
+    <li><span class="num">1</span> We have a good understanding of the factors that drive the phenomenon.</li>
+    <li><span class="num">2</span> We have lots of data.</li>
+    <li><span class="num">3</span> The past looks like the future. <span class="chip">lottery vs. energy demand</span></li>
+    <li class="strong"><span class="num">4</span> The forecast itself doesn't change the outcome it's predicting. <span class="chip">weather vs. bank run</span> <span class="tag">← the strong one</span></li>
+  </ul>
+
+  <hr>
+
+  <div class="label">Three things worth remembering</div>
+  <ul class="takeaways">
+    <li><span class="mark">#</span> We can forecast both <em>events</em> and <em>quantities</em>.</li>
+    <li><span class="mark">*</span> The method we choose depends on the four conditions above.</li>
+    <li><span class="mark">*</span> Sometimes the point of forecasting isn't the number — it's understanding the process well enough to adapt, adjust, and improve it.</li>
+  </ul>
+
+  <hr>
+
+  <div class="label">From forecast to plan</div>
+  <div class="diagram">
+    <div class="flow">
+      <div class="box">Strategy</div>
+      <span class="arrow">→</span>
+      <div class="box pair">Forecast reality</div>
+      <span class="arrow">→</span>
+      <div class="box goal">Set goals</div>
+    </div>
+    <div class="down-wrap"><span class="down">↓</span></div>
+    <div class="plan-row"><div class="box plan">Planning</div></div>
+    <div class="diagram-note">planning bridges what's actual and what's forecast, toward the goal</div>
+  </div>
+
+  <hr>
+
+  <div class="label">Time horizons</div>
+  <div class="horizons">
+    <div class="horizon short">
+      <div class="h-term">Short</div>
+      <div class="h-what">Transportation</div>
+    </div>
+    <div class="horizon medium">
+      <div class="h-term">Medium</div>
+      <div class="h-what">Machines</div>
+    </div>
+    <div class="horizon long">
+      <div class="h-term">Long</div>
+      <div class="h-what">Materials &amp; opportunities</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="next">next: forecasting methods, §3 →</span>
+    <span class="pagenum">01</span>
+  </div>
+
+</div>
+
+</body>
+</html>

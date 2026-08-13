@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Book Notes</title>
+  <link rel="stylesheet" href="site.css">
+</head>
+<body class="reader-page">
+  <header class="reader-bar">
+    <a class="back-link" href="index.html">← All notes</a>
+    <p id="position" class="position" aria-live="polite"></p>
+    <nav class="reader-controls" aria-label="Note navigation">
+      <button id="previous" type="button" aria-label="Previous note">←</button>
+      <button id="next" type="button" aria-label="Next note">→</button>
+    </nav>
+  </header>
+  <main class="reader-shell">
+    <iframe id="note" title="Book note"></iframe>
+  </main>
+  <script type="module" src="reader.js"></script>
+</body>
+</html>
