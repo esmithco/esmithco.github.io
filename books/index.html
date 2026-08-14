@@ -7,9 +7,11 @@
   <link rel="stylesheet" href="site.css">
   <style>
     .note-cover { position: absolute; inset: 0; z-index: 1; border-radius: 16px; }
-    .note-body { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; }
-    .read-pill { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 999px; background: #f1eefa; color: #6b5da7; font-size: .76rem; font-weight: 700; text-decoration: none; transition: background .15s ease; }
+    .read-pill { position: relative; z-index: 2; justify-self: end; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 999px; background: #f1eefa; color: #6b5da7; font-size: .8rem; font-weight: 700; text-decoration: none; transition: background .15s ease; }
     .read-pill:hover { background: #e6def7; }
+    @media (max-width: 560px) {
+      .read-pill { grid-column: 2; justify-self: start; margin-top: 10px; }
+    }
   </style>
 </head>
 <body>
@@ -22,10 +24,8 @@
       <div class="note-card">
         <a class="note-cover" href="chapters.html?book=forecasting" aria-label="Open Forecasting chapters"></a>
         <span class="note-number">01</span>
-        <div class="note-body">
-          <span class="note-title">Forecasting: Principles and Practice</span>
-          <a class="read-pill" href="https://otexts.com/fpp3/" target="_blank" rel="noopener">Read it online ↗</a>
-        </div>
+        <span class="note-title">Forecasting: Principles and Practice</span>
+        <a class="read-pill" href="https://otexts.com/fpp3/" target="_blank" rel="noopener">Read it online ↗</a>
       </div>
     </section>
   </main>
