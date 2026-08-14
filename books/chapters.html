@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Forecasting — Chapters</title>
+  <link rel="stylesheet" href="site.css">
+</head>
+
+<body>
+  <main class="library">
+    <a class="home-link" href="index.html">← All books</a>
+
+    <p class="eyebrow">Forecasting: Principles and Practice</p>
+    <h1>Chapters</h1>
+
+    <section id="chapter-list" class="note-list" aria-label="Chapters">
+      <p>Loading chapters...</p>
+    </section>
+  </main>
+
+  <script>
+    const owner = "ESMITHCO";
+    const repo = "ESMITHCO.github.io";
+    const folder = "books/notes/fpp3";
+
+    const chapterList = document.getElementById("chapter-list");
+
+    async function loadChapters() {
+      try {
+        const url =
+          `https://api.github.com/repos/${owner}/${repo}/contents/` +
+          folder.split("/")
+            .map(encodeURIComponent)
+            .join("/");
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error("Could not load chapters");
+        }
+
+        const files = await response.json();
+
+        const chapters = files
+          .filter(file => file.type === "dir")
+          .sort((a, b) =>
+            a.name.localeCompare(b.name, undefined, {
+              numeric: true
+            })
+          );
+
+        chapterList.innerHTML = "";
+
+        chapters.forEach((chapter, index) => {
+          const card = document.createElement("a");
+
+          card.className = "note-card";
+
+          card.href =
+            `reader.html?chapter=${encodeURIComponent(chapter.name)}`;
+
+          card.innerHTML = `
+            <span class="note-number">
+              ${String(index + 1).padStart(2, "0")}
+            </span>
+
+            <span class="note-title">
+              ${chapter.name.replace(/^chap\s*/i, "Chapter ")}
+            </span>
+
+            <span class="note-action">
+              Read →
+            </span>
+          `;
+
+          chapterList.appendChild(card);
+        });
+
+      } catch (error) {
+        console.error(error);
+        chapterList.innerHTML =
+          "<p>Could not load chapters.</p>";
+      }
+    }
+
+    loadChapters();
+  </script>
+</body>
+</html>
