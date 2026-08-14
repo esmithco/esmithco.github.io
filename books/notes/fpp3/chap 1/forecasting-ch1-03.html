@@ -28,6 +28,7 @@
     background:#E9E9E4;
     font-family:'Inter',sans-serif;
     color:var(--ink);
+    overflow-x:hidden;
   }
 
   body{
@@ -35,6 +36,7 @@
     justify-content:center;
     padding:32px 16px 64px;
   }
+  .definition, .lede, .caption{overflow-wrap:break-word;}
 
   .page{
     position:relative;
@@ -83,7 +85,7 @@
     font-weight:600;
     font-size:clamp(28px,5vw,38px);
     line-height:1.08;
-    margin:0 0 6px;
+    margin:0 0 22px;
     letter-spacing:-0.01em;
   }
 
@@ -234,7 +236,7 @@
   /* ---------- Footer ---------- */
   .footer{
     display:flex;
-    justify-content:space-between;
+    justify-content:flex-end;
     align-items:center;
     margin-top:26px;
     padding-top:14px;
@@ -244,8 +246,9 @@
   .pagenum{font-family:'Fraunces',serif; font-size:14px; color:var(--ink-soft);}
 
   @media (max-width:480px){
-    .page{padding:30px 20px 30px;}
-    .equation{font-size:14px;}
+    body{padding:20px 10px 48px;}
+    .page{padding:26px 16px 26px;}
+    .equation{font-size:13px; padding:9px 11px;}
   }
 </style>
 </head>
@@ -259,7 +262,6 @@
   </div>
 
   <h1>Three Ways to Model It</h1>
-  <div class="source">Hyndman &amp; Athanasopoulos, <em>Forecasting: Principles and Practice</em> (3rd ed.) · OTexts, otexts.com/fpp3</div>
 
   <div class="definition">
     Every model answers one of two questions — <span class="accent">what causes</span> the behavior, or
@@ -310,7 +312,6 @@
   </div>
 
   <div class="footer">
-    <span class="next">next: choosing between them →</span>
     <span class="pagenum">03</span>
   </div>
 

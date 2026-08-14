@@ -28,6 +28,7 @@
     background:#E9E9E4;
     font-family:'Inter',sans-serif;
     color:var(--ink);
+    overflow-x:hidden;
   }
 
   body{
@@ -35,6 +36,7 @@
     justify-content:center;
     padding:32px 16px 64px;
   }
+  .definition, .lede, .caption{overflow-wrap:break-word;}
 
   .page{
     position:relative;
@@ -84,7 +86,7 @@
     font-weight:600;
     font-size:clamp(28px,5vw,38px);
     line-height:1.08;
-    margin:0 0 6px;
+    margin:0 0 22px;
     letter-spacing:-0.01em;
   }
 
@@ -310,7 +312,7 @@
   /* ---------- Footer / page number ---------- */
   .footer{
     display:flex;
-    justify-content:space-between;
+    justify-content:flex-end;
     align-items:center;
     margin-top:30px;
     padding-top:14px;
@@ -327,7 +329,8 @@
   }
 
   @media (max-width:480px){
-    .page{padding:30px 20px 30px;}
+    body{padding:20px 10px 48px;}
+    .page{padding:26px 16px 26px;}
     .flow{justify-content:center;}
   }
 </style>
@@ -342,7 +345,6 @@
   </div>
 
   <h1>Framing the Forecast</h1>
-  <div class="source">Hyndman &amp; Athanasopoulos, <em>Forecasting: Principles and Practice</em> (3rd ed.) · OTexts, otexts.com/fpp3</div>
 
   <div class="definition">
     Before you forecast, decide <span class="accent">what</span>, decide <span class="accent">when</span>, and decide
@@ -421,7 +423,6 @@
   </ul>
 
   <div class="footer">
-    <span class="next">next: model &amp; methodology →</span>
     <span class="pagenum">02</span>
   </div>
 

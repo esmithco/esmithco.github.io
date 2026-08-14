@@ -23,8 +23,13 @@
     --steel-soft:#E7EDF2;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0; padding:0; background:#E9E9E4; font-family:'Inter',sans-serif; color:var(--ink);}
+  html,body{margin:0; padding:0; background:#E9E9E4; font-family:'Inter',sans-serif; color:var(--ink); overflow-x:hidden;}
   body{display:flex; justify-content:center; padding:32px 16px 64px;}
+  .takeaways li, .conditions li, .closing-note, .definition{overflow-wrap:break-word;}
+  .takeaways .katex{white-space:normal;}
+  .equation{max-width:100%;}
+  /* keep rendered math from stretching the page on narrow screens */
+  .equation .katex{max-width:100%; overflow-x:auto; overflow-y:hidden; display:inline-block;}
 
   .page{
     position:relative;
@@ -54,8 +59,7 @@
 
   h1{
     font-family:'Fraunces',serif; font-optical-sizing:auto; font-weight:600;
-    font-size:clamp(28px,5vw,38px); line-height:1.08; margin:0 0 6px; letter-spacing:-0.01em;
-  }
+    font-size:clamp(28px,5vw,38px); line-height:1.08; margin:0 0 22px; letter-spacing:-0.01em;}
   .source{font-size:12.5px; color:var(--ink-soft); margin-bottom:22px;}
   hr{border:none; border-top:1px solid #DCDFD8; margin:20px 0;}
 
@@ -116,13 +120,21 @@
   .closing-note .katex{font-size:1.02em;}
 
   .footer{
-    display:flex; justify-content:space-between; align-items:center;
+    display:flex; justify-content:flex-end; align-items:center;
     margin-top:26px; padding-top:14px; border-top:1px solid #DCDFD8;
   }
   .footer .next{font-size:12px; color:var(--ink-soft);}
   .pagenum{font-family:'Fraunces',serif; font-size:14px; color:var(--ink-soft);}
 
-  @media (max-width:480px){ .page{padding:30px 20px 30px;} }
+  @media (max-width:480px){
+    body{padding:20px 10px 48px;}
+    .page{padding:26px 16px 26px;}
+    .equation{font-size:13px; padding:9px 11px;}
+    .equation .katex{font-size:0.95em;}
+    .sigma-table{font-size:12.5px;}
+    .sigma-table td:first-child{width:auto;}
+    .figure{padding:10px 8px 8px;}
+  }
 </style>
 </head>
 <body>
@@ -135,7 +147,6 @@
   </div>
 
   <h1>Process, Then Probability</h1>
-  <div class="source">Hyndman &amp; Athanasopoulos, <em>Forecasting: Principles and Practice</em> (3rd ed.) · OTexts, otexts.com/fpp3</div>
 
   <div class="definition">
     A forecast is never a single number — it's a <span class="accent">probability distribution</span>. The number we report is just its center.
@@ -199,7 +210,6 @@
   <div class="equation">\(y_{t_n} \mid \mathrm{I} \;\rightarrow\; \{6,\ 8,\ 10,\ 10.3,\ 11.3\}\)</div>
 
   <div class="footer">
-    <span class="next">next: exploratory analysis →</span>
     <span class="pagenum">04</span>
   </div>
 
