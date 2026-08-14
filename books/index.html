@@ -6,9 +6,10 @@
   <title>Book Notes</title>
   <link rel="stylesheet" href="site.css">
   <style>
-    .book-online { margin: 8px 4px 0; display: flex; justify-content: flex-end; }
-    .book-online a { display: inline-flex; align-items: center; gap: 6px; color: #8a93a3; font-size: .82rem; font-weight: 700; text-decoration: none; }
-    .book-online a:hover { gap: 10px; color: #6b5da7; transition: gap .15s ease, color .15s ease; }
+    .note-cover { position: absolute; inset: 0; z-index: 1; border-radius: 16px; }
+    .note-body { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; }
+    .read-pill { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 999px; background: #f1eefa; color: #6b5da7; font-size: .76rem; font-weight: 700; text-decoration: none; transition: background .15s ease; }
+    .read-pill:hover { background: #e6def7; }
   </style>
 </head>
 <body>
@@ -18,14 +19,15 @@
     <h1>Book notes</h1>
     <p class="intro">Open a book to read its chapter notes like a document, then use arrows or swipe to move through the collection.</p>
     <section class="note-list" aria-label="Notes">
-      <a class="note-card"
-        href="chapters.html?book=forecasting"
-        aria-label="Open Forecasting chapters">
+      <div class="note-card">
+        <a class="note-cover" href="chapters.html?book=forecasting" aria-label="Open Forecasting chapters"></a>
         <span class="note-number">01</span>
-        <span class="note-title">Forecasting: Principles and Practice</span>
+        <div class="note-body">
+          <span class="note-title">Forecasting: Principles and Practice</span>
+          <a class="read-pill" href="https://otexts.com/fpp3/" target="_blank" rel="noopener">Read it online ↗</a>
+        </div>
         <span class="note-action">Chapters →</span>
-      </a>
-      <p class="book-online"><a href="https://otexts.com/fpp3/" target="_blank" rel="noopener">Read it online →</a></p>
+      </div>
     </section>
   </main>
 </body>
