@@ -9,47 +9,40 @@ const menuBackdrop = document.querySelector("#noteMenuBackdrop");
 
 const OWNER = "ESMITHCO";
 const REPO = "ESMITHCO.github.io";
+const BASE = "books/notes/fpp3";
 
-async function getNotes() {
-  const chapter =
-    new URLSearchParams(location.search).get("chapter");
+let chapter = new URLSearchParams(location.search).get("chapter");
+let chapters = [];       // all chapter folder names, sorted
+let chapterIndex = -1;   // where the current chapter sits in `chapters`
+let availableNotes = [];
+let current = 0;
+let titleToken = 0;      // guards async title loads across chapter switches
 
-  if (!chapter) {
-    return [];
-  }
-
-  const folder = `books/notes/fpp3/${chapter}`;
-
+async function ghContents(path) {
   const url =
     `https://api.github.com/repos/${OWNER}/${REPO}/contents/` +
-    folder
-      .split("/")
-      .map(encodeURIComponent)
-      .join("/");
+    path.split("/").map(encodeURIComponent).join("/");
 
-  const files = await fetch(url).then((response) => {
-    if (!response.ok) {
-      throw new Error("Could not load chapter.");
-    }
-
-    return response.json();
-  });
-
-  return files
-    .filter((file) =>
-      file.type === "file" &&
-      file.name.toLowerCase().endsWith(".html")
-    )
-    .sort((a, b) =>
-      a.name.localeCompare(b.name, undefined, {
-        numeric: true
-      })
-    );
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Could not load " + path);
+  return response.json();
 }
 
-const availableNotes = await getNotes();
+async function getChapters() {
+  const items = await ghContents(BASE);
+  return items
+    .filter((x) => x.type === "dir")
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+    .map((x) => x.name);
+}
 
-let current = 0;
+async function getNotes(chap) {
+  if (!chap) return [];
+  const items = await ghContents(`${BASE}/${chap}`);
+  return items
+    .filter((f) => f.type === "file" && f.name.toLowerCase().endsWith(".html"))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+}
 
 /*
   file.path is something like:
@@ -63,6 +56,10 @@ function notePathFor(file) {
     .map(encodeURIComponent)
     .join("/");
 }
+
+const hasPrevChapter = () => chapterIndex > 0;
+const hasNextChapter = () =>
+  chapterIndex >= 0 && chapterIndex < chapters.length - 1;
 
 function buildMenu() {
   menuList.innerHTML = "";
@@ -90,25 +87,28 @@ function buildMenu() {
 }
 
 async function loadTitles() {
+  const token = ++titleToken;
+  const notes = availableNotes;
+
   await Promise.all(
-    availableNotes.map(async (file, index) => {
+    notes.map(async (file, index) => {
       try {
         const html = await fetch(notePathFor(file)).then((r) => r.text());
         const match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-
         if (!match) return;
 
         const title = match[1]
           .replace(/<[^>]+>/g, "")
           .replace(/\s+/g, " ")
           .trim();
-
         if (!title) return;
+
+        // A newer chapter switch happened — don't write into the new menu.
+        if (token !== titleToken) return;
 
         const label = menuList.querySelector(
           `button[data-index="${index}"] .t`
         );
-
         if (label) label.textContent = title;
       } catch (error) {
         /* keep the fallback "Note NN" label */
@@ -154,70 +154,80 @@ document.addEventListener("keydown", (event) => {
 });
 
 function showNote(index, replace = false) {
-  current = Math.max(
-    0,
-    Math.min(index, availableNotes.length - 1)
-  );
+  current = Math.max(0, Math.min(index, availableNotes.length - 1));
 
   const file = availableNotes[current];
-
   if (!file) {
     location.replace("chapters.html");
     return;
   }
 
   noteFrame.src = notePathFor(file);
+  position.textContent = `${current + 1} / ${availableNotes.length}`;
 
-  position.textContent =
-    `${current + 1} / ${availableNotes.length}`;
-
-  previous.disabled = current === 0;
-  next.disabled =
-    current === availableNotes.length - 1;
+  previous.disabled = current === 0 && !hasPrevChapter();
+  next.disabled = current === availableNotes.length - 1 && !hasNextChapter();
 
   updateMenuHighlight();
 
-  const chapter =
-    new URLSearchParams(location.search).get("chapter");
-
-  history[
-    replace ? "replaceState" : "pushState"
-  ](
+  history[replace ? "replaceState" : "pushState"](
     {},
     "",
     `reader.html?chapter=${encodeURIComponent(chapter)}`
   );
 }
 
-previous.addEventListener("click", () => {
-  showNote(current - 1);
-});
+// Load a different chapter and land on its first ("first") or last ("last") note.
+async function switchChapter(newIndex, landing) {
+  let notes;
+  try {
+    notes = await getNotes(chapters[newIndex]);
+  } catch (error) {
+    return;
+  }
+  if (!notes.length) return;
 
-next.addEventListener("click", () => {
-  showNote(current + 1);
-});
+  chapter = chapters[newIndex];
+  chapterIndex = newIndex;
+  availableNotes = notes;
+
+  buildMenu();
+  loadTitles();
+  showNote(landing === "last" ? availableNotes.length - 1 : 0, false);
+}
+
+// One step forward / back, crossing chapter boundaries when needed.
+function go(delta) {
+  const target = current + delta;
+
+  if (target < 0) {
+    if (hasPrevChapter()) switchChapter(chapterIndex - 1, "last");
+    return;
+  }
+  if (target >= availableNotes.length) {
+    if (hasNextChapter()) switchChapter(chapterIndex + 1, "first");
+    return;
+  }
+  showNote(target);
+}
+
+previous.addEventListener("click", () => go(-1));
+next.addEventListener("click", () => go(1));
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "ArrowLeft") {
-    showNote(current - 1);
-  }
-
-  if (event.key === "ArrowRight") {
-    showNote(current + 1);
-  }
+  if (event.key === "ArrowLeft") go(-1);
+  if (event.key === "ArrowRight") go(1);
 });
 
 let swipeStart = null;
 
 noteFrame.addEventListener("load", () => {
-  const documentBody =
-    noteFrame.contentDocument?.body;
+  const documentBody = noteFrame.contentDocument?.body;
 
   documentBody?.addEventListener(
     "touchstart",
     (event) => {
-      swipeStart =
-        event.changedTouches[0].screenX;
+      swipeStart = event.changedTouches[0].screenX;
     },
     { passive: true }
   );
@@ -226,23 +236,22 @@ noteFrame.addEventListener("load", () => {
     "touchend",
     (event) => {
       if (swipeStart === null) return;
-
-      const distance =
-        event.changedTouches[0].screenX -
-        swipeStart;
-
-      if (Math.abs(distance) > 80) {
-        showNote(
-          current +
-          (distance < 0 ? 1 : -1)
-        );
-      }
-
+      const distance = event.changedTouches[0].screenX - swipeStart;
+      if (Math.abs(distance) > 80) go(distance < 0 ? 1 : -1);
       swipeStart = null;
     },
     { passive: true }
   );
 });
+
+// --- Boot ---
+try {
+  chapters = await getChapters();
+} catch (error) {
+  chapters = [];
+}
+chapterIndex = chapters.indexOf(chapter);
+availableNotes = await getNotes(chapter);
 
 buildMenu();
 loadTitles();
