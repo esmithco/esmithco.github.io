@@ -233,6 +233,14 @@
   .model.sage{background:var(--sage-soft);}
   .model.sage .m-term{color:var(--sage);}
 
+  /* ---------- Chapter thread + remember hook ---------- */
+  .thread{display:flex; flex-wrap:wrap; gap:4px 8px; font-size:11px; font-weight:600; letter-spacing:0.03em; color:#AEB2A9; margin:0 0 20px;}
+  .thread span{white-space:nowrap;}
+  .thread .on{color:var(--berry);}
+  .thread .sep{color:#CFD2CB;}
+  .remember{display:flex; gap:11px; align-items:flex-start; background:var(--berry-soft); border-radius:8px; padding:12px 15px; margin-top:24px; font-family:'Caveat',cursive; font-size:20px; line-height:1.3; color:var(--berry);}
+  .remember .star{flex:0 0 auto; font-family:'Inter',sans-serif; font-size:15px; margin-top:3px;}
+
   /* ---------- Footer ---------- */
   .footer{
     display:flex;
@@ -262,6 +270,13 @@
   </div>
 
   <h1>Three Ways to Model It</h1>
+
+  <div class="thread">
+    <span>1 · Define</span><span class="sep">→</span>
+    <span>2 · Frame</span><span class="sep">→</span>
+    <span class="on">3 · Model</span><span class="sep">→</span>
+    <span>4 · Quantify</span>
+  </div>
 
   <div class="definition">
     Every model answers one of two questions — <span class="accent">what causes</span> the behavior, or
@@ -309,6 +324,11 @@
       <div class="m-term">Mixed</div>
       <div class="m-what">combines both — can be hard to calculate</div>
     </div>
+  </div>
+
+  <div class="remember">
+    <span class="star">✦</span>
+    <span>Explain <em>why</em> · predict from its own past · or both. The simple time-series one usually wins.</span>
   </div>
 
   <div class="footer">

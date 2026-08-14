@@ -119,6 +119,13 @@
   .closing-note{font-size:13.5px; color:var(--ink); line-height:1.6; margin-top:12px;}
   .closing-note .katex{font-size:1.02em;}
 
+  .thread{display:flex; flex-wrap:wrap; gap:4px 8px; font-size:11px; font-weight:600; letter-spacing:0.03em; color:#AEB2A9; margin:0 0 20px;}
+  .thread span{white-space:nowrap;}
+  .thread .on{color:var(--berry);}
+  .thread .sep{color:#CFD2CB;}
+  .remember{display:flex; gap:11px; align-items:flex-start; background:var(--berry-soft); border-radius:8px; padding:12px 15px; margin-top:24px; font-family:'Caveat',cursive; font-size:20px; line-height:1.3; color:var(--berry);}
+  .remember .star{flex:0 0 auto; font-family:'Inter',sans-serif; font-size:15px; margin-top:3px;}
+
   .footer{
     display:flex; justify-content:flex-end; align-items:center;
     margin-top:26px; padding-top:14px; border-top:1px solid #DCDFD8;
@@ -147,6 +154,13 @@
   </div>
 
   <h1>Process, Then Probability</h1>
+
+  <div class="thread">
+    <span>1 · Define</span><span class="sep">→</span>
+    <span>2 · Frame</span><span class="sep">→</span>
+    <span>3 · Model</span><span class="sep">→</span>
+    <span class="on">4 · Quantify</span>
+  </div>
 
   <div class="definition">
     A forecast is never a single number — it's a <span class="accent">probability distribution</span>. The number we report is just its center.
@@ -208,6 +222,11 @@
   <div class="equation">\(y_{t_0} \mid \mathrm{I} \;\rightarrow\; \{5,\ 6,\ 6.2,\ 6.3,\ \dots,\ 9\}\)</div>
   <div class="equation">\(y_{t_1} \mid \mathrm{I} \;\rightarrow\; \{8,\ 8.1,\ \dots,\ 15\}\)</div>
   <div class="equation">\(y_{t_n} \mid \mathrm{I} \;\rightarrow\; \{6,\ 8,\ 10,\ 10.3,\ 11.3\}\)</div>
+
+  <div class="remember">
+    <span class="star">✦</span>
+    <span>A forecast is a distribution: the mean is the number, σ is the doubt. Interval = mean ± zσ.</span>
+  </div>
 
   <div class="footer">
     <span class="pagenum">04</span>
