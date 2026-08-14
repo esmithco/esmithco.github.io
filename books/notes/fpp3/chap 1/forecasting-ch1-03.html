@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Three Ways to Model It</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAF7;
+    --grid:#E4E7E1;
+    --ink:#20232A;
+    --ink-soft:#5B6067;
+    --berry:#A6356B;
+    --berry-soft:#F3E3EB;
+    --sage:#3E7A52;
+    --sage-soft:#E4EFE6;
+    --steel:#35526E;
+    --steel-soft:#E7EDF2;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:#E9E9E4;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+  }
+
+  body{
+    display:flex;
+    justify-content:center;
+    padding:32px 16px 64px;
+  }
+
+  .page{
+    position:relative;
+    width:100%;
+    max-width:760px;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+      var(--paper);
+    background-size:24px 24px;
+    border:1px solid #D9DBD3;
+    border-radius:4px;
+    box-shadow:0 24px 60px -20px rgba(32,35,42,0.25);
+    padding:44px 42px 40px;
+    animation:rise .5s ease-out;
+  }
+
+  @keyframes rise{
+    from{opacity:0; transform:translateY(10px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-family:'Caveat',cursive;
+    font-size:20px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .eyebrow .dots span{
+    display:inline-block;
+    width:7px; height:7px;
+    border-radius:50%;
+    margin-left:4px;
+  }
+  .dots span:nth-child(1){background:var(--berry);}
+  .dots span:nth-child(2){background:var(--sage);}
+  .dots span:nth-child(3){background:var(--steel);}
+
+  h1{
+    font-family:'Fraunces',serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:clamp(28px,5vw,38px);
+    line-height:1.08;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+
+  .source{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:22px;
+  }
+
+  hr{
+    border:none;
+    border-top:1px solid #DCDFD8;
+    margin:20px 0;
+  }
+
+  /* ---------- Hero definition ---------- */
+  .definition{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:clamp(18px,3vw,22px);
+    line-height:1.44;
+    color:var(--ink);
+    padding-left:18px;
+    border-left:3px solid var(--ink);
+  }
+  .definition .accent{
+    text-decoration:underline;
+    text-decoration-color:var(--berry);
+    text-decoration-thickness:2px;
+    text-underline-offset:3px;
+  }
+  .definition .accent.sage{text-decoration-color:var(--sage);}
+
+  /* ---------- Section labels ---------- */
+  .label{
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .label .who{font-weight:400; text-transform:none; letter-spacing:0; font-style:italic;}
+
+  .lede{
+    font-size:14px;
+    color:var(--ink);
+    margin-bottom:10px;
+  }
+
+  /* ---------- Equations ---------- */
+  .equation{
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    font-size:16px;
+    background:#fff;
+    border:1px solid #DCDFD8;
+    border-left:3px solid var(--ink);
+    border-radius:4px;
+    padding:10px 14px;
+    margin:2px 0 10px;
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+  .equation.steel{border-left-color:var(--steel); color:var(--steel);}
+  .equation.berry{border-left-color:var(--berry); color:var(--berry);}
+  .equation.sage{border-left-color:var(--sage); color:var(--sage);}
+  .equation sub{font-size:11px;}
+
+  .caption{
+    font-size:13px;
+    color:var(--ink-soft);
+    font-style:italic;
+    margin:0 0 4px;
+  }
+
+  /* ---------- Chip + tag ---------- */
+  .chip{
+    display:inline-block;
+    font-size:12px;
+    color:var(--steel);
+    background:var(--steel-soft);
+    border-radius:999px;
+    padding:2px 9px;
+    margin-left:2px;
+    white-space:nowrap;
+  }
+  .tag{
+    font-family:'Caveat',cursive;
+    font-size:16px;
+    margin-left:4px;
+    white-space:nowrap;
+  }
+  .tag.sage{color:var(--sage);}
+  .tag.berry{color:var(--berry);}
+
+  /* ---------- Mini vertical flow ---------- */
+  .stack{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:2px;
+    margin-top:4px;
+  }
+  .box{
+    font-size:13px;
+    font-weight:600;
+    padding:8px 13px;
+    border-radius:6px;
+    border:1.5px solid var(--ink);
+    background:#fff;
+    text-align:center;
+  }
+  .box.outline-berry{border-color:var(--berry); color:var(--berry);}
+  .box.outline-muted{border-color:var(--ink-soft); color:var(--ink-soft); font-weight:500;}
+  .stack .down{
+    font-size:15px;
+    color:var(--ink-soft);
+    margin-left:14px;
+  }
+
+  /* ---------- Recap cards ---------- */
+  .models{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .model{
+    flex:1 1 150px;
+    border-radius:6px;
+    padding:10px 12px;
+    font-size:12.5px;
+  }
+  .model .m-term{
+    font-weight:700;
+    font-size:11px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+  }
+  .model .m-what{margin-top:2px; color:var(--ink);}
+  .model.steel{background:var(--steel-soft);}
+  .model.steel .m-term{color:var(--steel);}
+  .model.berry{background:var(--berry-soft);}
+  .model.berry .m-term{color:var(--berry);}
+  .model.sage{background:var(--sage-soft);}
+  .model.sage .m-term{color:var(--sage);}
+
+  /* ---------- Footer ---------- */
+  .footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:26px;
+    padding-top:14px;
+    border-top:1px solid #DCDFD8;
+  }
+  .footer .next{font-size:12px; color:var(--ink-soft);}
+  .pagenum{font-family:'Fraunces',serif; font-size:14px; color:var(--ink-soft);}
+
+  @media (max-width:480px){
+    .page{padding:30px 20px 30px;}
+    .equation{font-size:14px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="eyebrow">
+    <span>reading notes · ch. 01, §1.4</span>
+    <span class="dots"><span></span><span></span><span></span></span>
+  </div>
+
+  <h1>Three Ways to Model It</h1>
+  <div class="source">Hyndman &amp; Athanasopoulos, <em>Forecasting: Principles and Practice</em> (3rd ed.) · OTexts, otexts.com/fpp3</div>
+
+  <div class="definition">
+    Every model answers one of two questions — <span class="accent">what causes</span> the behavior, or
+    <span class="accent sage">what will happen</span> next. Some try to answer both.
+  </div>
+
+  <hr>
+
+  <div class="label">Explanatory model <span class="who">— what causes it</span></div>
+  <div class="lede">Uses other information besides the main variable.</div>
+  <div class="equation steel">ED = f( Temperature, Economy, Population, Time of day, Error )</div>
+  <div class="caption">energy demand, explained by what drives it</div>
+
+  <hr>
+
+  <div class="label">Time series model <span class="who">— what will happen</span></div>
+  <div class="lede">Predicts from the variable's own past. <span class="tag sage">★ best, most of the time</span></div>
+  <div class="equation berry">ED<sub>t+1</sub> = f( ED<sub>t</sub>, ED<sub>t-1</sub>, … , ED<sub>0</sub>, Error )</div>
+  <div class="stack">
+    <div class="box outline-berry">predicting from past behavior</div>
+  </div>
+
+  <hr>
+
+  <div class="label">Mixed model <span class="who">— both at once</span></div>
+  <div class="lede">Its own past, plus outside variables.</div>
+  <div class="equation sage">ED<sub>t+1</sub> = f( ED<sub>t</sub>, Temperature, Population, … , Error )</div>
+  <div class="stack">
+    <div class="box outline-muted">can be hard to calculate</div>
+  </div>
+
+  <hr>
+
+  <div class="label">At a glance</div>
+  <div class="models">
+    <div class="model steel">
+      <div class="m-term">Explanatory</div>
+      <div class="m-what">outside variables — explains why</div>
+    </div>
+    <div class="model berry">
+      <div class="m-term">Time series</div>
+      <div class="m-what">its own past — simplest, usually best</div>
+    </div>
+    <div class="model sage">
+      <div class="m-term">Mixed</div>
+      <div class="m-what">combines both — can be hard to calculate</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="next">next: choosing between them →</span>
+    <span class="pagenum">03</span>
+  </div>
+
+</div>
+
+</body>
+</html>
