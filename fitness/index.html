@@ -128,9 +128,11 @@
   tr.info-open td.ex .ex-i{background:var(--blue);border-color:var(--blue);color:#fff;}
 
   tr.ex-detail td{padding:0 18px;border-top:none;}
-  tr.ex-detail .inner{max-height:0;overflow:hidden;transition:max-height .28s ease;}
-  tr.ex-detail.open .inner{max-height:260px;}
+  tr.ex-detail .inner{max-height:0;overflow:hidden;transition:max-height .3s ease;}
+  tr.ex-detail.open .inner{max-height:560px;}
   tr.ex-detail .card{margin:2px 0 12px;background:var(--bg);border:1px solid var(--panel-line);border-radius:10px;padding:11px 13px;}
+  tr.ex-detail .imgs{display:flex;gap:8px;margin-bottom:10px;}
+  tr.ex-detail .imgs img{flex:1;width:50%;aspect-ratio:1/1;object-fit:cover;background:#fff;border:1px solid var(--panel-line);border-radius:8px;}
   tr.ex-detail .muscles{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);font-weight:600;margin-bottom:5px;}
   tr.ex-detail .cue{display:block;font-size:12.8px;color:var(--steel);line-height:1.5;}
 
@@ -219,11 +221,11 @@
       <div class="caution">⚠ Press: si sientes dolor en el pectoral, para y sustituye por máquina o remo extra. Quédate 2-3 reps antes del fallo.</div>
       <table>
         <tr class="col-heads"><td></td><td class="ex"></td><td class="sr"></td><td class="wt">kg</td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d1e1"></td><td class="ex">Remo con mancuerna o máquina</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e1" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d1e2"></td><td class="ex">Press inclinado, carga ligera-moderada</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e2" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d1e3"></td><td class="ex">Jalón al pecho</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e3" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d1e4"></td><td class="ex">Elevaciones laterales</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e4" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d1e5"></td><td class="ex">Press de pecho en máquina</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e5" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d1e1"></td><td class="ex">Press inclinado con mancuernas</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e1" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d1e2"></td><td class="ex">Remo con mancuerna a una mano</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e2" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d1e3"></td><td class="ex">Elevaciones laterales</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e3" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d1e4"></td><td class="ex">Curl de bíceps con mancuerna</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e4" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d1e5"></td><td class="ex">Extensión de tríceps en polea</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e5" placeholder="—"></td></tr>
       </table>
     </div>
   </div>
@@ -256,11 +258,11 @@
       <div class="caution">⚠ Mismo cuidado con el press militar: si duele el pectoral, sustituye o baja el peso.</div>
       <table>
         <tr class="col-heads"><td></td><td class="ex"></td><td class="sr"></td><td class="wt">kg</td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d4e1"></td><td class="ex">Dominadas asistidas o jalón supino</td><td class="sr">3 x 8-10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e1" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d4e2"></td><td class="ex">Press militar con mancuernas</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e2" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d4e3"></td><td class="ex">Remo en máquina</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e3" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d4e4"></td><td class="ex">Curl bíceps</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e4" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d4e5"></td><td class="ex">Extensión de tríceps</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e5" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d4e1"></td><td class="ex">Press de pecho en máquina o banca</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e1" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d4e2"></td><td class="ex">Jalón al pecho (agarre ancho)</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e2" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d4e3"></td><td class="ex">Press militar con mancuernas</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e3" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d4e4"></td><td class="ex">Curl martillo</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e4" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d4e5"></td><td class="ex">Fondos en banco (tríceps)</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e5" placeholder="—"></td></tr>
       </table>
     </div>
   </div>
@@ -439,11 +441,11 @@
 
   // Tap an exercise name to reveal muscles + a short form cue below it.
   const EX_INFO = {
-    d1e1: ['Espalda · dorsal · bíceps', 'Tira del codo hacia atrás pegado al cuerpo y aprieta la escápula. No encojas el hombro ni gires el tronco.'],
-    d1e2: ['Pecho superior · hombro · tríceps', 'Banco a ~30°. Baja al pecho alto con los codos a ~45° y empuja sin bloquear de golpe.'],
-    d1e3: ['Dorsal · bíceps', 'Pecho arriba. Lleva la barra hacia el pecho tirando con los codos hacia abajo, sin balancearte.'],
-    d1e4: ['Hombro · deltoides lateral', 'Sube los brazos por los lados hasta la altura del hombro, codo algo flexionado y sin impulso.'],
-    d1e5: ['Pecho · tríceps', 'Empuja hasta casi estirar los brazos y controla la vuelta. Mantén los hombros atrás.'],
+    d1e1: ['Pecho superior · hombro · tríceps', 'Banco a ~30°. Baja las mancuernas al pecho alto con los codos a ~45° y empuja arriba sin bloquear de golpe.'],
+    d1e2: ['Espalda · dorsal · bíceps', 'Apoya rodilla y mano en el banco. Tira del codo hacia la cadera pegado al cuerpo y aprieta la escápula.'],
+    d1e3: ['Hombro · deltoides lateral', 'Sube los brazos por los lados hasta la altura del hombro, codo algo flexionado y sin impulso.'],
+    d1e4: ['Bíceps', 'Sube la mancuerna sin mover el codo y baja despacio controlando el peso.'],
+    d1e5: ['Tríceps', 'Codos pegados al cuerpo. Estira el codo hacia abajo y vuelve controlado sin abrir los codos.'],
 
     d2e1: ['Cuádriceps · glúteo · core', 'Baja como si te sentaras, rodillas hacia afuera y espalda recta, hasta que los muslos queden paralelos.'],
     d2e2: ['Isquios · glúteo', 'Lleva la cadera atrás con las piernas casi rectas y espalda recta. Baja hasta media espinilla.'],
@@ -451,17 +453,25 @@
     d2e4: ['Isquios / glúteo', 'Curl femoral: flexiona la rodilla llevando el talón al glúteo. Hip thrust: empuja la cadera arriba apretando el glúteo.'],
     d2e5: ['Core · abdomen', 'Cuerpo recto sobre los antebrazos. Aprieta abdomen y glúteo; no hundas ni subas la cadera.'],
 
-    d4e1: ['Dorsal · bíceps', 'Agarre supino (palmas hacia ti). Tira del pecho hacia la barra apretando la espalda.'],
-    d4e2: ['Hombro · tríceps', 'Empuja las mancuernas arriba sin arquear la espalda. Core apretado y glúteo firme.'],
-    d4e3: ['Espalda media · bíceps', 'Tira hacia el abdomen juntando las escápulas. Codos pegados al cuerpo.'],
-    d4e4: ['Bíceps', 'Sube la mancuerna sin mover el codo y baja despacio controlando el peso.'],
-    d4e5: ['Tríceps', 'Estira el codo por completo manteniéndolo fijo en su sitio.'],
+    d4e1: ['Pecho · hombro · tríceps', 'Empuja hasta casi estirar los brazos y controla la vuelta. Hombros hacia atrás y pecho arriba.'],
+    d4e2: ['Dorsal ancho · espalda · bíceps', 'Agarre ancho. Lleva la barra al pecho tirando con los codos hacia abajo, pecho arriba y sin balancearte.'],
+    d4e3: ['Hombro · tríceps', 'Empuja las mancuernas arriba sin arquear la espalda. Core apretado y glúteo firme.'],
+    d4e4: ['Bíceps · antebrazo', 'Agarre neutro (palmas enfrentadas). Sube sin mover el codo y baja controlando.'],
+    d4e5: ['Tríceps · pecho', 'Manos en el banco detrás de ti. Baja el cuerpo flexionando los codos hacia atrás y empuja arriba.'],
 
     d5e1: ['Glúteo · isquios · espalda', 'Espalda recta y pecho arriba. Empuja el suelo con los pies; sube cadera y pecho a la vez.'],
     d5e2: ['Cuádriceps · glúteo', 'Baja controlado con la rodilla alineada al pie. En búlgara, pie trasero elevado y torso algo adelante.'],
     d5e3: ['Glúteo', 'Espalda alta apoyada en el banco. Empuja la cadera arriba y aprieta el glúteo un segundo.'],
     d5e4: ['Gemelos', 'Sube sobre las puntas lo más alto posible, pausa arriba y baja lento.'],
     d5e5: ['Core · abdomen', 'Mantén la zona lumbar pegada al suelo. Extiende brazo/pierna despacio sin arquear la espalda.']
+  };
+  // Two demo photos (start / end position) per exercise — free-exercise-db (public domain).
+  const IMG_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
+  const EX_IMG = {
+    d1e1: 'Incline_Dumbbell_Press', d1e2: 'One-Arm_Dumbbell_Row', d1e3: 'Side_Lateral_Raise', d1e4: 'Dumbbell_Bicep_Curl', d1e5: 'Triceps_Pushdown',
+    d2e1: 'Barbell_Squat', d2e2: 'Romanian_Deadlift', d2e3: 'Dumbbell_Lunges', d2e4: 'Lying_Leg_Curls', d2e5: 'Plank',
+    d4e1: 'Machine_Bench_Press', d4e2: 'Wide-Grip_Lat_Pulldown', d4e3: 'Dumbbell_Shoulder_Press', d4e4: 'Hammer_Curls', d4e5: 'Bench_Dips',
+    d5e1: 'Barbell_Deadlift', d5e2: 'Leg_Press', d5e3: 'Barbell_Hip_Thrust', d5e4: 'Rocking_Standing_Calf_Raise', d5e5: 'Ab_Roller'
   };
   function setupExerciseInfo(){
     document.querySelectorAll('table tr').forEach(row=>{
@@ -486,15 +496,33 @@
       detail.className = 'ex-detail';
       detail.innerHTML =
         '<td colspan="4"><div class="inner"><div class="card">' +
+        '<div class="imgs"></div>' +
         '<span class="muscles"></span><span class="cue"></span>' +
         '</div></div></td>';
       detail.querySelector('.muscles').textContent = info[0];
       detail.querySelector('.cue').textContent = info[1];
       row.after(detail);
 
+      const imgId = EX_IMG[cb.dataset.id];
+      const imgsBox = detail.querySelector('.imgs');
+      if(!imgId) imgsBox.remove();
+      let imgsLoaded = false;
+      function loadImages(){
+        if(imgsLoaded || !imgId) return;
+        imgsLoaded = true;
+        [0,1].forEach(i=>{
+          const im = document.createElement('img');
+          im.alt = '';
+          im.decoding = 'async';
+          im.src = IMG_BASE + imgId + '/' + i + '.jpg';
+          imgsBox.appendChild(im);
+        });
+      }
+
       cell.addEventListener('click', ()=>{
         const open = detail.classList.toggle('open');
         row.classList.toggle('info-open', open);
+        if(open) loadImages();
       });
     });
   }
