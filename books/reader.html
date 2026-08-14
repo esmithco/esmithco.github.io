@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Book Notes</title>
-  <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="site.css?v=2">
 </head>
 <body class="reader-page">
   <header class="reader-bar">
@@ -14,15 +14,23 @@
       </a>
       <a class="back-link" href="chapters.html">← Chapters</a>
     </div>
-    <p id="position" class="position" aria-live="polite"></p>
+    <button id="noteMenuBtn" class="note-menu-btn" type="button" aria-haspopup="true" aria-expanded="false">
+      <span id="position" class="position" aria-live="polite"></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
     <nav class="reader-controls" aria-label="Note navigation">
       <button id="previous" type="button" aria-label="Previous note">←</button>
       <button id="next" type="button" aria-label="Next note">→</button>
     </nav>
   </header>
+  <div id="noteMenu" class="note-menu" hidden>
+    <p class="note-menu-title">Notes in this chapter</p>
+    <ul id="noteMenuList"></ul>
+  </div>
+  <div id="noteMenuBackdrop" class="note-menu-backdrop" hidden></div>
   <main class="reader-shell">
     <iframe id="note" title="Book note"></iframe>
   </main>
-  <script type="module" src="reader.js"></script>
+  <script type="module" src="reader.js?v=2"></script>
 </body>
 </html>
