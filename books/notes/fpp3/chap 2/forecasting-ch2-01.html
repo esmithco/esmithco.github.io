@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pandas — The Main Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAF7; --grid:#E4E7E1; --ink:#20232A; --ink-soft:#5B6067;
+    --berry:#A6356B; --berry-soft:#F3E3EB; --sage:#3E7A52; --sage-soft:#E4EFE6;
+    --steel:#35526E; --steel-soft:#E7EDF2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0; background:#E9E9E4; font-family:'Inter',sans-serif; color:var(--ink); overflow-x:hidden;}
+  body{display:flex; justify-content:center; padding:32px 16px 64px;}
+  .definition,.lede,.callout,.verbs li,.takeaways li{overflow-wrap:break-word;}
+
+  .page{
+    position:relative; width:100%; max-width:760px;
+    background:linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px), var(--paper);
+    background-size:24px 24px; border:1px solid #D9DBD3; border-radius:4px;
+    box-shadow:0 24px 60px -20px rgba(32,35,42,0.25); padding:44px 42px 40px; animation:rise .5s ease-out;
+  }
+  @keyframes rise{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+
+  .eyebrow{display:flex; align-items:center; justify-content:space-between; font-family:'Caveat',cursive; font-size:20px; color:var(--ink-soft); margin-bottom:6px;}
+  .eyebrow .dots span{display:inline-block; width:7px; height:7px; border-radius:50%; margin-left:4px;}
+  .dots span:nth-child(1){background:var(--berry);} .dots span:nth-child(2){background:var(--sage);} .dots span:nth-child(3){background:var(--steel);}
+
+  h1{font-family:'Fraunces',serif; font-optical-sizing:auto; font-weight:600; font-size:clamp(28px,5vw,38px); line-height:1.08; margin:0 0 22px; letter-spacing:-0.01em;}
+  hr{border:none; border-top:1px solid #DCDFD8; margin:22px 0;}
+
+  .definition{font-family:'Fraunces',serif; font-weight:500; font-size:clamp(18px,3vw,22px); line-height:1.44; color:var(--ink); padding-left:18px; border-left:3px solid var(--ink);}
+  .definition .accent{text-decoration:underline; text-decoration-color:var(--berry); text-decoration-thickness:2px; text-underline-offset:3px;}
+
+  .label{font-size:11.5px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:14px;}
+
+  code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:0.9em; background:var(--steel-soft); color:var(--steel); padding:1px 5px; border-radius:4px;}
+  .code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:12.5px; line-height:1.65; background:#fff; border:1px solid #DCDFD8; border-left:3px solid var(--steel); border-radius:4px; padding:11px 14px; margin:0 0 10px; overflow-x:auto; white-space:pre; color:var(--ink);}
+  .code .cmt{color:var(--ink-soft);} .code .cls{color:var(--berry); font-weight:600;} .code .fn{color:var(--sage); font-weight:600;}
+
+  .verbs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:11px;}
+  .verbs li{font-size:14px; line-height:1.5; display:flex; gap:11px; align-items:flex-start;}
+  .verbs .tok{flex:0 0 74px; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--steel); font-weight:600; padding-top:1px;}
+
+  .callout{background:var(--sage-soft); border-radius:6px; padding:12px 14px; font-size:13.5px; line-height:1.55; color:var(--ink); margin:0;}
+  .callout.berry{background:var(--berry-soft);}
+  .callout.steel{background:var(--steel-soft);}
+  .callout b{color:var(--ink);}
+  .two{display:flex; gap:10px; flex-wrap:wrap;}
+  .two .callout{flex:1 1 220px;}
+
+  .chip{display:inline-block; font-size:12px; color:var(--steel); background:var(--steel-soft); border-radius:999px; padding:2px 9px; margin-left:2px; white-space:nowrap;}
+  .k{font-family:'Caveat',cursive; font-size:16px; color:var(--berry);}
+
+  .footer{display:flex; justify-content:flex-end; align-items:center; margin-top:28px; padding-top:14px; border-top:1px solid #DCDFD8;}
+  .pagenum{font-family:'Fraunces',serif; font-size:14px; color:var(--ink-soft);}
+
+  @media (max-width:480px){
+    body{padding:20px 10px 48px;}
+    .page{padding:28px 18px 28px;}
+    .code{font-size:11.5px;}
+    .verbs .tok{flex-basis:64px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="eyebrow">
+    <span>reading notes · ch. 02 · pandas</span>
+    <span class="dots"><span></span><span></span><span></span></span>
+  </div>
+
+  <h1>Pandas — The Main Tool</h1>
+
+  <div class="definition">
+    <span class="accent">pandas</span> is a Python <span class="accent">module</span> — a library, not a class. It
+    holds <em>classes</em> (constructors that build objects) and <em>functions</em>. Learn its structure and the
+    syntax stops being confusing.
+  </div>
+
+  <hr>
+
+  <div class="label">The structure</div>
+  <div class="code">pandas
+├── DataFrame      → <span class="cls">class</span>     <span class="cmt">· 2-D table (rows × columns)</span>
+├── Series         → <span class="cls">class</span>     <span class="cmt">· 1-D column</span>
+├── Timestamp      → <span class="cls">class</span>     <span class="cmt">· a point in time</span>
+├── Period         → <span class="cls">class</span>     <span class="cmt">· an interval of time</span>
+├── DatetimeIndex  → <span class="cls">class</span>     <span class="cmt">· many points</span>
+├── PeriodIndex    → <span class="cls">class</span>     <span class="cmt">· many intervals</span>
+└── to_datetime()  → <span class="fn">function</span>  <span class="cmt">· converts to datetime</span></div>
+
+  <ul class="verbs">
+    <li><span class="tok">build</span><span><code>df = pd.DataFrame(...)</code> calls the <b>constructor</b> → builds a DataFrame object. Classes <span class="k">aka constructors</span>. Check with <code>type(df)</code>.</span></li>
+    <li><span class="tok">column</span><span><code>df["age"]</code> selects one column → returns a <b>Series</b> (1-D). pandas builds and returns it for you.</span></li>
+    <li><span class="tok">.attr</span><span><code>df.columns</code>, <code>df.index</code> are <b>attributes</b> (no <code>()</code>). <code>df.head()</code>, <code>df.tail()</code> are <b>methods</b> (call with <code>()</code>).</span></li>
+  </ul>
+
+  <hr>
+
+  <div class="label">Three ways to reach data</div>
+  <ul class="verbs">
+    <li><span class="tok">[ ]</span><span>Depends on what's inside: <code>df["c"]</code> one column · <code>df[["a","b"]]</code> many · <code>df[mask]</code> filter rows.</span></li>
+    <li><span class="tok">.loc</span><span>By <b>label</b> (and boolean masks): <code>df.loc[rows, cols]</code>. Picks rows <em>and</em> columns, and can assign.</span></li>
+    <li><span class="tok">.iloc</span><span>By <b>position</b>: <code>df.iloc[0]</code> → the first row.</span></li>
+  </ul>
+
+  <hr>
+
+  <div class="label">Filter vs. transform — and how to keep it</div>
+  <div class="two">
+    <div class="callout steel"><b>Filter</b> — <code>df[df["age"]&gt;25]</code><br><span style="color:var(--ink-soft)">"Which rows do I keep?"</span></div>
+    <div class="callout berry"><b>Transform</b> — <code>df["age"].apply(f)</code><br><span style="color:var(--ink-soft)">"What do I compute per value?"</span></div>
+  </div>
+  <div class="callout" style="margin-top:10px">
+    Neither one changes <code>df</code>. An operation only <b>produces a result</b> — the <code>=</code> <b>stores</b> it:
+    <div class="code" style="margin-top:9px; margin-bottom:0">df["age"] = df["age"].apply(<span class="cmt">lambda x: x*2</span>)</div>
+  </div>
+
+  <hr>
+
+  <div class="label">Transform toolkit</div>
+  <ul class="verbs">
+    <li><span class="tok">apply</span><span><code>df["c"].apply(f)</code> → <code>f</code> gets each <b>value</b>. <code>df.apply(f, axis=1)</code> → <code>f</code> gets each <b>row</b> (when you need several columns). <span class="chip">axis=0 columns · axis=1 rows</span></span></li>
+    <li><span class="tok">map</span><span><code>df["city"].map({"Cali":"CAL"})</code> → maps each <b>value → value</b>.</span></li>
+    <li><span class="tok">vector</span><span>Prefer it: <code>df["price"]*df["qty"]</code>, <code>(df["a"]&gt;1)&amp;(df["b"]==0)</code>, <code>np.where(cond, A, B)</code>. Faster and simpler than <code>apply</code>.</span></li>
+  </ul>
+
+  <div class="footer">
+    <span class="pagenum">01</span>
+  </div>
+
+</div>
+
+</body>
+</html>

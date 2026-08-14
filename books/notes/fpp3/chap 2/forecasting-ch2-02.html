@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time in Pandas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAF7; --grid:#E4E7E1; --ink:#20232A; --ink-soft:#5B6067;
+    --berry:#A6356B; --berry-soft:#F3E3EB; --sage:#3E7A52; --sage-soft:#E4EFE6;
+    --steel:#35526E; --steel-soft:#E7EDF2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0; background:#E9E9E4; font-family:'Inter',sans-serif; color:var(--ink); overflow-x:hidden;}
+  body{display:flex; justify-content:center; padding:32px 16px 64px;}
+  .definition,.lede,.callout,.verbs li{overflow-wrap:break-word;}
+
+  .page{
+    position:relative; width:100%; max-width:760px;
+    background:linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px), var(--paper);
+    background-size:24px 24px; border:1px solid #D9DBD3; border-radius:4px;
+    box-shadow:0 24px 60px -20px rgba(32,35,42,0.25); padding:44px 42px 40px; animation:rise .5s ease-out;
+  }
+  @keyframes rise{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+
+  .eyebrow{display:flex; align-items:center; justify-content:space-between; font-family:'Caveat',cursive; font-size:20px; color:var(--ink-soft); margin-bottom:6px;}
+  .eyebrow .dots span{display:inline-block; width:7px; height:7px; border-radius:50%; margin-left:4px;}
+  .dots span:nth-child(1){background:var(--berry);} .dots span:nth-child(2){background:var(--sage);} .dots span:nth-child(3){background:var(--steel);}
+
+  h1{font-family:'Fraunces',serif; font-optical-sizing:auto; font-weight:600; font-size:clamp(28px,5vw,38px); line-height:1.08; margin:0 0 22px; letter-spacing:-0.01em;}
+  hr{border:none; border-top:1px solid #DCDFD8; margin:22px 0;}
+
+  .definition{font-family:'Fraunces',serif; font-weight:500; font-size:clamp(18px,3vw,22px); line-height:1.44; color:var(--ink); padding-left:18px; border-left:3px solid var(--ink);}
+  .definition .accent{text-decoration:underline; text-decoration-color:var(--berry); text-decoration-thickness:2px; text-underline-offset:3px;}
+
+  .label{font-size:11.5px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:14px;}
+
+  code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:0.9em; background:var(--steel-soft); color:var(--steel); padding:1px 5px; border-radius:4px;}
+
+  /* atom cards: point vs interval */
+  .atoms{display:flex; gap:12px; flex-wrap:wrap;}
+  .atom{flex:1 1 240px; background:#fff; border:1px solid #DCDFD8; border-radius:8px; padding:14px 15px;}
+  .atom .glyph{font-family:ui-monospace,Menlo,monospace; font-size:20px; letter-spacing:2px; margin-bottom:6px;}
+  .atom.point{border-left:3px solid var(--berry);} .atom.point .glyph{color:var(--berry);}
+  .atom.interval{border-left:3px solid var(--sage);} .atom.interval .glyph{color:var(--sage);}
+  .atom .name{font-weight:700; font-size:14px;} .atom .name code{background:none; padding:0; color:inherit;}
+  .atom .what{font-size:13px; color:var(--ink-soft); line-height:1.5; margin-top:4px;}
+
+  .verbs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:11px;}
+  .verbs li{font-size:14px; line-height:1.5; display:flex; gap:11px; align-items:flex-start;}
+  .verbs .tok{flex:0 0 118px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--steel); font-weight:600; padding-top:1px;}
+
+  .callout{background:var(--sage-soft); border-radius:6px; padding:12px 14px; font-size:13.5px; line-height:1.55; color:var(--ink); margin:0;}
+  .callout.berry{background:var(--berry-soft);} .callout.steel{background:var(--steel-soft);}
+  .callout .lead{font-family:'Caveat',cursive; font-size:17px; color:var(--sage); display:block; margin-bottom:2px;}
+  .callout.berry .lead{color:var(--berry);}
+  .chip{display:inline-block; font-size:12px; color:var(--steel); background:var(--steel-soft); border-radius:999px; padding:2px 9px; white-space:nowrap;}
+
+  .footer{display:flex; justify-content:flex-end; align-items:center; margin-top:28px; padding-top:14px; border-top:1px solid #DCDFD8;}
+  .pagenum{font-family:'Fraunces',serif; font-size:14px; color:var(--ink-soft);}
+
+  @media (max-width:480px){
+    body{padding:20px 10px 48px;}
+    .page{padding:28px 18px 28px;}
+    .verbs .tok{flex-basis:100%; padding-top:0;}
+    .verbs li{flex-direction:column; gap:3px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="eyebrow">
+    <span>reading notes · ch. 02 · time</span>
+    <span class="dots"><span></span><span></span><span></span></span>
+  </div>
+
+  <h1>Time in Pandas</h1>
+
+  <div class="definition">
+    Two kinds of time. A <span class="accent">Timestamp</span> is a <em>point</em>; a
+    <span class="accent">Period</span> is an <em>interval</em>. Everything else is either a
+    <em>collection</em> of these (an Index) or a <em>converter</em> (a function).
+  </div>
+
+  <div class="callout steel" style="margin-top:16px">
+    Don't confuse Python's <code>datetime</code> module (with its <code>datetime.datetime</code> class) with pandas'
+    own time objects below. They look alike; they are not the same.
+  </div>
+
+  <hr>
+
+  <div class="label">The two atoms</div>
+  <div class="atoms">
+    <div class="atom point">
+      <div class="glyph">●</div>
+      <div class="name">Timestamp <code>— a point</code></div>
+      <div class="what"><code>pd.Timestamp("2020-01-01 08:00")</code> — one specific moment.</div>
+    </div>
+    <div class="atom interval">
+      <div class="glyph">[──)</div>
+      <div class="name">Period <code>— an interval</code></div>
+      <div class="what"><code>pd.Period("2020-01", freq="M")</code> — the whole month of Jan 2020.</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="label">The two indexes</div>
+  <p style="font-size:13px; color:var(--ink-soft); line-height:1.55; margin:0 0 14px;">
+    An <b>Index</b> is the structure of labels that identify rows. Labels need not be numbers, and need not be unique
+    (<code>df.index.is_unique</code> checks). When the labels are time, you get one of these:
+  </p>
+  <ul class="verbs">
+    <li><span class="tok">DatetimeIndex</span><span>Many <b>timestamps</b> (points). <code>freq="8h"</code> means spaced every 8h — <em>not</em> that each covers 8h.</span></li>
+    <li><span class="tok">PeriodIndex</span><span>Many <b>periods</b> (intervals). <code>dtype="period[8h]"</code> means each element <em>is</em> an 8h interval; the label shown is its <b>start</b>.</span></li>
+    <li><span class="tok">to_datetime()</span><span>The converter <b>function</b>: one value → <b>Timestamp</b>; a list → <b>DatetimeIndex</b>.</span></li>
+  </ul>
+
+  <hr>
+
+  <div class="label">The distinction that matters for forecasting</div>
+  <div class="two" style="display:flex; gap:10px; flex-wrap:wrap;">
+    <div class="callout berry" style="flex:1 1 240px;"><span class="lead">● DatetimeIndex</span>Observations occur <b>AT</b> these points in time.</div>
+    <div class="callout" style="flex:1 1 240px;"><span class="lead">[──) PeriodIndex</span>Observations belong <b>TO</b> these time intervals.</div>
+  </div>
+  <div class="callout steel" style="margin-top:10px">
+    Coarsening timestamps into periods can <b>repeat labels</b> — four readings in the same week all become one weekly
+    period. That's not an error; it means they belong to that week. Want one row per week? <b>aggregate</b> them.
+  </div>
+
+  <div class="footer">
+    <span class="pagenum">02</span>
+  </div>
+
+</div>
+
+</body>
+</html>
