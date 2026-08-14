@@ -46,6 +46,35 @@
   .verbs li{font-size:14px; line-height:1.5; display:flex; gap:11px; align-items:flex-start;}
   .verbs .tok{flex:0 0 74px; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--steel); font-weight:600; padding-top:1px;}
 
+  /* ---------- The map ---------- */
+  .legend{display:flex; flex-wrap:wrap; gap:6px 14px; margin:2px 0 16px; font-size:11.5px; color:var(--ink-soft);}
+  .legend span{display:flex; align-items:center; gap:5px;}
+  .legend i{width:10px; height:10px; border-radius:3px; display:inline-block;}
+  .i-cls{background:var(--berry);} .i-fn{background:var(--sage);} .i-attr{background:var(--steel);} .i-mth{background:#8A5A22;}
+
+  .tag{font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:1.5px 6px; border-radius:5px; white-space:nowrap;}
+  .tag.cls{background:var(--berry-soft); color:var(--berry);}
+  .tag.fn{background:var(--sage-soft); color:var(--sage);}
+  .tag.attr{background:var(--steel-soft); color:var(--steel);}
+  .tag.mth{background:#F1E9DC; color:#8A5A22;}
+
+  .group{margin:0 0 16px; padding-left:14px; border-left:2px solid var(--grid);}
+  .group.classes{border-left-color:var(--berry);}
+  .group.funcs{border-left-color:var(--sage);}
+  .group.access{border-left-color:var(--steel);}
+  .g-head{font-size:11.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink); margin-bottom:2px;}
+  .g-sub{font-size:12px; color:var(--ink-soft); margin-bottom:10px;}
+  .node{display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; padding:3px 0; line-height:1.45;}
+  .node code{font-size:12.5px;}
+  .node .desc{font-size:12.5px; color:var(--ink-soft);}
+  .node.sub{padding:2px 0 6px 4px; gap:6px;}
+
+  .pair{background:#fff; border:1px solid #DCDFD8; border-radius:8px; padding:11px 13px; margin-bottom:10px;}
+  .pair .p-title{font-family:'Caveat',cursive; font-size:17px; color:var(--ink-soft); margin-bottom:8px;}
+  .pair .p-row{display:flex; gap:10px 16px; flex-wrap:wrap;}
+  .pair .side{flex:1 1 210px; font-size:12.5px; line-height:1.5; color:var(--ink);}
+  .pair .side code{font-size:12px;}
+
   .callout{background:var(--sage-soft); border-radius:6px; padding:12px 14px; font-size:13.5px; line-height:1.55; color:var(--ink); margin:0;}
   .callout.berry{background:var(--berry-soft);}
   .callout.steel{background:var(--steel-soft);}
@@ -86,21 +115,73 @@
 
   <hr>
 
-  <div class="label">The structure</div>
-  <div class="code">pandas
-├── DataFrame      → <span class="cls">class</span>     <span class="cmt">· 2-D table (rows × columns)</span>
-├── Series         → <span class="cls">class</span>     <span class="cmt">· 1-D column</span>
-├── Timestamp      → <span class="cls">class</span>     <span class="cmt">· a point in time</span>
-├── Period         → <span class="cls">class</span>     <span class="cmt">· an interval of time</span>
-├── DatetimeIndex  → <span class="cls">class</span>     <span class="cmt">· many points</span>
-├── PeriodIndex    → <span class="cls">class</span>     <span class="cmt">· many intervals</span>
-└── to_datetime()  → <span class="fn">function</span>  <span class="cmt">· converts to datetime</span></div>
+  <div class="label">The map — everything you touch in pandas</div>
+  <p class="lede" style="font-size:13px; color:var(--ink-soft); line-height:1.55; margin:0 0 14px;">
+    <code>df = pd.DataFrame(...)</code> calls a <b>class</b> (a constructor) and builds an <b>object</b>.
+    <code>type(df)</code> tells you what any object is.
+  </p>
 
-  <ul class="verbs">
-    <li><span class="tok">build</span><span><code>df = pd.DataFrame(...)</code> calls the <b>constructor</b> → builds a DataFrame object. Classes <span class="k">aka constructors</span>. Check with <code>type(df)</code>.</span></li>
-    <li><span class="tok">column</span><span><code>df["age"]</code> selects one column → returns a <b>Series</b> (1-D). pandas builds and returns it for you.</span></li>
-    <li><span class="tok">.attr</span><span><code>df.columns</code>, <code>df.index</code> are <b>attributes</b> (no <code>()</code>). <code>df.head()</code>, <code>df.tail()</code> are <b>methods</b> (call with <code>()</code>).</span></li>
-  </ul>
+  <div class="legend">
+    <span><i class="i-cls"></i>class · builds an object</span>
+    <span><i class="i-fn"></i>function · does a job</span>
+    <span><i class="i-attr"></i>attribute · a value, no <code>()</code></span>
+    <span><i class="i-mth"></i>method · an action, with <code>()</code></span>
+  </div>
+
+  <div class="group classes">
+    <div class="g-head">Classes — build objects</div>
+    <div class="g-sub">a blueprint; call it with <code>()</code> to get an object, e.g. <code>pd.DataFrame(...)</code></div>
+    <div class="node"><code>DataFrame</code><span class="tag cls">class</span><span class="desc">2-D table · rows × columns</span></div>
+    <div class="node"><code>Series</code><span class="tag cls">class</span><span class="desc">1-D column · <code>df["age"]</code> returns one</span></div>
+    <div class="node"><code>Index</code><span class="tag cls">class</span><span class="desc">the row / column labels</span></div>
+    <div class="node"><code>Timestamp</code><span class="tag cls">class</span><span class="desc">one point in time&nbsp; ●</span></div>
+    <div class="node"><code>Period</code><span class="tag cls">class</span><span class="desc">one interval of time&nbsp; [──)</span></div>
+    <div class="node"><code>DatetimeIndex</code><span class="tag cls">class</span><span class="desc">an index of timestamps</span></div>
+    <div class="node"><code>PeriodIndex</code><span class="tag cls">class</span><span class="desc">an index of periods</span></div>
+  </div>
+
+  <div class="group funcs">
+    <div class="g-head">Functions — do a job, return something</div>
+    <div class="g-sub">live on <code>pd</code>; a verb, not a thing you own</div>
+    <div class="node"><code>pd.read_csv()</code><span class="tag fn">function</span><span class="desc">file → DataFrame</span></div>
+    <div class="node"><code>pd.to_datetime()</code><span class="tag fn">function</span><span class="desc">text → Timestamp / DatetimeIndex</span></div>
+    <div class="node"><code>pd.date_range()</code><span class="tag fn">function</span><span class="desc">→ a DatetimeIndex</span></div>
+    <div class="node"><code>pd.concat()</code><span class="tag fn">function</span><span class="desc">glue frames together</span></div>
+  </div>
+
+  <div class="group access">
+    <div class="g-head">On an object&nbsp; (e.g. <code>df</code>)</div>
+    <div class="g-sub">describe it with attributes · act on it with methods</div>
+    <div class="node"><span class="tag attr">attribute</span><span class="desc">a value you <b>read</b> — <b>no <code>()</code></b></span></div>
+    <div class="node sub"><code>df.shape</code><code>df.columns</code><code>df.index</code><code>df.dtypes</code></div>
+    <div class="node"><span class="tag mth">method</span><span class="desc">an action you <b>call</b> — <b>with <code>()</code></b></span></div>
+    <div class="node sub"><code>df.head()</code><code>df.describe()</code><code>df.groupby()</code><code>df.apply()</code></div>
+  </div>
+
+  <hr>
+
+  <div class="label">Three you must never confuse</div>
+  <div class="pair">
+    <div class="p-title">class vs. function</div>
+    <div class="p-row">
+      <div class="side"><span class="tag cls">class</span> &nbsp;<code>pd.DataFrame(...)</code><br>builds a <b>thing</b> — a noun, a blueprint.</div>
+      <div class="side"><span class="tag fn">function</span> &nbsp;<code>pd.to_datetime(...)</code><br>does a <b>job</b> and returns a result — a verb.</div>
+    </div>
+  </div>
+  <div class="pair">
+    <div class="p-title">attribute vs. method</div>
+    <div class="p-row">
+      <div class="side"><span class="tag attr">attribute</span> &nbsp;<code>df.columns</code><br>a <b>fact</b> about the object — <b>no <code>()</code></b>.</div>
+      <div class="side"><span class="tag mth">method</span> &nbsp;<code>df.head()</code><br>an <b>action</b> it can do — <b>call with <code>()</code></b>.</div>
+    </div>
+  </div>
+  <div class="pair">
+    <div class="p-title">python datetime vs. pandas time</div>
+    <div class="p-row">
+      <div class="side"><code>import datetime</code> → <code>datetime.datetime</code> <span class="tag cls">class</span><br>Python's own — <em>not</em> pandas.</div>
+      <div class="side"><code>pd.Timestamp</code> <span class="tag cls">class</span> · <code>pd.to_datetime()</code> <span class="tag fn">function</span><br>pandas' own. Don't mix the two.</div>
+    </div>
+  </div>
 
   <hr>
 
