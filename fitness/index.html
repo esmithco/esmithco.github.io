@@ -36,10 +36,12 @@
   .home-nav svg{width:18px;height:18px;}
   .home-nav:active{background:#EDF1F5;}
 
-  .masthead{margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
-  .masthead .kicker{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;color:var(--steel-dim);text-transform:uppercase;}
-  .masthead h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:30px;letter-spacing:.01em;margin:4px 0 6px;text-transform:uppercase;}
-  .masthead p{color:var(--steel);font-size:13.5px;margin:0;line-height:1.5;}
+  .masthead{margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--panel-line);}
+  .masthead .kicker{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;color:var(--blue);text-transform:uppercase;}
+  .masthead .kicker::before{content:'';width:18px;height:2px;border-radius:2px;background:var(--blue);flex:none;}
+  .masthead h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:32px;letter-spacing:.005em;margin:9px 0 8px;text-transform:uppercase;line-height:1;}
+  .masthead h1 .accent{color:var(--blue);}
+  .masthead p{color:var(--steel);font-size:13px;margin:0;line-height:1.55;max-width:54ch;}
 
   .reset-btn{flex-shrink:0;background:var(--panel);border:1px solid var(--panel-line);color:var(--steel);font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;border-radius:8px;padding:8px 10px;cursor:pointer;}
   .reset-btn:active{background:#EDF1F5;}
@@ -179,7 +181,7 @@
   <div class="masthead">
     <div>
       <div class="kicker">Plan de entrenamiento · Upper / Lower</div>
-      <h1>Rutina 4 días</h1>
+      <h1>Rutina <span class="accent">4 días</span></h1>
       <p>Tren superior e inferior, 2 veces por semana cada uno. Progresa el peso cuando completes todas las series con buena técnica.</p>
     </div>
   </div>
