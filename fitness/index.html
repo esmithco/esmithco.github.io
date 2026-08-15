@@ -28,7 +28,7 @@
   }
 
   *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--chalk);font-family:'Inter',sans-serif;overflow-x:hidden;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--chalk);font-family:'Inter',sans-serif;overflow-x:clip;}
 
   .wrap{max-width:720px;margin:0 auto;padding:20px 18px 80px;padding-top:calc(20px + env(safe-area-inset-top));}
 
@@ -37,10 +37,9 @@
   .home-nav:active{background:#EDF1F5;}
 
   .masthead{margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--panel-line);}
-  .masthead .kicker{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;color:var(--blue);text-transform:uppercase;}
-  .masthead .kicker::before{content:'';width:18px;height:2px;border-radius:2px;background:var(--blue);flex:none;}
-  .masthead h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:32px;letter-spacing:.005em;margin:9px 0 8px;text-transform:uppercase;line-height:1;}
-  .masthead h1 .accent{color:var(--blue);}
+  .masthead h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:32px;letter-spacing:.005em;margin:0 0 4px;text-transform:uppercase;line-height:1;}
+  .masthead .subtitle{display:flex;align-items:center;gap:8px;font-family:'Oswald',sans-serif;font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);margin:0 0 10px;}
+  .masthead .subtitle::before{content:'';width:16px;height:2px;border-radius:2px;background:var(--blue);flex:none;}
   .masthead p{color:var(--steel);font-size:13px;margin:0;line-height:1.55;max-width:54ch;}
 
   .reset-btn{flex-shrink:0;background:var(--panel);border:1px solid var(--panel-line);color:var(--steel);font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;border-radius:8px;padding:8px 10px;cursor:pointer;}
@@ -180,8 +179,8 @@
 
   <div class="masthead">
     <div>
-      <div class="kicker">Plan de rutina · 4 días de infierno</div>
-      <h1>Rutina <span class="accent">4 días</span></h1>
+      <h1>My routine plan</h1>
+      <div class="subtitle">4 days of hell</div>
       <p>Tren superior e inferior, 2 veces por semana cada uno. Progresa el peso cuando completes todas las series con buena técnica.</p>
     </div>
   </div>
@@ -542,15 +541,15 @@
   const UPPER_WARM = {name:'Calentamiento', time:'5–8 min', tag:'antes', muscles:'Movilidad · activa el tren superior',
     desc:'3 min de trote suave, círculos de brazos y apertura dinámica de pecho. Termina con 1–2 series de aproximación ligeras del primer ejercicio.',
     imgs:['Arm_Circles','Dynamic_Chest_Stretch']};
-  const UPPER_STRETCH = {name:'Estiramiento', time:'5–10 min', tag:'después', muscles:'Enfría · pecho, hombro, dorsal, tríceps',
-    desc:'Estira pecho, hombro, dorsal y tríceps. Mantén 20–30 s por lado, sin rebotes.',
-    imgs:['Chest_And_Front_Of_Shoulder_Stretch','Triceps_Stretch']};
+  const UPPER_STRETCH = {name:'Estiramiento', time:'5–10 min', tag:'después', muscles:'Enfría · hombro, pecho y tríceps',
+    desc:'Estira hombro, pecho y tríceps. Sin material: cruza el brazo y lleva la mano tras la nuca. Mantén 20–30 s por lado, sin rebotes.',
+    imgs:['Shoulder_Stretch','Triceps_Stretch']};
   const LOWER_WARM = {name:'Calentamiento', time:'5–8 min', tag:'antes', muscles:'Movilidad · activa el tren inferior',
     desc:'3 min de trote suave, movilidad de cadera, sentadillas sin peso y la "world’s greatest". Termina con 1–2 series ligeras del primer ejercicio.',
     imgs:['Bodyweight_Squat','Worlds_Greatest_Stretch']};
-  const LOWER_STRETCH = {name:'Estiramiento', time:'5–10 min', tag:'después', muscles:'Enfría · isquios, cuádriceps, cadera, gemelos',
-    desc:'Estira isquios, cuádriceps, flexores de cadera y gemelos. Mantén 20–30 s por lado.',
-    imgs:['Standing_Hamstring_and_Calf_Stretch','Kneeling_Hip_Flexor']};
+  const LOWER_STRETCH = {name:'Estiramiento', time:'5–10 min', tag:'después', muscles:'Enfría · isquios, cadera y cuádriceps',
+    desc:'Estira isquios (sentado en el suelo), flexores de cadera y cuádriceps. Sin material. Mantén 20–30 s por lado.',
+    imgs:['Seated_Floor_Hamstring_Stretch','Kneeling_Hip_Flexor']};
   const PHASES = {
     '1':{warm:UPPER_WARM, stretch:UPPER_STRETCH},
     '2':{warm:LOWER_WARM, stretch:LOWER_STRETCH},
