@@ -41,6 +41,7 @@
   code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:0.9em; background:var(--steel-soft); color:var(--steel); padding:1px 5px; border-radius:4px;}
   .code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:12.5px; line-height:1.65; background:#fff; border:1px solid #DCDFD8; border-left:3px solid var(--steel); border-radius:4px; padding:11px 14px; margin:0 0 10px; overflow-x:auto; white-space:pre; color:var(--ink);}
   .code .cmt{color:var(--ink-soft);} .code .cls{color:var(--berry); font-weight:600;} .code .fn{color:var(--sage); font-weight:600;}
+  .code .attr{color:var(--steel); font-weight:600;} .code .mth{color:#8A5A22; font-weight:600;} .code .br{color:var(--ink-soft); font-weight:700; letter-spacing:.06em;}
 
   .verbs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:11px;}
   .verbs li{font-size:14px; line-height:1.5; display:flex; gap:11px; align-items:flex-start;}
@@ -128,35 +129,26 @@
     <span><i class="i-mth"></i>method · an action, with <code>()</code></span>
   </div>
 
-  <div class="group classes">
-    <div class="g-head">Classes — build objects</div>
-    <div class="g-sub">a blueprint; call it with <code>()</code> to get an object, e.g. <code>pd.DataFrame(...)</code></div>
-    <div class="node"><code>DataFrame</code><span class="tag cls">class</span><span class="desc">2-D table · rows × columns</span></div>
-    <div class="node"><code>Series</code><span class="tag cls">class</span><span class="desc">1-D column · <code>df["age"]</code> returns one</span></div>
-    <div class="node"><code>Index</code><span class="tag cls">class</span><span class="desc">the row / column labels</span></div>
-    <div class="node"><code>Timestamp</code><span class="tag cls">class</span><span class="desc">one point in time&nbsp; ●</span></div>
-    <div class="node"><code>Period</code><span class="tag cls">class</span><span class="desc">one interval of time&nbsp; [──)</span></div>
-    <div class="node"><code>DatetimeIndex</code><span class="tag cls">class</span><span class="desc">an index of timestamps</span></div>
-    <div class="node"><code>PeriodIndex</code><span class="tag cls">class</span><span class="desc">an index of periods</span></div>
-  </div>
-
-  <div class="group funcs">
-    <div class="g-head">Functions — do a job, return something</div>
-    <div class="g-sub">live on <code>pd</code>; a verb, not a thing you own</div>
-    <div class="node"><code>pd.read_csv()</code><span class="tag fn">function</span><span class="desc">file → DataFrame</span></div>
-    <div class="node"><code>pd.to_datetime()</code><span class="tag fn">function</span><span class="desc">text → Timestamp / DatetimeIndex</span></div>
-    <div class="node"><code>pd.date_range()</code><span class="tag fn">function</span><span class="desc">→ a DatetimeIndex</span></div>
-    <div class="node"><code>pd.concat()</code><span class="tag fn">function</span><span class="desc">glue frames together</span></div>
-  </div>
-
-  <div class="group access">
-    <div class="g-head">On an object&nbsp; (e.g. <code>df</code>)</div>
-    <div class="g-sub">describe it with attributes · act on it with methods</div>
-    <div class="node"><span class="tag attr">attribute</span><span class="desc">a value you <b>read</b> — <b>no <code>()</code></b></span></div>
-    <div class="node sub"><code>df.shape</code><code>df.columns</code><code>df.index</code><code>df.dtypes</code></div>
-    <div class="node"><span class="tag mth">method</span><span class="desc">an action you <b>call</b> — <b>with <code>()</code></b></span></div>
-    <div class="node sub"><code>df.head()</code><code>df.describe()</code><code>df.groupby()</code><code>df.apply()</code></div>
-  </div>
+  <div class="code">pandas  <span class="cmt">— module · import as pd</span>
+│
+├─ <span class="br">CLASSES</span>  <span class="cmt">— build objects · call with ()</span>
+│   ├── <span class="cls">DataFrame</span>      <span class="cmt">2-D table · rows × columns</span>
+│   ├── <span class="cls">Series</span>         <span class="cmt">1-D column · df["age"]</span>
+│   ├── <span class="cls">Index</span>          <span class="cmt">row / column labels</span>
+│   ├── <span class="cls">Timestamp</span>      <span class="cmt">one point in time  ●</span>
+│   ├── <span class="cls">Period</span>         <span class="cmt">one interval  [──)</span>
+│   ├── <span class="cls">DatetimeIndex</span>  <span class="cmt">index of timestamps</span>
+│   └── <span class="cls">PeriodIndex</span>    <span class="cmt">index of periods</span>
+│
+├─ <span class="br">FUNCTIONS</span>  <span class="cmt">— do a job, return something</span>
+│   ├── pd.<span class="fn">read_csv</span>()      <span class="cmt">file → DataFrame</span>
+│   ├── pd.<span class="fn">to_datetime</span>()   <span class="cmt">text → Timestamp / DatetimeIndex</span>
+│   ├── pd.<span class="fn">date_range</span>()    <span class="cmt">→ DatetimeIndex</span>
+│   └── pd.<span class="fn">concat</span>()        <span class="cmt">glue frames together</span>
+│
+└─ <span class="br">on an OBJECT</span>  <span class="cmt">(e.g. df)</span>
+    ├── <span class="attr">attributes</span>  <span class="cmt">value · no ()   →  df.shape · df.columns · df.dtypes</span>
+    └── <span class="mth">methods</span>     <span class="cmt">action · with () →  df.head() · df.groupby() · df.apply()</span></div>
 
   <hr>
 
