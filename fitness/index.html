@@ -48,7 +48,7 @@
 
   .stopwatch{background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:calc(env(safe-area-inset-top) + 6px);z-index:30;box-shadow:0 6px 18px rgba(24,39,56,.10);}
   .stopwatch.pinned{box-shadow:0 8px 24px rgba(24,39,56,.16);border-color:var(--blue);}
-  .stopwatch .time{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:600;letter-spacing:.03em;color:var(--chalk);font-variant-numeric:tabular-nums;-webkit-transform:translateZ(0);transform:translateZ(0);}
+  .stopwatch .time{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:600;letter-spacing:.03em;color:var(--chalk);font-variant-numeric:tabular-nums;will-change:transform;}
   .stopwatch .label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--steel-dim);text-transform:uppercase;margin-bottom:2px;}
   .stopwatch .btns{display:flex;gap:8px;}
   .sw-btn{border:none;border-radius:8px;padding:10px 16px;font-family:'Oswald',sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;}
@@ -180,7 +180,7 @@
 
   <div class="masthead">
     <div>
-      <div class="kicker">Plan de entrenamiento · Upper / Lower</div>
+      <div class="kicker">Plan de rutina · 4 días de infierno</div>
       <h1>Rutina <span class="accent">4 días</span></h1>
       <p>Tren superior e inferior, 2 veces por semana cada uno. Progresa el peso cuando completes todas las series con buena técnica.</p>
     </div>
@@ -387,9 +387,19 @@
     saveTimer(t); renderTimer();
   }
   function resetTimer(){ saveTimer({running:false, startedAt:null, elapsed:0}); renderTimer(); }
+  let _tzToggle = false;
+  function paintTime(text){
+    const el = document.getElementById('swDisplay');
+    el.textContent = text;
+    // Force iOS to repaint the pinned (position:sticky) clock: nudging the
+    // element's own transform each tick makes the compositor redraw it. The
+    // change is on the Z axis only, so nothing moves visually.
+    _tzToggle = !_tzToggle;
+    el.style.transform = _tzToggle ? 'translateZ(0.01px)' : 'translateZ(0)';
+  }
   function tickTimer(){
     const t = loadTimer();
-    if(t.running) document.getElementById('swDisplay').textContent = formatTime(currentElapsed(t));
+    if(t.running) paintTime(formatTime(currentElapsed(t)));
   }
   timerInterval = setInterval(tickTimer, 1000);
 
