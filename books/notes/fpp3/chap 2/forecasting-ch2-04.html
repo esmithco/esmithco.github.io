@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matplotlib + Seaborn — The Main Picture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAF7; --grid:#E4E7E1; --ink:#20232A; --ink-soft:#5B6067;
+    --berry:#A6356B; --berry-soft:#F3E3EB; --sage:#3E7A52; --sage-soft:#E4EFE6;
+    --steel:#35526E; --steel-soft:#E7EDF2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0; background:#E9E9E4; font-family:'Inter',sans-serif; color:var(--ink); overflow-x:hidden;}
+  body{display:flex; justify-content:center; padding:32px 16px 64px;}
+  .definition,.lede,.callout,.verbs li,.node,.pair .side{overflow-wrap:break-word;}
+
+  .page{
+    position:relative; width:100%; max-width:760px;
+    background:linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px), var(--paper);
+    background-size:24px 24px; border:1px solid #D9DBD3; border-radius:4px;
+    box-shadow:0 24px 60px -20px rgba(32,35,42,0.25); padding:44px 42px 40px; animation:rise .5s ease-out;
+  }
+  @keyframes rise{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+
+  .eyebrow{display:flex; align-items:center; justify-content:space-between; font-family:'Caveat',cursive; font-size:20px; color:var(--ink-soft); margin-bottom:6px;}
+  .eyebrow .dots span{display:inline-block; width:7px; height:7px; border-radius:50%; margin-left:4px;}
+  .dots span:nth-child(1){background:var(--berry);} .dots span:nth-child(2){background:var(--sage);} .dots span:nth-child(3){background:var(--steel);}
+
+  h1{font-family:'Fraunces',serif; font-optical-sizing:auto; font-weight:600; font-size:clamp(26px,4.6vw,36px); line-height:1.08; margin:0 0 22px; letter-spacing:-0.01em;}
+  hr{border:none; border-top:1px solid #DCDFD8; margin:22px 0;}
+
+  .definition{font-family:'Fraunces',serif; font-weight:500; font-size:clamp(18px,3vw,22px); line-height:1.44; color:var(--ink); padding-left:18px; border-left:3px solid var(--ink);}
+  .definition .accent{text-decoration:underline; text-decoration-color:var(--berry); text-decoration-thickness:2px; text-underline-offset:3px;}
+  .definition .accent.sage{text-decoration-color:var(--sage);}
+
+  .label{font-size:11.5px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:14px;}
+
+  code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:0.9em; background:var(--steel-soft); color:var(--steel); padding:1px 5px; border-radius:4px;}
+  .code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:12.5px; line-height:1.65; background:#fff; border:1px solid #DCDFD8; border-left:3px solid var(--steel); border-radius:4px; padding:11px 14px; margin:0 0 10px; overflow-x:auto; white-space:pre; color:var(--ink);}
+  .code .cmt{color:var(--ink-soft);} .code .obj{color:var(--berry); font-weight:600;} .code .fn{color:var(--sage); font-weight:600;} .code .mth{color:#8A5A22; font-weight:600;}
+
+  /* tags + legend */
+  .legend{display:flex; flex-wrap:wrap; gap:6px 14px; margin:2px 0 16px; font-size:11.5px; color:var(--ink-soft);}
+  .legend span{display:flex; align-items:center; gap:5px;}
+  .legend i{width:10px; height:10px; border-radius:3px; display:inline-block;}
+  .i-obj{background:var(--berry);} .i-mod{background:var(--steel);} .i-fn{background:var(--sage);} .i-mth{background:#8A5A22;} .i-alias{background:#9AA09A;}
+
+  .tag{font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:1.5px 6px; border-radius:5px; white-space:nowrap;}
+  .tag.obj{background:var(--berry-soft); color:var(--berry);}
+  .tag.mod{background:var(--steel-soft); color:var(--steel);}
+  .tag.fn{background:var(--sage-soft); color:var(--sage);}
+  .tag.mth{background:#F1E9DC; color:#8A5A22;}
+  .tag.alias{background:#ECEDEA; color:#63685f;}
+
+  .group{margin:0 0 16px; padding-left:14px; border-left:2px solid var(--grid);}
+  .group.objects{border-left-color:var(--berry);}
+  .group.funcs{border-left-color:var(--sage);}
+  .g-head{font-size:11.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink); margin-bottom:2px;}
+  .g-sub{font-size:12px; color:var(--ink-soft); margin-bottom:10px;}
+  .node{display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; padding:3px 0; line-height:1.45;}
+  .node code{font-size:12.5px;}
+  .node .desc{font-size:12.5px; color:var(--ink-soft);}
+  .node.sub{padding:2px 0 6px 4px; gap:6px;}
+
+  .verbs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:11px;}
+  .verbs li{font-size:14px; line-height:1.5; display:flex; gap:11px; align-items:flex-start;}
+  .verbs .tok{flex:0 0 96px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--steel); font-weight:600; padding-top:1px;}
+
+  .callout{background:var(--sage-soft); border-radius:6px; padding:12px 14px; font-size:13.5px; line-height:1.55; color:var(--ink); margin:0;}
+  .callout.berry{background:var(--berry-soft);} .callout.steel{background:var(--steel-soft);}
+  .watch{font-family:'Caveat',cursive; font-size:16px; color:var(--berry); margin-right:4px;}
+
+  .pair{background:#fff; border:1px solid #DCDFD8; border-radius:8px; padding:11px 13px; margin-bottom:10px;}
+  .pair .p-title{font-family:'Caveat',cursive; font-size:17px; color:var(--ink-soft); margin-bottom:8px;}
+  .pair .p-row{display:flex; gap:10px 16px; flex-wrap:wrap;}
+  .pair .side{flex:1 1 210px; font-size:12.5px; line-height:1.5; color:var(--ink);}
+  .pair .side code{font-size:12px;}
+  .pair .eq{display:flex; flex-wrap:wrap; gap:6px 10px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--ink-soft); margin-top:8px;}
+
+  .final{background:var(--steel-soft); border-radius:10px; padding:16px 16px 12px; margin-top:6px;}
+  .final .flow{font-family:ui-monospace,Menlo,monospace; font-size:13px; color:var(--steel); text-align:center; line-height:1.9; margin-bottom:10px; font-weight:600;}
+  .final .gloss{display:grid; grid-template-columns:auto 1fr; gap:5px 12px; font-size:12.5px; line-height:1.4;}
+  .final .gloss code{background:#fff;}
+  .final .gloss .d{color:var(--ink-soft);}
+
+  .footer{display:flex; justify-content:flex-end; align-items:center; margin-top:28px; padding-top:14px; border-top:1px solid #DCDFD8;}
+  .pagenum{font-family:'Fraunces',serif; font-size:14px; color:var(--ink-soft);}
+
+  @media (max-width:480px){
+    body{padding:20px 10px 48px;}
+    .page{padding:28px 16px 28px;}
+    .code{font-size:11.3px;}
+    .verbs .tok{flex-basis:100%; padding-top:0;}
+    .verbs li{flex-direction:column; gap:3px;}
+    .final .gloss{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="eyebrow">
+    <span>reading notes · ch. 02 · plotting</span>
+    <span class="dots"><span></span><span></span><span></span></span>
+  </div>
+
+  <h1>Matplotlib + Seaborn — The Main Picture</h1>
+
+  <div class="definition">
+    <span class="accent">matplotlib</span> is the plotting engine; <span class="accent sage">seaborn</span> is a
+    higher-level statistical layer built on top of it. The whole game is <em>Figure</em>, <em>Axes</em>, and
+    <em>who draws on them</em>.
+  </div>
+
+  <hr>
+
+  <div class="label">The map — who is what</div>
+  <div class="legend">
+    <span><i class="i-obj"></i>object</span>
+    <span><i class="i-mod"></i>module</span>
+    <span><i class="i-alias"></i>alias</span>
+    <span><i class="i-fn"></i>function</span>
+    <span><i class="i-mth"></i>method</span>
+  </div>
+  <div class="code">python
+├── matplotlib          <span class="cmt">module</span>
+│   └── pyplot          <span class="cmt">module · the interface   →  import ... as</span> plt
+│
+└── seaborn             <span class="cmt">module                   →  import ... as</span> sns
+        <span class="cmt">└── draws using matplotlib underneath</span></div>
+  <ul class="verbs">
+    <li><span class="tok">plt</span><span><b>alias</b> for <code>pyplot</code> — a convenient interface. <b>Not a class.</b> Functions live on it: <code>plt.plot()</code> <code>plt.subplots()</code> <code>plt.show()</code> <code>plt.savefig()</code>.</span></li>
+    <li><span class="tok">sns</span><span><b>alias</b> for <code>seaborn</code>. <b>Not a class.</b> Its functions: <code>sns.lineplot()</code> <code>sns.scatterplot()</code> <code>sns.histplot()</code>.</span></li>
+  </ul>
+
+  <hr>
+
+  <div class="label">The two objects that matter</div>
+  <div class="code"><span class="obj">Figure</span>  <span class="cmt">— the whole canvas / container</span>
+└── <span class="obj">Axes</span>  <span class="cmt">— one plotting area inside it</span>
+     ├── the plot   <span class="cmt">(lines · points · bars)</span>
+     ├── x-axis · y-axis
+     ├── title
+     └── labels
+
+<span class="cmt">one Figure can hold many Axes:</span>
+<span class="obj">Figure</span> ├─ <span class="obj">Axes</span>  ├─ <span class="obj">Axes</span>  └─ <span class="obj">Axes</span></div>
+  <div class="pair">
+    <div class="p-title">Axes  ≠  axis</div>
+    <div class="p-row">
+      <div class="side"><span class="tag obj">object</span> &nbsp;<code>Axes</code><br>a whole <b>plotting area</b>.</div>
+      <div class="side">an <b>axis</b> is just one edge — the <code>x-axis</code> or <code>y-axis</code> that an Axes <b>contains</b>.</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="label">The workhorse — <code>plt.subplots()</code></div>
+  <div class="code"><span class="obj">fig</span>, <span class="obj">ax</span> = plt.<span class="fn">subplots</span>()
+ │     │
+ │     └── <span class="obj">Axes</span> object   <span class="cmt">— the plotting area</span>
+ └──────── <span class="obj">Figure</span> object <span class="cmt">— the canvas</span>
+
+ax.<span class="mth">plot</span>(x, y)   <span class="cmt">→ draw on THIS Axes</span></div>
+  <div class="callout steel">The plot lives <b>on the Axes</b>; the Axes lives <b>inside the Figure</b>. <code>plt.subplots()</code> → <b>Figure + Axes</b> in one line.</div>
+
+  <hr>
+
+  <div class="label">The thing you keep mixing up — <code>plt</code> vs <code>ax</code></div>
+  <div class="pair">
+    <div class="p-title">implicit interface  vs  explicit object</div>
+    <div class="p-row">
+      <div class="side"><span class="tag alias">plt</span> <code>plt.plot(x, y)</code><br>pyplot draws on the <b>current / active</b> Axes.</div>
+      <div class="side"><span class="tag obj">ax</span> <code>ax.plot(x, y)</code><br>draw <b>explicitly</b> on this Axes.</div>
+    </div>
+    <div class="eq">
+      <span>plt.title() ↔ ax.set_title()</span>
+      <span>plt.xlabel() ↔ ax.set_xlabel()</span>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="label">Seaborn sits on top</div>
+  <div class="code">DATA <span class="cmt">(DataFrame)</span>
+   ↓  seaborn      <span class="cmt">high-level</span>
+   ↓  matplotlib   <span class="obj">Axes</span> + <span class="obj">Figure</span></div>
+  <ul class="verbs">
+    <li><span class="tok">on its own</span><span><code>sns.scatterplot(data=df, x="age", y="salary")</code> is valid <b>alone</b> — seaborn creates/uses the Figure &amp; Axes for you. No <code>plt.subplots()</code> needed.</span></li>
+    <li><span class="tok">on my Axes</span><span>Pass <code>ax=ax</code> to target a specific Axes (next section).</span></li>
+  </ul>
+  <div class="code">fig, ax = plt.<span class="fn">subplots</span>()
+sns.<span class="fn">lineplot</span>(data=df, x="date", y="sales", <span class="mth">ax=ax</span>)
+                                              <span class="cmt">↑ draw on THIS matplotlib Axes</span></div>
+  <div class="callout">You → seaborn → matplotlib <span style="color:var(--ink-soft)">Axes</span> → <span style="color:var(--ink-soft)">Figure</span>. Seaborn <b>doesn't replace</b> matplotlib — it's a higher layer <b>on top</b> of it.</div>
+
+  <hr>
+
+  <div class="label">seaborn (level)  vs  matplotlib (control)</div>
+  <div class="pair">
+    <div class="p-row">
+      <div class="side"><span class="tag fn">seaborn</span><br>high-level · statistical · DataFrame-native · auto Figure/Axes · quick charts.</div>
+      <div class="side"><span class="tag obj">matplotlib</span><br>the engine · direct Figure/Axes control · limits, layout, annotations, saving.</div>
+    </div>
+    <div class="eq" style="color:var(--ink)"><span>Know only seaborn → most common charts, but <b>not every</b> matplotlib operation.</span></div>
+  </div>
+
+  <hr>
+
+  <div class="label">show · save · close — be precise</div>
+  <ul class="verbs">
+    <li><span class="tok">plt.show()</span><span>displays the Figures pyplot is <b>currently managing / open</b> — <em>not</em> just the current one. <span class="watch">note —</span> "current Figure" and "all managed Figures" are <b>different</b> ideas.</span></li>
+    <li><span class="tok">plt.close(fig)</span><span>removes a Figure from pyplot's management.</span></li>
+    <li><span class="tok">fig.savefig()</span><span><code>fig.savefig("f.png")</code> saves <b>exactly this Figure</b> — all its Axes as one canvas.</span></li>
+    <li><span class="tok">plt.savefig()</span><span>saves the <b>current / active</b> Figure. <span class="watch">note —</span> <em>not</em> "save every Figure".</span></li>
+  </ul>
+
+  <hr>
+
+  <div class="label">one Figure vs many Figures</div>
+  <div class="pair">
+    <div class="p-row">
+      <div class="side"><b>One Figure, many Axes</b><br><code>Figure ├ Axes ├ Axes └ Axes</code><br>subplots in one canvas · <code>fig.savefig()</code> saves them together.</div>
+      <div class="side"><b>Several Figures</b><br><code>Fig1→Axes · Fig2→Axes · Fig3→Axes</code><br>separate canvases · <code>plt.show()</code> can show all managed · <code>fig1.savefig()</code> saves only Figure 1.</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="label">Remember this</div>
+  <div class="final">
+    <div class="flow">DATA&nbsp; →&nbsp; seaborn / matplotlib&nbsp; →&nbsp; Axes&nbsp; →&nbsp; Figure&nbsp; →&nbsp; display / save</div>
+    <div class="gloss">
+      <code>plt</code><span class="d">pyplot interface (alias, not a class)</span>
+      <code>sns</code><span class="d">seaborn interface (alias, not a class)</span>
+      <code>fig</code><span class="d">the whole canvas — Figure object</span>
+      <code>ax</code><span class="d">one plotting area — Axes object</span>
+      <code>plt.show()</code><span class="d">display managed / open Figures</span>
+      <code>plt.savefig()</code><span class="d">save the current Figure</span>
+      <code>fig.savefig()</code><span class="d">save this specific Figure</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="pagenum">04</span>
+  </div>
+
+</div>
+
+</body>
+</html>
