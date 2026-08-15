@@ -46,7 +46,7 @@
 
   .stopwatch{background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:calc(env(safe-area-inset-top) + 6px);z-index:30;box-shadow:0 6px 18px rgba(24,39,56,.10);}
   .stopwatch.pinned{box-shadow:0 8px 24px rgba(24,39,56,.16);border-color:var(--blue);}
-  .stopwatch .time{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:600;letter-spacing:.03em;color:var(--chalk);font-variant-numeric:tabular-nums;}
+  .stopwatch .time{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:600;letter-spacing:.03em;color:var(--chalk);font-variant-numeric:tabular-nums;-webkit-transform:translateZ(0);transform:translateZ(0);}
   .stopwatch .label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--steel-dim);text-transform:uppercase;margin-bottom:2px;}
   .stopwatch .btns{display:flex;gap:8px;}
   .sw-btn{border:none;border-radius:8px;padding:10px 16px;font-family:'Oswald',sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;}
@@ -91,11 +91,11 @@
   .body{max-height:0;overflow:hidden;transition:max-height .3s ease;}
   .day.expanded .body{max-height:4000px;}
 
-  .phase{margin:0 18px;padding:11px 13px;border:1px solid var(--panel-line);border-radius:10px;background:var(--bg);}
-  .phase.before{margin-top:4px;margin-bottom:14px;}
-  .phase.after{margin-top:14px;margin-bottom:16px;}
-  .phase .t{font-family:'Oswald',sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--chalk);margin-bottom:4px;}
-  .phase .b{font-size:12.5px;color:var(--steel);line-height:1.5;}
+  .phase-row td{background:#EEF3F8;}
+  .phase-row td.sr{color:var(--steel-dim);}
+  .phase-row td.ex .ex-tag{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;margin-bottom:3px;}
+  .phase-row.warm td.ex .ex-tag{color:var(--blue);}
+  .phase-row.stretch td.ex .ex-tag{color:var(--green);}
 
   .caution{margin:0 18px 10px;font-size:12px;color:#8A5D00;background:#FFF7DF;border:1px solid #F3D583;border-radius:8px;padding:8px 10px;line-height:1.4;}
 
@@ -309,7 +309,7 @@
   }
   function updateProgress(){
     [1,2,4,5].forEach(d=>{
-      const boxes = document.querySelectorAll('#day'+d+' input[type=checkbox]');
+      const boxes = document.querySelectorAll('#day'+d+' input[type=checkbox]:not(.aux)');
       const done = [...boxes].filter(b=>b.checked).length;
       const el = document.getElementById('prog'+d);
       if(el) el.textContent = done + '/' + boxes.length;
@@ -526,24 +526,102 @@
     });
   }
 
-  // Sandwich each workout day with its warm-up (before) and cool-down (after).
-  // Rest days have no exercise table, so they're skipped.
-  const WARMUP = ['Antes · 5-8 min', 'Movilidad articular + 3-5 min cardio suave + series de aproximación con poco peso.'];
-  const COOLDOWN = ['Después · 5-10 min', 'Estiramiento estático: pectoral, flexores de cadera, isquios y espalda alta. 20-30 seg por lado.'];
-  function phaseEl(kind, data){
-    const el = document.createElement('div');
-    el.className = 'phase ' + kind;
-    el.innerHTML = '<div class="t"></div><div class="b"></div>';
-    el.querySelector('.t').textContent = data[0];
-    el.querySelector('.b').textContent = data[1];
-    return el;
+  // Warm-up and stretch as checkable rows, adapted per day (upper vs lower), with images.
+  const UPPER_WARM = {name:'Calentamiento', time:'5–8 min', tag:'antes', muscles:'Movilidad · activa el tren superior',
+    desc:'3 min de trote suave, círculos de brazos y apertura dinámica de pecho. Termina con 1–2 series de aproximación ligeras del primer ejercicio.',
+    imgs:['Arm_Circles','Dynamic_Chest_Stretch']};
+  const UPPER_STRETCH = {name:'Estiramiento', time:'5–10 min', tag:'después', muscles:'Enfría · pecho, hombro, dorsal, tríceps',
+    desc:'Estira pecho, hombro, dorsal y tríceps. Mantén 20–30 s por lado, sin rebotes.',
+    imgs:['Chest_And_Front_Of_Shoulder_Stretch','Triceps_Stretch']};
+  const LOWER_WARM = {name:'Calentamiento', time:'5–8 min', tag:'antes', muscles:'Movilidad · activa el tren inferior',
+    desc:'3 min de trote suave, movilidad de cadera, sentadillas sin peso y la "world’s greatest". Termina con 1–2 series ligeras del primer ejercicio.',
+    imgs:['Bodyweight_Squat','Worlds_Greatest_Stretch']};
+  const LOWER_STRETCH = {name:'Estiramiento', time:'5–10 min', tag:'después', muscles:'Enfría · isquios, cuádriceps, cadera, gemelos',
+    desc:'Estira isquios, cuádriceps, flexores de cadera y gemelos. Mantén 20–30 s por lado.',
+    imgs:['Standing_Hamstring_and_Calf_Stretch','Kneeling_Hip_Flexor']};
+  const PHASES = {
+    '1':{warm:UPPER_WARM, stretch:UPPER_STRETCH},
+    '2':{warm:LOWER_WARM, stretch:LOWER_STRETCH},
+    '4':{warm:UPPER_WARM, stretch:UPPER_STRETCH},
+    '5':{warm:LOWER_WARM, stretch:LOWER_STRETCH}
+  };
+
+  function makePhaseRow(day, data, kind){
+    const dataId = 'd' + day + '_' + kind;
+    const tr = document.createElement('tr');
+    tr.className = 'phase-row ' + kind;
+    tr.innerHTML =
+      '<td class="chk"><input type="checkbox" class="aux"></td>' +
+      '<td class="ex has-info"></td>' +
+      '<td class="sr"></td><td class="wt"></td>';
+
+    const cb = tr.querySelector('input');
+    cb.dataset.id = dataId;
+
+    const cell = tr.querySelector('td.ex');
+    const tagEl = document.createElement('span');
+    tagEl.className = 'ex-tag';
+    tagEl.textContent = data.tag;
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'ex-name';
+    nameSpan.textContent = data.name;
+    const badge = document.createElement('span');
+    badge.className = 'ex-i';
+    badge.textContent = 'i';
+    cell.append(tagEl, nameSpan, ' ', badge);
+    tr.querySelector('td.sr').textContent = data.time;
+
+    const detail = document.createElement('tr');
+    detail.className = 'ex-detail';
+    detail.innerHTML =
+      '<td colspan="4"><div class="inner"><div class="card">' +
+      '<div class="imgs"></div><span class="muscles"></span><span class="cue"></span>' +
+      '</div></div></td>';
+    detail.querySelector('.muscles').textContent = data.muscles;
+    detail.querySelector('.cue').textContent = data.desc;
+
+    const imgsBox = detail.querySelector('.imgs');
+    let loaded = false;
+    function loadImages(){
+      if(loaded) return; loaded = true;
+      data.imgs.forEach(id=>{
+        const im = document.createElement('img');
+        im.alt = ''; im.decoding = 'async';
+        im.src = IMG_BASE + id + '/0.jpg';
+        imgsBox.appendChild(im);
+      });
+    }
+
+    cell.addEventListener('click', ()=>{
+      const open = detail.classList.toggle('open');
+      tr.classList.toggle('info-open', open);
+      if(open) loadImages();
+    });
+
+    const state = loadState();
+    cb.checked = !!state[dataId];
+    tr.classList.toggle('done', cb.checked);
+    cb.addEventListener('click', e=> e.stopPropagation());
+    cb.addEventListener('change', ()=>{
+      const s = loadState();
+      s[dataId] = cb.checked;
+      saveState(s);
+      tr.classList.toggle('done', cb.checked);
+    });
+
+    return { row: tr, detail };
   }
+
   function injectPhases(){
-    document.querySelectorAll('.day').forEach(day=>{
-      const body = day.querySelector('.body');
-      if(!body || !body.querySelector('table')) return; // rest day → skip
-      body.insertBefore(phaseEl('before', WARMUP), body.firstChild);
-      body.appendChild(phaseEl('after', COOLDOWN));
+    Object.keys(PHASES).forEach(day=>{
+      const table = document.querySelector('#day' + day + ' .body table');
+      if(!table) return;
+      const colHeads = table.querySelector('tr.col-heads');
+      const warm = makePhaseRow(day, PHASES[day].warm, 'warm');
+      const stretch = makePhaseRow(day, PHASES[day].stretch, 'stretch');
+      if(colHeads) colHeads.after(warm.row, warm.detail);
+      else table.prepend(warm.detail, warm.row);
+      table.append(stretch.row, stretch.detail);
     });
   }
 
