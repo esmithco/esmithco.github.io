@@ -44,8 +44,8 @@
   .reset-btn{flex-shrink:0;background:var(--panel);border:1px solid var(--panel-line);color:var(--steel);font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;border-radius:8px;padding:8px 10px;cursor:pointer;}
   .reset-btn:active{background:#EDF1F5;}
 
-  .stopwatch{background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
-  .stopwatch.pinned{position:sticky;top:calc(env(safe-area-inset-top) + 6px);z-index:30;box-shadow:0 8px 24px rgba(24,39,56,.16);border-color:var(--blue);}
+  .stopwatch{background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:calc(env(safe-area-inset-top) + 6px);z-index:30;box-shadow:0 6px 18px rgba(24,39,56,.10);}
+  .stopwatch.pinned{box-shadow:0 8px 24px rgba(24,39,56,.16);border-color:var(--blue);}
   .stopwatch .time{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:600;letter-spacing:.03em;color:var(--chalk);font-variant-numeric:tabular-nums;}
   .stopwatch .label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--steel-dim);text-transform:uppercase;margin-bottom:2px;}
   .stopwatch .btns{display:flex;gap:8px;}
@@ -102,6 +102,7 @@
   td.ex{color:var(--chalk);}
   tr.done td.ex{color:var(--steel-dim);text-decoration:line-through;}
   td.sr{font-family:'JetBrains Mono',monospace;color:var(--steel);text-align:right;white-space:nowrap;font-size:12.5px;}
+  td.sr .rest{display:block;font-family:'Inter',sans-serif;font-size:10px;font-weight:500;color:var(--steel-dim);margin-top:3px;white-space:nowrap;}
   td.chk{width:24px;text-align:center;padding-right:8px;}
   td.wt{width:58px;text-align:right;}
 
@@ -468,6 +469,13 @@
     d5e5: ['Core · abdomen', 'Mantén la zona lumbar pegada al suelo. Extiende brazo/pierna despacio sin arquear la espalda.']
   };
   // Two demo photos (start / end position) per exercise — free-exercise-db (public domain).
+  // Recommended rest between sets — longer for heavy compounds, shorter for isolation/core.
+  const EX_REST = {
+    d1e1: '90–120 s', d1e2: '90–120 s', d1e3: '60–90 s', d1e4: '60–90 s', d1e5: '60–90 s',
+    d2e1: '2–3 min', d2e2: '2–3 min', d2e3: '90–120 s', d2e4: '90 s', d2e5: '45–60 s',
+    d4e1: '90–120 s', d4e2: '90–120 s', d4e3: '90–120 s', d4e4: '60–90 s', d4e5: '60–90 s',
+    d5e1: '2–3 min', d5e2: '2 min', d5e3: '90–120 s', d5e4: '45–60 s', d5e5: '45–60 s'
+  };
   const IMG_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
   const EX_IMG = {
     d1e1: 'Incline_Dumbbell_Press', d1e2: 'One-Arm_Dumbbell_Row', d1e3: 'Side_Lateral_Raise', d1e4: 'Dumbbell_Bicep_Curl', d1e5: 'Triceps_Pushdown',
@@ -482,6 +490,15 @@
       if(!cb || !cell) return;
       const info = EX_INFO[cb.dataset.id];
       if(!info) return;
+
+      const rest = EX_REST[cb.dataset.id];
+      const srCell = row.querySelector('td.sr');
+      if (rest && srCell && !srCell.querySelector('.rest')) {
+        const restSpan = document.createElement('span');
+        restSpan.className = 'rest';
+        restSpan.textContent = 'descanso ' + rest;
+        srCell.appendChild(restSpan);
+      }
 
       const name = cell.textContent.trim();
       cell.textContent = '';
