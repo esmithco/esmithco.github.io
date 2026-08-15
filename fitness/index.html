@@ -28,7 +28,7 @@
   }
 
   *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--chalk);font-family:'Inter',sans-serif;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--chalk);font-family:'Inter',sans-serif;overflow-x:hidden;}
 
   .wrap{max-width:720px;margin:0 auto;padding:20px 18px 80px;padding-top:calc(20px + env(safe-area-inset-top));}
 
@@ -102,7 +102,6 @@
   td.ex{color:var(--chalk);}
   tr.done td.ex{color:var(--steel-dim);text-decoration:line-through;}
   td.sr{font-family:'JetBrains Mono',monospace;color:var(--steel);text-align:right;white-space:nowrap;font-size:12.5px;}
-  td.sr .rest{display:block;font-family:'Inter',sans-serif;font-size:10px;font-weight:500;color:var(--steel-dim);margin-top:3px;white-space:nowrap;}
   td.chk{width:24px;text-align:center;padding-right:8px;}
   td.wt{width:58px;text-align:right;}
 
@@ -126,6 +125,7 @@
 
   td.ex.has-info{cursor:pointer;}
   td.ex .ex-name{border-bottom:1px dotted var(--steel-dim);padding-bottom:1px;}
+  td.ex .ex-rest{display:block;font-size:10.5px;font-weight:500;color:var(--steel-dim);margin-top:4px;}
   td.ex .ex-i{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:6px;border-radius:50%;border:1px solid var(--steel-dim);color:var(--steel-dim);font-size:10px;font-weight:700;font-style:italic;line-height:1;vertical-align:middle;font-family:Georgia,serif;}
   tr.info-open td.ex .ex-i{background:var(--blue);border-color:var(--blue);color:#fff;}
 
@@ -176,7 +176,6 @@
       <h1>Rutina 4 días</h1>
       <p>Tren superior e inferior, 2 veces por semana cada uno. Progresa el peso cuando completes todas las series con buena técnica.</p>
     </div>
-    <button class="reset-btn" onclick="resetWeek()">Reiniciar</button>
   </div>
 
   <div class="stopwatch">
@@ -188,11 +187,6 @@
       <button class="sw-btn start" id="swToggle" onclick="toggleTimer()">Start</button>
       <button class="sw-btn reset" onclick="resetTimer()">Reset</button>
     </div>
-  </div>
-
-  <div id="installHint" class="install-hint hidden">
-    <button class="install-close" onclick="dismissInstall()">✕</button>
-    <b>Instálala como app:</b> en Safari toca compartir → "Añadir a pantalla de inicio". Así abre a pantalla completa, como una app.
   </div>
 
   <div class="week" id="weekStrip">
@@ -432,15 +426,6 @@
     }
   }
 
-  function dismissInstall(){
-    localStorage.setItem(HINT_KEY,'1');
-    document.getElementById('installHint').classList.add('hidden');
-  }
-  function checkInstallHint(){
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    const dismissed = localStorage.getItem(HINT_KEY);
-    if(!isStandalone && !dismissed) document.getElementById('installHint').classList.remove('hidden');
-  }
 
   // Tap an exercise name to reveal muscles + a short form cue below it.
   const EX_INFO = {
@@ -491,15 +476,6 @@
       const info = EX_INFO[cb.dataset.id];
       if(!info) return;
 
-      const rest = EX_REST[cb.dataset.id];
-      const srCell = row.querySelector('td.sr');
-      if (rest && srCell && !srCell.querySelector('.rest')) {
-        const restSpan = document.createElement('span');
-        restSpan.className = 'rest';
-        restSpan.textContent = 'descanso ' + rest;
-        srCell.appendChild(restSpan);
-      }
-
       const name = cell.textContent.trim();
       cell.textContent = '';
       const nameSpan = document.createElement('span');
@@ -509,6 +485,15 @@
       badge.className = 'ex-i';
       badge.textContent = 'i';
       cell.append(nameSpan, badge);
+
+      const rest = EX_REST[cb.dataset.id];
+      if (rest) {
+        const restLine = document.createElement('span');
+        restLine.className = 'ex-rest';
+        restLine.textContent = 'descanso ' + rest;
+        cell.appendChild(restLine);
+      }
+
       cell.classList.add('has-info');
 
       const detail = document.createElement('tr');
@@ -550,7 +535,6 @@
   applyWeights();
   renderTimer();
   markToday();
-  checkInstallHint();
   setupExerciseInfo();
 </script>
 </body>
