@@ -2,22 +2,22 @@
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; }
 .library { width: min(720px, calc(100% - 32px)); margin: 0 auto; padding: 72px 0; }
-.home-link { display: inline-block; margin-bottom: 28px; color: #6b5da7; font-size: .9rem; font-weight: 800; text-decoration: none; }
+.home-link { display: inline-block; margin-bottom: 28px; color: #0e8f82; font-size: .9rem; font-weight: 800; text-decoration: none; }
 .topnav { display: flex; align-items: center; gap: 10px; margin-bottom: 30px; }
-.nav-btn { display: inline-flex; align-items: center; gap: 7px; height: 44px; padding: 0 18px; border: 1px solid #d7dde5; border-radius: 14px; background: #fff; color: #6b5da7; font-size: .88rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 14px rgba(21, 38, 62, .05); transition: border-color .15s ease, transform .15s ease; -webkit-tap-highlight-color: transparent; }
-.nav-btn:hover { border-color: #6b5da7; transform: translateY(-1px); }
+.nav-btn { display: inline-flex; align-items: center; gap: 7px; height: 44px; padding: 0 18px; border: 1px solid #d7dde5; border-radius: 14px; background: #fff; color: #0e8f82; font-size: .88rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 14px rgba(21, 38, 62, .05); transition: border-color .15s ease, transform .15s ease; -webkit-tap-highlight-color: transparent; }
+.nav-btn:hover { border-color: #0e8f82; transform: translateY(-1px); }
 .nav-btn:active { transform: translateY(0); }
 .nav-btn--icon { width: 44px; padding: 0; justify-content: center; }
 .nav-btn svg { width: 18px; height: 18px; flex: none; }
-.eyebrow { margin: 0 0 10px; color: #6b5da7; font-size: .8rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.eyebrow { margin: 0 0 10px; color: #0e8f82; font-size: .8rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 h1 { margin: 0; font-family: Georgia, serif; font-size: clamp(2.5rem, 8vw, 4.6rem); letter-spacing: -.055em; }
 .intro { max-width: 58ch; color: #586473; font-size: 1.05rem; line-height: 1.6; }
 .note-list { display: grid; gap: 12px; margin-top: 42px; }
 .note-card { position: relative; display: grid; grid-template-columns: 48px 1fr auto; align-items: center; gap: 16px; padding: 20px; border: 1px solid #d7dde5; border-radius: 16px; background: #fff; color: inherit; text-decoration: none; box-shadow: 0 8px 24px rgba(21, 38, 62, .06); }
-.note-card:hover { border-color: #6b5da7; transform: translateY(-2px); transition: .15s ease; }
-.note-number { color: #6b5da7; font-weight: 800; }
+.note-card:hover { border-color: #0e8f82; transform: translateY(-2px); transition: .15s ease; }
+.note-number { color: #0e8f82; font-weight: 800; }
 .note-title { font-size: 1.05rem; font-weight: 750; }
-.note-action { color: #6b5da7; font-size: .9rem; font-weight: 800; }
+.note-action { color: #0e8f82; font-size: .9rem; font-weight: 800; }
 .reader-page { background: #28303d; }
 .reader-bar { position: sticky; top: 0; z-index: 1; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 58px; padding: 10px 18px; color: #fff; background: #1d2430; }
 .reader-nav { display: flex; align-items: center; gap: 14px; }
@@ -37,10 +37,10 @@ h1 { margin: 0; font-family: Georgia, serif; font-size: clamp(2.5rem, 8vw, 4.6re
 .note-menu ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .note-menu button { width: 100%; display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 12px; padding: 13px 12px; border: none; border-radius: 11px; background: transparent; color: #1e2631; font: inherit; text-align: left; cursor: pointer; }
 .note-menu button:hover { background: #f2f4f8; }
-.note-menu button .n { color: #6b5da7; font-weight: 800; font-size: .85rem; }
+.note-menu button .n { color: #0e8f82; font-weight: 800; font-size: .85rem; }
 .note-menu button .t { font-size: .96rem; font-weight: 650; line-height: 1.3; }
-.note-menu button[aria-current="true"] { background: #f1eefa; }
-.note-menu button[aria-current="true"] .t { color: #6b5da7; }
+.note-menu button[aria-current="true"] { background: #e2f2ef; }
+.note-menu button[aria-current="true"] .t { color: #0e8f82; }
 
 .reader-controls { justify-self: end; display: flex; gap: 8px; }
 .reader-controls button { width: 36px; height: 36px; border: 1px solid #596474; border-radius: 9px; color: #fff; background: #303b4a; font-size: 1.15rem; cursor: pointer; }
