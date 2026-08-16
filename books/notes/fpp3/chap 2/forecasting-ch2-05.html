@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Series Graphics — Plot First</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAF7; --grid:#E4E7E1; --ink:#20232A; --ink-soft:#5B6067;
+    --berry:#A6356B; --berry-soft:#F3E3EB; --sage:#3E7A52; --sage-soft:#E4EFE6;
+    --steel:#35526E; --steel-soft:#E7EDF2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0; background:#E9E9E4; font-family:'Inter',sans-serif; color:var(--ink); overflow-x:hidden;}
+  body{display:flex; justify-content:center; padding:32px 16px 64px;}
+  .definition,.lede,.callout,.takeaways li,.pat .b{overflow-wrap:break-word;}
+
+  .page{
+    position:relative; width:100%; max-width:760px;
+    background:linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px), var(--paper);
+    background-size:24px 24px; border:1px solid #D9DBD3; border-radius:4px;
+    box-shadow:0 24px 60px -20px rgba(32,35,42,0.25); padding:44px 42px 40px; animation:rise .5s ease-out;
+  }
+  @keyframes rise{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+
+  .eyebrow{display:flex; align-items:center; justify-content:space-between; font-family:'Caveat',cursive; font-size:20px; color:var(--ink-soft); margin-bottom:6px;}
+  .eyebrow .dots span{display:inline-block; width:7px; height:7px; border-radius:50%; margin-left:4px;}
+  .dots span:nth-child(1){background:var(--berry);} .dots span:nth-child(2){background:var(--sage);} .dots span:nth-child(3){background:var(--steel);}
+
+  h1{font-family:'Fraunces',serif; font-optical-sizing:auto; font-weight:600; font-size:clamp(26px,4.6vw,36px); line-height:1.08; margin:0 0 22px; letter-spacing:-0.01em;}
+  hr{border:none; border-top:1px solid #DCDFD8; margin:22px 0;}
+
+  .definition{font-family:'Fraunces',serif; font-weight:500; font-size:clamp(18px,3vw,22px); line-height:1.44; color:var(--ink); padding-left:18px; border-left:3px solid var(--ink);}
+  .definition .accent{text-decoration:underline; text-decoration-color:var(--berry); text-decoration-thickness:2px; text-underline-offset:3px;}
+
+  .label{font-size:11.5px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:14px;}
+  code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:0.9em; background:var(--steel-soft); color:var(--steel); padding:1px 5px; border-radius:4px;}
+
+  /* which plot → which question index */
+  .idx{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+  .idx li{display:flex; gap:11px; align-items:baseline; font-size:13.5px; line-height:1.45;}
+  .idx .p{flex:0 0 128px; font-weight:700; color:var(--steel);}
+  .idx .q{color:var(--ink-soft);}
+
+  /* three patterns */
+  .pats{display:flex; gap:10px; flex-wrap:wrap;}
+  .pat{flex:1 1 200px; background:#fff; border:1px solid #DCDFD8; border-radius:8px; padding:12px 13px;}
+  .pat svg{display:block; width:100%; height:56px; margin-bottom:8px;}
+  .pat .t{font-weight:700; font-size:13.5px;}
+  .pat.trend{border-left:3px solid var(--steel);} .pat.trend .t{color:var(--steel);}
+  .pat.seas{border-left:3px solid var(--berry);} .pat.seas .t{color:var(--berry);}
+  .pat.cycle{border-left:3px solid var(--sage);} .pat.cycle .t{color:var(--sage);}
+  .pat .b{font-size:12.5px; color:var(--ink-soft); line-height:1.5; margin-top:3px;}
+  .pat .ex{display:block; margin-top:5px; font-family:'Caveat',cursive; font-size:15px; color:var(--ink);}
+
+  .pair{background:#fff; border:1px solid #DCDFD8; border-radius:8px; padding:11px 13px; margin:12px 0 0;}
+  .pair .p-title{font-family:'Caveat',cursive; font-size:17px; color:var(--ink-soft); margin-bottom:8px;}
+  .pair .p-row{display:flex; gap:10px 16px; flex-wrap:wrap;}
+  .pair .side{flex:1 1 210px; font-size:12.5px; line-height:1.5; color:var(--ink);}
+
+  .takeaways{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:11px;}
+  .takeaways li{display:flex; gap:11px; align-items:flex-start; font-size:14px; line-height:1.55;}
+  .takeaways .tok{flex:0 0 96px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--steel); font-weight:600; padding-top:1px;}
+  .chip{display:inline-block; font-size:12px; color:var(--steel); background:var(--steel-soft); border-radius:999px; padding:1px 8px; white-space:nowrap;}
+
+  .figure{background:#fff; border:1px solid #DCDFD8; border-radius:8px; padding:12px 12px 8px; margin-top:12px;}
+  .figure svg{display:block; width:100%; height:auto;}
+  .figure .cap{font-size:12px; color:var(--ink-soft); text-align:center; margin-top:4px; font-style:italic;}
+
+  .callout{background:var(--berry-soft); border-radius:6px; padding:11px 13px; font-size:13px; line-height:1.55; color:var(--ink); margin-top:12px;}
+  .watch{font-family:'Caveat',cursive; font-size:16px; color:var(--berry); margin-right:4px;}
+
+  .remember{display:flex; gap:11px; align-items:flex-start; background:var(--sage-soft); border-radius:8px; padding:13px 15px; margin-top:24px; font-family:'Caveat',cursive; font-size:20px; line-height:1.32; color:var(--sage);}
+  .remember .star{flex:0 0 auto; font-family:'Inter',sans-serif; font-size:15px; margin-top:3px;}
+
+  .footer{display:flex; justify-content:flex-end; align-items:center; margin-top:26px; padding-top:14px; border-top:1px solid #DCDFD8;}
+  .pagenum{font-family:'Fraunces',serif; font-size:14px; color:var(--ink-soft);}
+
+  @media (max-width:480px){
+    body{padding:20px 10px 48px;}
+    .page{padding:28px 16px 28px;}
+    .idx .p{flex-basis:100%;}
+    .idx li{flex-direction:column; gap:1px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="eyebrow">
+    <span>reading notes · fpp ch. 2 · graphics</span>
+    <span class="dots"><span></span><span></span><span></span></span>
+  </div>
+
+  <h1>Time Series Graphics — Plot First</h1>
+
+  <div class="definition">
+    Before you model, <span class="accent">look</span>. To understand a problem or the data, the best first move is
+    to <span class="accent">plot it</span> — each kind of plot answers a different question the raw numbers hide.
+  </div>
+
+  <hr>
+
+  <div class="label">Which plot answers which question</div>
+  <ul class="idx">
+    <li><span class="p">time plot</span><span class="q">what's the overall story — trend, seasonality, cycles, anomalies?</span></li>
+    <li><span class="p">seasonal plot</span><span class="q">what's the repeating shape within a season?</span></li>
+    <li><span class="p">subseries plot</span><span class="q">how does each season behave and change over time?</span></li>
+    <li><span class="p">scatterplot</span><span class="q">how do two series relate? (correlation)</span></li>
+    <li><span class="p">lag plot</span><span class="q">does a value depend on itself k steps ago?</span></li>
+    <li><span class="p">ACF</span><span class="q">how much memory does the series have — and where?</span></li>
+  </ul>
+
+  <hr>
+
+  <div class="label">The three patterns you're hunting</div>
+  <div class="pats">
+    <div class="pat trend">
+      <svg viewBox="0 0 120 56"><line x1="6" y1="50" x2="114" y2="50" stroke="#C3C6BD"/><polyline points="8,46 24,42 40,44 56,34 72,36 88,24 104,18 114,14" fill="none" stroke="#35526E" stroke-width="2.5" stroke-linejoin="round"/></svg>
+      <span class="t">Trend</span>
+      <div class="b">Long-run rise or fall. No fixed period.</div>
+      <span class="ex">e.g. suscripciones creciendo año a año</span>
+    </div>
+    <div class="pat seas">
+      <svg viewBox="0 0 120 56"><line x1="6" y1="50" x2="114" y2="50" stroke="#C3C6BD"/><polyline points="8,46 18,26 28,46 38,44 48,24 58,44 68,46 78,26 88,46 98,44 108,24 114,40" fill="none" stroke="#A6356B" stroke-width="2.5" stroke-linejoin="round"/></svg>
+      <span class="t">Seasonality</span>
+      <div class="b"><b>Fixed, known</b> period tied to the calendar (week, month, year).</div>
+      <span class="ex">e.g. pico de ventas cada diciembre · cierre de mes</span>
+    </div>
+    <div class="pat cycle">
+      <svg viewBox="0 0 120 56"><line x1="6" y1="50" x2="114" y2="50" stroke="#C3C6BD"/><path d="M8,34 C24,14 34,14 48,34 C60,50 74,50 86,30 C96,16 108,20 114,30" fill="none" stroke="#3E7A52" stroke-width="2.5"/></svg>
+      <span class="t">Cycle</span>
+      <div class="b">Rises &amp; falls of <b>no fixed period</b>, usually longer (&gt; 2 yr), driven by conditions.</div>
+      <span class="ex">e.g. ciclo económico / de negocio</span>
+    </div>
+  </div>
+  <div class="pair">
+    <div class="p-title">seasonality  ≠  cycle</div>
+    <div class="p-row">
+      <div class="side"><b>Seasonal</b> — length is <b>fixed and known</b> (period = 12 months, 7 days…). Repeats on the calendar.</div>
+      <div class="side"><b>Cyclic</b> — length <b>varies</b> and is usually longer; you can't set its clock in advance.</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="label">Time plot &nbsp;·&nbsp; §2.2 — the default view</div>
+  <div class="figure">
+    <svg viewBox="0 0 640 150" xmlns="http://www.w3.org/2000/svg">
+      <line x1="20" y1="128" x2="620" y2="128" stroke="#C3C6BD"/>
+      <path d="M24,110 L70,96 L116,104 L162,86 L208,94 L254,74 L300,40 L320,102 L346,80 L392,64 L438,70 L484,52 L530,58 L576,40 L616,34" fill="none" stroke="#35526E" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="300" cy="40" r="4" fill="#A6356B"/>
+      <text x="300" y="30" text-anchor="middle" font-family="Caveat" font-size="16" fill="#A6356B">venta extraordinaria</text>
+      <text x="600" y="122" text-anchor="end" font-family="Inter" font-size="10" fill="#5B6067">time →</text>
+    </svg>
+    <div class="cap">read left → right: trend up, seasonal wobble, a one-off spike (outlier)</div>
+  </div>
+  <ul class="takeaways" style="margin-top:12px">
+    <li><span class="tok">look for</span><span>trend · seasonality · cycles · <b>anomalies</b> (spikes, level shifts) · gaps.</span></li>
+    <li><span class="tok">compare</span><span>plot several series together (color = <b>hue</b>) or split by variable, group, or aggregation.</span></li>
+  </ul>
+
+  <hr>
+
+  <div class="label">Seasonal &amp; subseries plots &nbsp;·&nbsp; §2.3–2.4</div>
+  <div class="figure">
+    <svg viewBox="0 0 640 150" xmlns="http://www.w3.org/2000/svg">
+      <line x1="20" y1="128" x2="620" y2="128" stroke="#C3C6BD"/>
+      <path d="M30,96 C120,40 200,40 300,96 C400,150 500,150 610,96" fill="none" stroke="#A6356B" stroke-width="2" opacity="0.85"/>
+      <path d="M30,108 C120,58 200,58 300,108 C400,158 500,158 610,108" fill="none" stroke="#3E7A52" stroke-width="2" opacity="0.75"/>
+      <path d="M30,84 C120,28 200,28 300,84 C400,140 500,140 610,84" fill="none" stroke="#35526E" stroke-width="2" opacity="0.75"/>
+      <text x="20" y="146" font-family="Inter" font-size="10" fill="#5B6067">Jan</text>
+      <text x="610" y="146" text-anchor="end" font-family="Inter" font-size="10" fill="#5B6067">Dec</text>
+    </svg>
+    <div class="cap">seasonal plot: each year drawn on top of the same axis — the shape that repeats</div>
+  </div>
+  <ul class="takeaways" style="margin-top:12px">
+    <li><span class="tok">seasonal</span><span>collapse time onto <b>one season</b> and overlay every cycle → see the recurring shape and which periods are high/low.</span></li>
+    <li><span class="tok">subseries</span><span>one <b>mini-panel per season</b> (one for Jan, one for Feb…) with its mean line → how each season evolves across years.</span></li>
+  </ul>
+
+  <hr>
+
+  <div class="label">Scatter &amp; lag plots &nbsp;·&nbsp; §2.5–2.6 — relationships</div>
+  <ul class="takeaways">
+    <li><span class="tok">scatter</span><span>two series against each other. <b>Correlation</b> measures <em>linear</em> strength &amp; sign: <span class="chip">r ≈ 0.25 weak</span> <span class="chip">r ≈ −0.99 strong, inverse</span>.</span></li>
+    <li><span class="tok">lag plot</span><span>plot <code>y<sub>t</sub></code> vs <code>y<sub>t−k</sub></code>. A tight diagonal cloud = strong <b>autocorrelation</b> at lag k (often at the seasonal lag).</span></li>
+  </ul>
+  <div class="callout"><span class="watch">watch —</span> correlation only catches <b>straight-line</b> relationships and never proves cause. A curved pattern can have r near 0 yet be perfectly related.</div>
+
+  <hr>
+
+  <div class="label">Autocorrelation (ACF) &nbsp;·&nbsp; §2.7 — the memory of the series</div>
+  <p style="font-size:13px; color:var(--ink-soft); line-height:1.55; margin:0 0 12px;">
+    ACF = correlation of the series with <b>its own past</b>, at each lag. It's the fingerprint of trend and seasonality:
+  </p>
+  <div class="figure">
+    <svg viewBox="0 0 640 150" xmlns="http://www.w3.org/2000/svg">
+      <line x1="20" y1="120" x2="300" y2="120" stroke="#C3C6BD"/>
+      <line x1="20" y1="60" x2="300" y2="60" stroke="#DCDFD8" stroke-dasharray="3 4"/>
+      <g stroke="#35526E" stroke-width="4">
+        <line x1="40" y1="120" x2="40" y2="34"/><line x1="62" y1="120" x2="62" y2="44"/><line x1="84" y1="120" x2="84" y2="54"/><line x1="106" y1="120" x2="106" y2="66"/><line x1="128" y1="120" x2="128" y2="78"/><line x1="150" y1="120" x2="150" y2="88"/>
+        <line x1="172" y1="120" x2="172" y2="98"/><line x1="194" y1="120" x2="194" y2="104"/><line x1="216" y1="120" x2="216" y2="52" stroke="#A6356B"/><line x1="238" y1="120" x2="238" y2="108"/><line x1="260" y1="120" x2="260" y2="112"/><line x1="282" y1="120" x2="282" y2="110"/>
+      </g>
+      <text x="216" y="30" text-anchor="middle" font-family="Caveat" font-size="15" fill="#A6356B">lag 12</text>
+      <text x="20" y="142" font-family="Inter" font-size="10" fill="#5B6067">slow decay = trend · spike = seasonality</text>
+
+      <line x1="350" y1="120" x2="620" y2="120" stroke="#C3C6BD"/>
+      <line x1="350" y1="88" x2="620" y2="88" stroke="#A6356B" stroke-dasharray="4 4" opacity="0.6"/>
+      <line x1="350" y1="152" x2="620" y2="152" stroke="#A6356B" stroke-dasharray="4 4" opacity="0"/>
+      <g stroke="#8793A1" stroke-width="4">
+        <line x1="368" y1="120" x2="368" y2="112"/><line x1="390" y1="120" x2="390" y2="126"/><line x1="412" y1="120" x2="412" y2="108"/><line x1="434" y1="120" x2="434" y2="124"/><line x1="456" y1="120" x2="456" y2="114"/><line x1="478" y1="120" x2="478" y2="116"/><line x1="500" y1="120" x2="500" y2="110"/><line x1="522" y1="120" x2="522" y2="123"/><line x1="544" y1="120" x2="544" y2="115"/><line x1="566" y1="120" x2="566" y2="118"/><line x1="588" y1="120" x2="588" y2="113"/><line x1="610" y1="120" x2="610" y2="121"/>
+      </g>
+      <text x="350" y="142" font-family="Inter" font-size="10" fill="#5B6067">white noise: all bars inside ±2/√T</text>
+    </svg>
+    <div class="cap">left: trend (slow decay) + seasonality (spike at lag 12) · right: white noise</div>
+  </div>
+  <ul class="takeaways" style="margin-top:12px">
+    <li><span class="tok">trend</span><span>ACF stays high and <b>decays slowly</b> — nearby values are alike.</span></li>
+    <li><span class="tok">seasonal</span><span><b>spikes at the seasonal lags</b> (12, 24… for monthly). "does last month matter? does it repeat a year later?"</span></li>
+    <li><span class="tok">white noise</span><span>§2.8 — <b>no</b> autocorrelation: every bar inside <code>±2/√T</code>. Nothing left to model; this is what good residuals look like.</span></li>
+  </ul>
+
+  <div class="remember">
+    <span class="star">✦</span>
+    <span>Plot first. Time plot = the story · seasonal / subseries = the repeating shape · lag / ACF = the memory · white noise = nothing left to model.</span>
+  </div>
+
+  <div class="footer">
+    <span class="pagenum">05</span>
+  </div>
+
+</div>
+
+</body>
+</html>
