@@ -218,6 +218,7 @@
         <tr><td class="chk"><input type="checkbox" data-id="d1e3"></td><td class="ex">Elevaciones laterales</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e3" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d1e4"></td><td class="ex">Curl de bíceps con mancuerna</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e4" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d1e5"></td><td class="ex">Extensión de tríceps en polea</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e5" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d1e6"></td><td class="ex">Aperturas con mancuernas</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e6" placeholder="—"></td></tr>
       </table>
     </div>
   </div>
@@ -254,6 +255,7 @@
         <tr><td class="chk"><input type="checkbox" data-id="d4e2"></td><td class="ex">Jalón al pecho (agarre ancho)</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e2" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d4e3"></td><td class="ex">Press militar con mancuernas</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e3" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d4e4"></td><td class="ex">Curl martillo</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e4" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d4e6"></td><td class="ex">Remo sentado en polea</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e6" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d4e5"></td><td class="ex">Fondos en banco (tríceps)</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e5" placeholder="—"></td></tr>
       </table>
     </div>
@@ -440,6 +442,7 @@
     d1e3: ['Hombro · deltoides lateral', 'Sube los brazos por los lados hasta la altura del hombro, codo algo flexionado y sin impulso.'],
     d1e4: ['Bíceps', 'Sube la mancuerna sin mover el codo y baja despacio controlando el peso.'],
     d1e5: ['Tríceps', 'Codos pegados al cuerpo. Estira el codo hacia abajo y vuelve controlado sin abrir los codos.'],
+    d1e6: ['Pecho (pectoral)', 'Tumbado en banco, brazos casi estirados. Baja las mancuernas en arco abriendo el pecho y ciérralas arriba apretando, sin bloquear el codo.'],
 
     d2e1: ['Cuádriceps · glúteo · core', 'Baja como si te sentaras, rodillas hacia afuera y espalda recta, hasta que los muslos queden paralelos.'],
     d2e2: ['Isquios · glúteo', 'Lleva la cadera atrás con las piernas casi rectas y espalda recta. Baja hasta media espinilla.'],
@@ -452,6 +455,7 @@
     d4e3: ['Hombro · tríceps', 'Empuja las mancuernas arriba sin arquear la espalda. Core apretado y glúteo firme.'],
     d4e4: ['Bíceps · antebrazo', 'Agarre neutro (palmas enfrentadas). Sube sin mover el codo y baja controlando.'],
     d4e5: ['Tríceps · pecho', 'Manos en el banco detrás de ti. Baja el cuerpo flexionando los codos hacia atrás y empuja arriba.'],
+    d4e6: ['Espalda media · dorsal · bíceps', 'Sentado, tira del agarre hacia el abdomen juntando las escápulas. Pecho arriba, sin encorvar la espalda ni usar impulso.'],
 
     d5e1: ['Glúteo · isquios · espalda', 'Espalda recta y pecho arriba. Empuja el suelo con los pies; sube cadera y pecho a la vez.'],
     d5e2: ['Cuádriceps · glúteo', 'Baja controlado con la rodilla alineada al pie. En búlgara, pie trasero elevado y torso algo adelante.'],
@@ -462,16 +466,16 @@
   // Two demo photos (start / end position) per exercise — free-exercise-db (public domain).
   // Recommended rest between sets — longer for heavy compounds, shorter for isolation/core.
   const EX_REST = {
-    d1e1: '90–120 s', d1e2: '90–120 s', d1e3: '60–90 s', d1e4: '60–90 s', d1e5: '60–90 s',
+    d1e1: '90–120 s', d1e2: '90–120 s', d1e3: '60–90 s', d1e4: '60–90 s', d1e5: '60–90 s', d1e6: '60–90 s',
     d2e1: '2–3 min', d2e2: '2–3 min', d2e3: '90–120 s', d2e4: '90 s', d2e5: '45–60 s',
-    d4e1: '90–120 s', d4e2: '90–120 s', d4e3: '90–120 s', d4e4: '60–90 s', d4e5: '60–90 s',
+    d4e1: '90–120 s', d4e2: '90–120 s', d4e3: '90–120 s', d4e4: '60–90 s', d4e5: '60–90 s', d4e6: '90–120 s',
     d5e1: '2–3 min', d5e2: '2 min', d5e3: '90–120 s', d5e4: '45–60 s', d5e5: '45–60 s'
   };
   const IMG_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
   const EX_IMG = {
-    d1e1: 'Incline_Dumbbell_Press', d1e2: 'One-Arm_Dumbbell_Row', d1e3: 'Side_Lateral_Raise', d1e4: 'Dumbbell_Bicep_Curl', d1e5: 'Triceps_Pushdown',
+    d1e1: 'Incline_Dumbbell_Press', d1e2: 'One-Arm_Dumbbell_Row', d1e3: 'Side_Lateral_Raise', d1e4: 'Dumbbell_Bicep_Curl', d1e5: 'Triceps_Pushdown', d1e6: 'Dumbbell_Flyes',
     d2e1: 'Barbell_Squat', d2e2: 'Romanian_Deadlift', d2e3: 'Dumbbell_Lunges', d2e4: 'Lying_Leg_Curls', d2e5: 'Plank',
-    d4e1: 'Machine_Bench_Press', d4e2: 'Wide-Grip_Lat_Pulldown', d4e3: 'Dumbbell_Shoulder_Press', d4e4: 'Hammer_Curls', d4e5: 'Bench_Dips',
+    d4e1: 'Machine_Bench_Press', d4e2: 'Wide-Grip_Lat_Pulldown', d4e3: 'Dumbbell_Shoulder_Press', d4e4: 'Hammer_Curls', d4e5: 'Bench_Dips', d4e6: 'Seated_Cable_Rows',
     d5e1: 'Barbell_Deadlift', d5e2: 'Leg_Press', d5e3: 'Barbell_Hip_Thrust', d5e4: 'Rocking_Standing_Calf_Raise', d5e5: 'Ab_Roller'
   };
   function setupExerciseInfo(){
