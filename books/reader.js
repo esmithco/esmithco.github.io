@@ -7,54 +7,38 @@ const menu = document.querySelector("#noteMenu");
 const menuList = document.querySelector("#noteMenuList");
 const menuBackdrop = document.querySelector("#noteMenuBackdrop");
 
-const OWNER = "ESMITHCO";
-const REPO = "ESMITHCO.github.io";
-const BASE = "books/notes/fpp3";
+const REL = "notes/fpp3";   // relative to reader.html (which lives in /books/)
 
 let chapter = new URLSearchParams(location.search).get("chapter");
-let chapters = [];       // all chapter folder names, sorted
+let manifest = null;     // { chapters: [{ name, notes:[...] }] }
+let chapters = [];       // all chapter names, sorted
 let chapterIndex = -1;   // where the current chapter sits in `chapters`
 let availableNotes = [];
 let current = 0;
 let titleToken = 0;      // guards async title loads across chapter switches
 
-async function ghContents(path) {
-  const url =
-    `https://api.github.com/repos/${OWNER}/${REPO}/contents/` +
-    path.split("/").map(encodeURIComponent).join("/");
-
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("Could not load " + path);
-  return response.json();
+// Chapters and notes come from a static manifest served by this site — no
+// GitHub API, so no 60-req/hr rate limit and it works instantly + offline.
+async function loadManifest() {
+  const data = await fetch(`${REL}/manifest.json`)
+    .then((r) => { if (!r.ok) throw new Error("manifest"); return r.json(); });
+  data.chapters.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  return data;
 }
 
-async function getChapters() {
-  const items = await ghContents(BASE);
-  return items
-    .filter((x) => x.type === "dir")
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
-    .map((x) => x.name);
+function getNotes(chap) {
+  if (!chap || !manifest) return [];
+  const entry = manifest.chapters.find((c) => c.name === chap);
+  if (!entry) return [];
+  return entry.notes
+    .slice()
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .map((name) => ({ name, path: `${REL}/${chap}/${name}` }));
 }
 
-async function getNotes(chap) {
-  if (!chap) return [];
-  const items = await ghContents(`${BASE}/${chap}`);
-  return items
-    .filter((f) => f.type === "file" && f.name.toLowerCase().endsWith(".html"))
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-}
-
-/*
-  file.path is something like:
-    books/notes/fpp3/chap 1/forecasting-ch1-01.html
-  reader.html is inside /books/, so remove "books/".
-*/
+// reader.html lives in /books/, so paths are relative to it (already "books/"-free).
 function notePathFor(file) {
-  return file.path
-    .replace(/^books\//, "")
-    .split("/")
-    .map(encodeURIComponent)
-    .join("/");
+  return file.path.split("/").map(encodeURIComponent).join("/");
 }
 
 const hasPrevChapter = () => chapterIndex > 0;
@@ -178,13 +162,8 @@ function showNote(index, replace = false) {
 }
 
 // Load a different chapter and land on its first ("first") or last ("last") note.
-async function switchChapter(newIndex, landing) {
-  let notes;
-  try {
-    notes = await getNotes(chapters[newIndex]);
-  } catch (error) {
-    return;
-  }
+function switchChapter(newIndex, landing) {
+  const notes = getNotes(chapters[newIndex]);
   if (!notes.length) return;
 
   chapter = chapters[newIndex];
@@ -246,12 +225,14 @@ noteFrame.addEventListener("load", () => {
 
 // --- Boot ---
 try {
-  chapters = await getChapters();
+  manifest = await loadManifest();
+  chapters = manifest.chapters.map((c) => c.name);
 } catch (error) {
+  manifest = { chapters: [] };
   chapters = [];
 }
 chapterIndex = chapters.indexOf(chapter);
-availableNotes = await getNotes(chapter);
+availableNotes = getNotes(chapter);
 
 buildMenu();
 loadTitles();

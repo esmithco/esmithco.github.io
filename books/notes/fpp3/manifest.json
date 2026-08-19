@@ -1,0 +1,21 @@
+{
+  "book": "forecasting",
+  "chapters": [
+    { "name": "chap 1", "notes": [
+      "forecasting-ch1-01.html",
+      "forecasting-ch1-02.html",
+      "forecasting-ch1-03.html",
+      "forecasting-ch1-04.html"
+    ] },
+    { "name": "chap 2", "notes": [
+      "forecasting-ch2-01.html",
+      "forecasting-ch2-02.html",
+      "forecasting-ch2-03.html",
+      "forecasting-ch2-04.html",
+      "forecasting-ch2-05.html"
+    ] },
+    { "name": "chap 3", "notes": [
+      "forecasting-ch3-01.html"
+    ] }
+  ]
+}
