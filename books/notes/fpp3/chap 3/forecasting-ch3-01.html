@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decomposition — Splitting the Signal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAF7; --grid:#E4E7E1; --ink:#20232A; --ink-soft:#5B6067;
+    --berry:#A6356B; --berry-soft:#F3E3EB; --sage:#3E7A52; --sage-soft:#E4EFE6;
+    --steel:#35526E; --steel-soft:#E7EDF2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0; background:#E9E9E4; font-family:'Inter',sans-serif; color:var(--ink); overflow-x:clip;}
+  body{display:flex; justify-content:center; padding:32px 16px 64px;}
+  .definition,.lede,.callout,.takeaways li,.pair .side{overflow-wrap:break-word;}
+
+  .page{
+    position:relative; width:100%; max-width:760px;
+    background:linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px), var(--paper);
+    background-size:24px 24px; border:1px solid #D9DBD3; border-radius:4px;
+    box-shadow:0 24px 60px -20px rgba(32,35,42,0.25); padding:44px 42px 40px; animation:rise .5s ease-out;
+  }
+  @keyframes rise{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+
+  .eyebrow{display:flex; align-items:center; justify-content:space-between; font-family:'Caveat',cursive; font-size:20px; color:var(--ink-soft); margin-bottom:6px;}
+  .eyebrow .dots span{display:inline-block; width:7px; height:7px; border-radius:50%; margin-left:4px;}
+  .dots span:nth-child(1){background:var(--berry);} .dots span:nth-child(2){background:var(--sage);} .dots span:nth-child(3){background:var(--steel);}
+
+  h1{font-family:'Fraunces',serif; font-optical-sizing:auto; font-weight:600; font-size:clamp(26px,4.6vw,36px); line-height:1.08; margin:0 0 22px; letter-spacing:-0.01em;}
+  hr{border:none; border-top:1px solid #DCDFD8; margin:22px 0;}
+
+  .definition{font-family:'Fraunces',serif; font-weight:500; font-size:clamp(18px,3vw,22px); line-height:1.44; color:var(--ink); padding-left:18px; border-left:3px solid var(--ink);}
+  .definition .accent{text-decoration:underline; text-decoration-color:var(--berry); text-decoration-thickness:2px; text-underline-offset:3px;}
+
+  .label{font-size:11.5px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:14px;}
+  code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:0.9em; background:var(--steel-soft); color:var(--steel); padding:1px 5px; border-radius:4px;}
+
+  .eqn{font-family:'Fraunces',serif; font-size:clamp(18px,3.4vw,24px); text-align:center; margin:2px 0 4px; color:var(--ink);}
+  .eqn sub{font-size:.62em;} .eqn .T{color:var(--steel);} .eqn .S{color:var(--berry);} .eqn .R{color:var(--sage);}
+  .eqn-note{text-align:center; font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;}
+
+  .comp{display:flex; flex-direction:column; gap:11px; margin:0;}
+  .comp .row{display:flex; gap:12px; align-items:flex-start;}
+  .comp .k{flex:0 0 118px; font-family:'Fraunces',serif; font-weight:600; font-size:15px;}
+  .comp .row.t .k{color:var(--steel);} .comp .row.s .k{color:var(--berry);} .comp .row.r .k{color:var(--sage);}
+  .comp .v{font-size:13.5px; line-height:1.5; color:var(--ink);}
+  .comp .v b{color:var(--ink);}
+
+  .figure{background:#fff; border:1px solid #DCDFD8; border-radius:8px; padding:12px 12px 8px; margin-top:14px;}
+  .figure svg{display:block; width:100%; height:auto;}
+  .figure .cap{font-size:12px; color:var(--ink-soft); text-align:center; margin-top:4px; font-style:italic;}
+
+  .pair{background:#fff; border:1px solid #DCDFD8; border-radius:8px; padding:11px 13px; margin-top:12px;}
+  .pair .p-title{font-family:'Caveat',cursive; font-size:17px; color:var(--ink-soft); margin-bottom:8px;}
+  .pair .p-row{display:flex; gap:10px 16px; flex-wrap:wrap;}
+  .pair .side{flex:1 1 220px; font-size:12.5px; line-height:1.5; color:var(--ink);}
+  .pair .side svg{display:block; width:100%; height:44px; margin-bottom:6px;}
+
+  .takeaways{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:11px;}
+  .takeaways li{display:flex; gap:11px; align-items:flex-start; font-size:14px; line-height:1.55;}
+  .takeaways .tok{flex:0 0 96px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--steel); font-weight:600; padding-top:1px;}
+
+  .callout{background:var(--steel-soft); border-radius:6px; padding:11px 13px; font-size:13px; line-height:1.55; color:var(--ink); margin-top:12px;}
+  .watch{font-family:'Caveat',cursive; font-size:16px; color:var(--berry); margin-right:4px;}
+
+  .remember{display:flex; gap:11px; align-items:flex-start; background:var(--sage-soft); border-radius:8px; padding:13px 15px; margin-top:24px; font-family:'Caveat',cursive; font-size:20px; line-height:1.32; color:var(--sage);}
+  .remember .star{flex:0 0 auto; font-family:'Inter',sans-serif; font-size:15px; margin-top:3px;}
+
+  .footer{display:flex; justify-content:flex-end; align-items:center; margin-top:26px; padding-top:14px; border-top:1px solid #DCDFD8;}
+  .pagenum{font-family:'Fraunces',serif; font-size:14px; color:var(--ink-soft);}
+
+  @media (max-width:480px){
+    body{padding:20px 10px 48px;}
+    .page{padding:28px 16px 28px;}
+    .comp .k{flex-basis:100%;}
+    .comp .row{flex-direction:column; gap:2px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="eyebrow">
+    <span>reading notes · fpp ch. 3 · decomposition</span>
+    <span class="dots"><span></span><span></span><span></span></span>
+  </div>
+
+  <h1>Decomposition — Splitting the Signal</h1>
+
+  <div class="definition">
+    Sometimes a series is too tangled to model directly. So <span class="accent">split it</span> into parts you can
+    read and forecast on their own: a <span class="accent">trend-cycle</span>, a <span class="accent">season</span>,
+    and <span class="accent">what's left</span>.
+  </div>
+
+  <hr>
+
+  <div class="label">The two ways to split</div>
+  <div class="eqn">y<sub>t</sub> = <span class="T">T<sub>t</sub></span> + <span class="S">S<sub>t</sub></span> + <span class="R">R<sub>t</sub></span></div>
+  <div class="eqn-note">additive — parts <b>add</b> up</div>
+  <div class="eqn" style="margin-top:12px">y<sub>t</sub> = <span class="T">T<sub>t</sub></span> &times; <span class="S">S<sub>t</sub></span> &times; <span class="R">R<sub>t</sub></span></div>
+  <div class="eqn-note">multiplicative — parts <b>scale</b> each other</div>
+  <div class="pair">
+    <div class="p-title">additive  vs  multiplicative</div>
+    <div class="p-row">
+      <div class="side">
+        <svg viewBox="0 0 130 44"><line x1="6" y1="38" x2="124" y2="38" stroke="#C3C6BD"/><polyline points="8,30 18,18 28,30 38,28 48,16 58,28 68,30 78,18 88,30 98,28 108,16 118,26" fill="none" stroke="#35526E" stroke-width="2"/></svg>
+        <b>Additive</b> — seasonal swing stays the <b>same size</b> as the level rises.
+      </div>
+      <div class="side">
+        <svg viewBox="0 0 130 44"><line x1="6" y1="38" x2="124" y2="38" stroke="#C3C6BD"/><polyline points="8,34 18,28 28,34 38,32 48,22 58,32 68,32 78,16 88,32 98,30 108,6 118,28" fill="none" stroke="#A6356B" stroke-width="2"/></svg>
+        <b>Multiplicative</b> — seasonal swing <b>grows</b> with the level.
+      </div>
+    </div>
+    <div style="font-size:12.5px; color:var(--ink-soft); margin-top:9px; line-height:1.5;">Take <code>log(y)</code> and a multiplicative split becomes additive: <code>log&nbsp;y = log&nbsp;T + log&nbsp;S + log&nbsp;R</code>.</div>
+  </div>
+
+  <hr>
+
+  <div class="label">What each part really is</div>
+  <div class="comp">
+    <div class="row t"><span class="k">Trend-cycle&nbsp; T<sub>t</sub></span><span class="v">The <b>smooth</b> long-run movement <em>and</em> the slow ups/downs (cycles) — bundled together. "Where the series is heading once you ignore the wiggles." Estimated by <b>smoothing</b>.</span></div>
+    <div class="row s"><span class="k">Seasonal&nbsp; S<sub>t</sub></span><span class="v">The pattern that repeats every <b>fixed, known period</b> (12 months, 7 days). With STL it may <b>drift slowly</b> across years.</span></div>
+    <div class="row r"><span class="k">Remainder&nbsp; R<sub>t</sub></span><span class="v">Whatever T and S <b>don't</b> explain — irregular noise and one-off shocks. A <b>good</b> split leaves R looking like <b>white noise</b> (no pattern left).</span></div>
+  </div>
+
+  <div class="figure">
+    <svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg">
+      <!-- original -->
+      <text x="628" y="20" text-anchor="end" font-family="Fraunces" font-size="13" fill="#20232A">y (data)</text>
+      <line x1="20" y1="60" x2="20" y2="14" stroke="#C3C6BD"/><line x1="20" y1="60" x2="600" y2="60" stroke="#C3C6BD"/>
+      <path d="M24,50 L70,44 L96,26 L110,50 L150,40 L176,22 L190,46 L230,36 L256,18 L270,42 L310,32 L336,16 L350,40 L390,28 L416,12 L430,36 L470,24 L520,20 L560,16 L600,12" fill="none" stroke="#20232A" stroke-width="1.8"/>
+      <!-- trend -->
+      <text x="628" y="98" text-anchor="end" font-family="Fraunces" font-size="13" fill="#35526E">T</text>
+      <line x1="20" y1="130" x2="20" y2="86" stroke="#C3C6BD"/><line x1="20" y1="130" x2="600" y2="130" stroke="#C3C6BD"/>
+      <path d="M24,120 C160,108 320,96 460,90 C520,88 570,86 600,84" fill="none" stroke="#35526E" stroke-width="2.3"/>
+      <!-- seasonal -->
+      <text x="628" y="176" text-anchor="end" font-family="Fraunces" font-size="13" fill="#A6356B">S</text>
+      <line x1="20" y1="210" x2="20" y2="150" stroke="#C3C6BD"/><line x1="20" y1="180" x2="600" y2="180" stroke="#DCDFD8" stroke-dasharray="3 4"/>
+      <path d="M24,180 C44,158 64,158 84,180 C104,202 124,202 144,180 C164,158 184,158 204,180 C224,202 244,202 264,180 C284,158 304,158 324,180 C344,202 364,202 384,180 C404,158 424,158 444,180 C464,202 484,202 504,180 C524,158 544,158 564,180 C584,202 600,200 600,190" fill="none" stroke="#A6356B" stroke-width="2"/>
+      <!-- remainder -->
+      <text x="628" y="256" text-anchor="end" font-family="Fraunces" font-size="13" fill="#3E7A52">R</text>
+      <line x1="20" y1="290" x2="20" y2="230" stroke="#C3C6BD"/><line x1="20" y1="260" x2="600" y2="260" stroke="#DCDFD8" stroke-dasharray="3 4"/>
+      <path d="M24,262 L48,254 L72,266 L96,256 L120,264 L144,252 L168,268 L192,258 L216,262 L240,250 L264,266 L288,256 L312,264 L336,254 L360,268 L384,258 L408,262 L432,252 L456,266 L480,256 L504,264 L528,258 L552,262 L576,256 L600,260" fill="none" stroke="#3E7A52" stroke-width="1.6"/>
+    </svg>
+    <div class="cap">the same series read four ways: data = trend-cycle + seasonal + remainder</div>
+  </div>
+
+  <hr>
+
+  <div class="label">How the trend gets smoothed</div>
+  <ul class="takeaways">
+    <li><span class="tok">classic</span><span><b>Moving average</b> (m-MA): average a window to iron out season &amp; noise and reveal the trend. Even periods need a <em>centered</em> 2×m-MA.</span></li>
+    <li><span class="tok">STL</span><span><b>S</b>easonal-<b>T</b>rend decomposition using <b>L</b>oess: local smoothers instead of a plain average. <span class="watch">best default —</span> handles any season length, lets the <b>season change over time</b>, is robust to outliers, and you tune how smooth T and S are.</span></li>
+    <li><span class="tok">limits</span><span>STL is <b>additive only</b> (take <code>log</code> for multiplicative) and won't handle calendar effects for you.</span></li>
+  </ul>
+
+  <hr>
+
+  <div class="label">Adjust &amp; transform <em>before</em> you split or model</div>
+  <ul class="takeaways">
+    <li><span class="tok">adjust</span><span>Strip out known distortions: <b>calendar</b> (trading days), <b>population</b> (use per-capita), <b>inflation</b> (real vs nominal pesos). Clearer signal → better forecast.</span></li>
+    <li><span class="tok">transform</span><span>A math transform — <code>log</code> or <b>Box-Cox(λ)</b> — <b>stabilizes the variance</b> so the swings are the same size across the series.</span></li>
+  </ul>
+  <div class="callout"><span class="watch">watch —</span> variance-stabilizing transforms fix the <b>spread</b>. Making the <b>mean</b> flat (differencing → stationarity) is a separate tool that comes with ARIMA (ch. 9). Don't merge the two ideas.</div>
+
+  <hr>
+
+  <div class="label">Why bother — what you do with the pieces</div>
+  <ul class="takeaways">
+    <li><span class="tok">deseason</span><span><b>Seasonally adjusted</b> series = <code>y − S</code> (additive) or <code>y / S</code> (mult.) → see the real movement without the calendar noise.</span></li>
+    <li><span class="tok">forecast</span><span>Forecast the seasonally-adjusted part (<span style="color:var(--steel)">T</span>+<span style="color:var(--sage)">R</span>) and the <span style="color:var(--berry)">seasonal</span> part <b>separately</b>, then recombine. (§5.7)</span></li>
+  </ul>
+
+  <div class="remember">
+    <span class="star">✦</span>
+    <span>Decompose = T (where it heads) + S (what repeats) + R (what's left). Adjust &amp; transform first; a good split leaves R looking like noise.</span>
+  </div>
+
+  <div class="footer">
+    <span class="pagenum">01</span>
+  </div>
+
+</div>
+
+</body>
+</html>
