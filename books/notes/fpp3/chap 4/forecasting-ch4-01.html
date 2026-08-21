@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Features — A Series in Numbers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAF7; --grid:#E4E7E1; --ink:#20232A; --ink-soft:#5B6067;
+    --berry:#A6356B; --berry-soft:#F3E3EB; --sage:#3E7A52; --sage-soft:#E4EFE6;
+    --steel:#35526E; --steel-soft:#E7EDF2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0; background:#E9E9E4; font-family:'Inter',sans-serif; color:var(--ink); overflow-x:clip;}
+  body{display:flex; justify-content:center; padding:32px 16px 64px;}
+  .definition,.lede,.callout,.takeaways li,.pair .side{overflow-wrap:break-word;}
+
+  .page{
+    position:relative; width:100%; max-width:760px;
+    background:linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px), var(--paper);
+    background-size:24px 24px; border:1px solid #D9DBD3; border-radius:4px;
+    box-shadow:0 24px 60px -20px rgba(32,35,42,0.25); padding:44px 42px 40px; animation:rise .5s ease-out;
+  }
+  @keyframes rise{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+
+  .eyebrow{display:flex; align-items:center; justify-content:space-between; font-family:'Caveat',cursive; font-size:20px; color:var(--ink-soft); margin-bottom:6px;}
+  .eyebrow .dots span{display:inline-block; width:7px; height:7px; border-radius:50%; margin-left:4px;}
+  .dots span:nth-child(1){background:var(--berry);} .dots span:nth-child(2){background:var(--sage);} .dots span:nth-child(3){background:var(--steel);}
+
+  h1{font-family:'Fraunces',serif; font-optical-sizing:auto; font-weight:600; font-size:clamp(26px,4.6vw,36px); line-height:1.08; margin:0 0 22px; letter-spacing:-0.01em;}
+  hr{border:none; border-top:1px solid #DCDFD8; margin:22px 0;}
+
+  .definition{font-family:'Fraunces',serif; font-weight:500; font-size:clamp(18px,3vw,22px); line-height:1.44; color:var(--ink); padding-left:18px; border-left:3px solid var(--ink);}
+  .definition .accent{text-decoration:underline; text-decoration-color:var(--berry); text-decoration-thickness:2px; text-underline-offset:3px;}
+
+  .label{font-size:11.5px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:14px;}
+  code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:0.9em; background:var(--steel-soft); color:var(--steel); padding:1px 5px; border-radius:4px;}
+  .code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:12.5px; line-height:1.65; background:#fff; border:1px solid #DCDFD8; border-left:3px solid var(--steel); border-radius:4px; padding:11px 14px; margin:0 0 10px; overflow-x:auto; white-space:pre; color:var(--ink);}
+  .code .cmt{color:var(--ink-soft);} .code .fn{color:var(--sage); font-weight:600;} .code .kw{color:var(--berry); font-weight:600;}
+
+  .tag{font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:1.5px 6px; border-radius:5px; white-space:nowrap;}
+  .tag.fn{background:var(--sage-soft); color:var(--sage);} .tag.obj{background:var(--berry-soft); color:var(--berry);}
+
+  .chips{display:flex; flex-wrap:wrap; gap:6px;}
+  .chips span{font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--steel); background:var(--steel-soft); border-radius:6px; padding:3px 8px;}
+
+  .pair{background:#fff; border:1px solid #DCDFD8; border-radius:8px; padding:11px 13px; margin:12px 0 0;}
+  .pair .p-title{font-family:'Caveat',cursive; font-size:17px; color:var(--ink-soft); margin-bottom:8px;}
+  .pair .p-row{display:flex; gap:10px 16px; flex-wrap:wrap;}
+  .pair .side{flex:1 1 220px; font-size:12.5px; line-height:1.5; color:var(--ink);}
+
+  .takeaways{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:11px;}
+  .takeaways li{display:flex; gap:11px; align-items:flex-start; font-size:14px; line-height:1.55;}
+  .takeaways .tok{flex:0 0 96px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--steel); font-weight:600; padding-top:1px;}
+
+  .eqbox{background:#fff; border:1px solid #DCDFD8; border-left:3px solid var(--berry); border-radius:6px; padding:11px 14px; margin:0 0 8px; font-family:'Fraunces',serif; font-size:16px; overflow-x:auto;}
+  .eqbox .m{font-size:12px; color:var(--ink-soft); font-family:'Inter',sans-serif; display:block; margin-top:4px;}
+  .eqbox sub{font-size:.66em;} .eqbox .F{color:var(--berry);}
+
+  .figure{background:#fff; border:1px solid #DCDFD8; border-radius:8px; padding:12px 12px 8px; margin-top:12px;}
+  .figure svg{display:block; width:100%; height:auto;}
+  .figure .cap{font-size:12px; color:var(--ink-soft); text-align:center; margin-top:4px; font-style:italic;}
+
+  .callout{background:var(--berry-soft); border-radius:6px; padding:11px 13px; font-size:13px; line-height:1.55; color:var(--ink); margin-top:12px;}
+  .watch{font-family:'Caveat',cursive; font-size:16px; color:var(--berry); margin-right:4px;}
+
+  .remember{display:flex; gap:11px; align-items:flex-start; background:var(--sage-soft); border-radius:8px; padding:13px 15px; margin-top:24px; font-family:'Caveat',cursive; font-size:20px; line-height:1.32; color:var(--sage);}
+  .remember .star{flex:0 0 auto; font-family:'Inter',sans-serif; font-size:15px; margin-top:3px;}
+
+  .footer{display:flex; justify-content:flex-end; align-items:center; margin-top:26px; padding-top:14px; border-top:1px solid #DCDFD8;}
+  .pagenum{font-family:'Fraunces',serif; font-size:14px; color:var(--ink-soft);}
+
+  @media (max-width:480px){
+    body{padding:20px 10px 48px;}
+    .page{padding:28px 16px 28px;}
+    .code{font-size:11.3px;}
+    .takeaways .tok{flex-basis:100%; padding-top:0;}
+    .takeaways li{flex-direction:column; gap:3px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="eyebrow">
+    <span>reading notes · fpp ch. 4 · features</span>
+    <span class="dots"><span></span><span></span><span></span></span>
+  </div>
+
+  <h1>Features — A Series in Numbers</h1>
+
+  <div class="definition">
+    A whole time series can be crushed into a handful of <span class="accent">numbers</span> (features). Compute the
+    same numbers for <span class="accent">many</span> series → compare them, group them, and spot the odd ones.
+  </div>
+
+  <hr>
+
+  <div class="label">A feature = one number that summarizes the series</div>
+  <div class="chips">
+    <span>mean</span><span>median</span><span>min</span><span>max</span><span>sd</span><span>acf1</span><span>pacf1</span><span>trend_strength</span><span>seasonal_strength</span><span>spikiness</span><span>stability</span><span>n_crossing_points</span>
+  </div>
+  <p style="font-size:13px; color:var(--ink-soft); line-height:1.55; margin:12px 0 0;">
+    One <b>row of numbers per series</b>. That's the whole idea — turn a curve into coordinates.
+  </p>
+
+  <hr>
+
+  <div class="label">The Python library — <code>tsfeatures</code></div>
+  <div class="code"><span class="kw">from</span> tsfeatures <span class="kw">import</span> tsfeatures        <span class="cmt"># the Python analog of R's feasts::features</span>
+
+<span class="cmt"># df in long form: columns  unique_id · ds (date) · y (value)</span>
+feats = <span class="fn">tsfeatures</span>(df, freq=12)          <span class="cmt"># freq = seasonal period (12 = monthly)</span></div>
+  <ul class="takeaways">
+    <li><span class="tok">tsfeatures</span><span><span class="tag fn">function</span> — takes the long df, <b>returns a DataFrame</b> <span class="tag obj">DataFrame</span>: one <b>row per series</b> (<code>unique_id</code>), one <b>column per feature</b>.</span></li>
+    <li><span class="tok">pieces</span><span>It's a bundle of smaller feature functions you can call alone: <code>acf_features</code>, <code>pacf_features</code>, <code>stl_features</code>, <code>entropy</code>… pass a <code>list</code> to compute only what you want.</span></li>
+  </ul>
+  <div class="code"><span class="cmt"># only the STL features (trend &amp; seasonal strength, etc.)</span>
+<span class="kw">from</span> tsfeatures <span class="kw">import</span> stl_features
+feats = <span class="fn">tsfeatures</span>(df, freq=12, features=[stl_features])</div>
+
+  <hr>
+
+  <div class="label">ACF vs PACF — the one you kept mixing up</div>
+  <div class="pair">
+    <div class="p-title">total memory  vs  direct memory</div>
+    <div class="p-row">
+      <div class="side"><b>ACF(k)</b> = corr(<code>y<sub>t</sub></code>, <code>y<sub>t−k</sub></code>).<br>The <b>total</b> link at lag k — <em>including</em> what leaks through the middle lags (t−1 … t−k+1).</div>
+      <div class="side"><b>PACF(k)</b> = the same correlation <b>after removing</b> lags 1…k−1.<br>The <b>direct</b> link at <em>exactly</em> lag k. = the coefficient of <code>y<sub>t−k</sub></code> when you regress <code>y<sub>t</sub></code> on all shorter lags.</div>
+    </div>
+  </div>
+  <ul class="takeaways" style="margin-top:12px">
+    <li><span class="tok">trend</span><span>ACF <b>decays slowly</b> (everything is correlated); PACF has one <b>spike at lag 1</b>, then ~0.</span></li>
+    <li><span class="tok">seasonal</span><span><b>both</b> spike at the seasonal lag (12, 24…). A big ACF <em>and</em> PACF there = a real, repeating season.</span></li>
+    <li><span class="tok">(later)</span><span>AR(p): PACF cuts off after lag p · MA(q): ACF cuts off after lag q → this is how you read a series for ARIMA (ch. 9).</span></li>
+  </ul>
+
+  <hr>
+
+  <div class="label">Trend &amp; seasonal strength &nbsp;·&nbsp; the features that matter most</div>
+  <p style="font-size:13px; color:var(--ink-soft); line-height:1.55; margin:0 0 12px;">
+    Straight from the STL split (ch. 3): if pulling out a component leaves little variance in the remainder, that
+    component was strong. Both land in <b>[0, 1]</b>.
+  </p>
+  <div class="eqbox"><span class="F">F<sub>T</sub></span> = max&#8202;(0,&nbsp; 1 − Var(R) / Var(T + R))<span class="m">trend strength — near 1 = strongly trended</span></div>
+  <div class="eqbox"><span class="F">F<sub>S</sub></span> = max&#8202;(0,&nbsp; 1 − Var(R) / Var(S + R))<span class="m">seasonal strength — near 1 = strongly seasonal</span></div>
+
+  <hr>
+
+  <div class="label">The feature scatterplot &nbsp;·&nbsp; the "versus" plot</div>
+  <p style="font-size:13px; color:var(--ink-soft); line-height:1.55; margin:0 0 12px;">
+    Compute features for <b>every</b> series, then plot <b>one feature against another</b> — each <b>dot is a whole series</b>.
+  </p>
+  <div class="figure">
+    <svg viewBox="0 0 420 300" xmlns="http://www.w3.org/2000/svg">
+      <line x1="46" y1="20" x2="46" y2="262" stroke="#B7BBB2"/>
+      <line x1="46" y1="262" x2="404" y2="262" stroke="#B7BBB2"/>
+      <text x="14" y="150" transform="rotate(-90 14 150)" text-anchor="middle" font-family="Inter" font-size="12" fill="#5B6067">seasonal ACF</text>
+      <text x="225" y="290" text-anchor="middle" font-family="Inter" font-size="12" fill="#5B6067">seasonal PACF</text>
+      <!-- low-low cluster -->
+      <g fill="#8793A1">
+        <circle cx="92" cy="228" r="4"/><circle cx="110" cy="240" r="4"/><circle cx="80" cy="214" r="4"/><circle cx="128" cy="232" r="4"/><circle cx="104" cy="206" r="4"/><circle cx="140" cy="218" r="4"/><circle cx="96" cy="244" r="4"/><circle cx="150" cy="238" r="4"/>
+      </g>
+      <!-- high-high cluster (strong seasonality) -->
+      <g fill="#A6356B">
+        <circle cx="330" cy="72" r="4.5"/><circle cx="352" cy="60" r="4.5"/><circle cx="316" cy="88" r="4.5"/><circle cx="344" cy="86" r="4.5"/>
+      </g>
+      <ellipse cx="336" cy="74" rx="40" ry="30" fill="none" stroke="#A6356B" stroke-dasharray="4 4" opacity="0.7"/>
+      <text x="336" y="30" text-anchor="middle" font-family="Caveat" font-size="16" fill="#A6356B">high on BOTH → strong season</text>
+      <line x1="336" y1="36" x2="336" y2="44" stroke="#A6356B"/>
+    </svg>
+    <div class="cap">each dot = a series · high on both axes = the season repeats strongly (e.g. every year)</div>
+  </div>
+  <div class="callout"><span class="watch">read it —</span> a dot high on <b>both</b> seasonal-ACF and seasonal-PACF = a series whose season is real and strong (last year predicts this year). Corner clusters = groups that need the <b>same model</b>; a lone dot = an <b>outlier</b> series to handle apart. This is exactly how you segment many series before modeling.</div>
+
+  <div class="remember">
+    <span class="star">✦</span>
+    <span>Features turn each series into a row of numbers. ACF = total memory, PACF = direct memory. F<sub>T</sub>, F<sub>S</sub> ∈ [0,1] say how strong trend / season are. Scatter features across series → find groups &amp; outliers.</span>
+  </div>
+
+  <div class="footer">
+    <span class="pagenum">01</span>
+  </div>
+
+</div>
+
+</body>
+</html>
