@@ -56,12 +56,6 @@
   .sw-btn.reset{background:transparent;color:var(--steel-dim);border:1px solid var(--panel-line);}
   .sw-btn:active{opacity:.8;}
 
-  .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:18px 0 22px;}
-  .week .d{background:var(--panel);border:1px solid var(--panel-line);border-radius:10px;padding:10px 4px;text-align:center;position:relative;cursor:pointer;}
-  .week .d.today{border-color:var(--chalk);}
-  .week .d .num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--steel-dim);text-transform:uppercase;}
-  .week .d .plate{width:14px;height:14px;border-radius:50%;margin:6px auto 6px;}
-  .week .d .lab{font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:.02em;color:var(--steel);text-transform:uppercase;line-height:1.2;}
 
   .plate.blue{background:var(--blue);}
   .plate.red{background:var(--red);}
@@ -159,9 +153,6 @@
     .masthead h1{font-size:24px;}
     .stopwatch{flex-wrap:wrap;}
     .stopwatch .time{font-size:26px;}
-    .week{gap:4px;}
-    .week .d{padding:8px 2px;}
-    .week .d .lab{font-size:8.3px;}
     .flow{flex-direction:column;}
     td{font-size:12.5px;}
     .weight-input{width:44px;}
@@ -194,16 +185,6 @@
       <button class="sw-btn start" id="swToggle" onclick="toggleTimer()">Start</button>
       <button class="sw-btn reset" onclick="resetTimer()">Reset</button>
     </div>
-  </div>
-
-  <div class="week" id="weekStrip">
-    <div class="d" data-day="1" onclick="expandDay('day1')"><div class="num">Lun</div><div class="plate blue"></div><div class="lab">Upper A</div></div>
-    <div class="d" data-day="2" onclick="expandDay('day2')"><div class="num">Mar</div><div class="plate red"></div><div class="lab">Lower A</div></div>
-    <div class="d" data-day="3" onclick="expandDay('day3')"><div class="num">Mié</div><div class="plate gray"></div><div class="lab">Descanso</div></div>
-    <div class="d" data-day="4" onclick="expandDay('day4')"><div class="num">Jue</div><div class="plate yellow"></div><div class="lab">Upper B</div></div>
-    <div class="d" data-day="5" onclick="expandDay('day5')"><div class="num">Vie</div><div class="plate green"></div><div class="lab">Lower B</div></div>
-    <div class="d" data-day="6" onclick="expandDay('day6')"><div class="num">Sáb</div><div class="plate gray"></div><div class="lab">Descanso</div></div>
-    <div class="d" data-day="7" onclick="expandDay('day7')"><div class="num">Dom</div><div class="plate gray"></div><div class="lab">Descanso</div></div>
   </div>
 
   <div class="day" id="day1" data-day="1">
@@ -418,9 +399,6 @@
     const jsDay = new Date().getDay();
     const map = {1:1,2:2,3:3,4:4,5:5,6:6,0:7};
     const today = map[jsDay];
-    document.querySelectorAll('.week .d').forEach(el=>{
-      if(Number(el.dataset.day) === today) el.classList.add('today');
-    });
     const todayCard = document.getElementById('day'+today);
     if(todayCard){
       todayCard.classList.add('today','expanded');
