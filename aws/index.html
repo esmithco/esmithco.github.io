@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Backend — The Plan</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23E8730C'/%3E%3Cg fill='%23ffffff'%3E%3Ccircle cx='38' cy='60' r='13'/%3E%3Ccircle cx='57' cy='52' r='17'/%3E%3Ccircle cx='72' cy='61' r='12'/%3E%3Crect x='38' y='58' width='34' height='14' rx='7'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBFCFD; --grid:#E7ECF3; --ink:#172033; --ink-soft:#55606F;
+    --rust:#2F5FE0; --rust-soft:#E7EDFB; --pine:#0E9488; --pine-soft:#E0F1EF;
+    --gold:#E8730C; --gold-soft:#FCEBDD; --line:#E3E7EF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0; background:#F5F7FB; font-family:'Inter',sans-serif; color:var(--ink); overflow-x:clip;}
+  body{display:flex; justify-content:center; padding:32px 16px 64px;}
+  .definition,.lede,.callout,.steps li,.phase .b{overflow-wrap:break-word;}
+
+  .page{
+    position:relative; width:100%; max-width:780px;
+    background:linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px), var(--paper);
+    background-size:24px 24px; border:1px solid #DDE3EC; border-radius:4px;
+    box-shadow:0 24px 60px -20px rgba(35,32,28,0.28); padding:40px 40px 40px;
+  }
+
+  .home-btn{display:inline-flex; align-items:center; gap:7px; height:40px; padding:0 15px; border:1px solid var(--line); border-radius:12px; background:#fff; color:var(--gold); font-size:.85rem; font-weight:800; text-decoration:none; margin-bottom:24px;}
+  .home-btn svg{width:17px; height:17px;}
+
+  .eyebrow{font-family:'Caveat',cursive; font-size:20px; color:var(--ink-soft); margin-bottom:4px;}
+  h1{font-family:'Fraunces',serif; font-weight:600; font-size:clamp(28px,5vw,40px); line-height:1.05; margin:0 0 20px; letter-spacing:-0.01em;}
+  hr{border:none; border-top:1px solid var(--line); margin:24px 0;}
+
+  .definition{font-family:'Fraunces',serif; font-weight:500; font-size:clamp(18px,3vw,22px); line-height:1.44; padding-left:18px; border-left:3px solid var(--ink);}
+  .definition .accent{text-decoration:underline; text-decoration-color:var(--gold); text-decoration-thickness:2px; text-underline-offset:3px;}
+
+  .label{font-size:11.5px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:14px;}
+  code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:0.88em; background:#EEF1F6; color:#55606f; padding:1px 5px; border-radius:4px;}
+  .code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:12.5px; line-height:1.6; background:#fff; border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:4px; padding:12px 14px; margin:0 0 12px; overflow-x:auto; white-space:pre; color:var(--ink);}
+  .code .cmt{color:var(--ink-soft);} .code .kw{color:var(--rust); font-weight:600;} .code .fn{color:var(--pine); font-weight:600;}
+
+  .services{display:flex; flex-direction:column; gap:9px; margin:0;}
+  .svc{display:flex; gap:11px; align-items:flex-start; font-size:13.5px; line-height:1.5;}
+  .svc .n{flex:0 0 132px; font-weight:700; color:var(--gold);}
+  .svc .n small{display:block; font-weight:500; color:var(--ink-soft); font-size:11px;}
+
+  .phases{list-style:none; margin:0; padding:0; counter-reset:p -1; display:flex; flex-direction:column; gap:10px;}
+  .phase{display:flex; gap:12px; align-items:flex-start;}
+  .phase .n{flex:0 0 30px; height:30px; border-radius:50%; border:1.5px solid var(--line); display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:600; font-size:13px; color:var(--ink-soft);}
+  .phase.now .n{background:var(--gold); border-color:var(--gold); color:#fff;}
+  .phase .b{font-size:14px; line-height:1.5; padding-top:4px;}
+  .phase .b b{color:var(--ink);}
+  .phase.now .b b{color:var(--gold);}
+  .phase .tagnow{font-family:'Caveat',cursive; font-size:15px; color:var(--gold); margin-left:6px;}
+
+  .steps{list-style:none; margin:0 0 12px; padding:0; display:flex; flex-direction:column; gap:9px;}
+  .steps li{display:flex; gap:11px; font-size:13.5px; line-height:1.5;}
+  .steps .s{flex:0 0 auto; width:21px; height:21px; border-radius:50%; border:1.5px solid var(--pine); color:var(--pine); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; margin-top:1px;}
+
+  .callout{background:var(--rust-soft); border-radius:6px; padding:12px 14px; font-size:13px; line-height:1.55; margin-top:12px;}
+  .callout b{color:var(--rust);}
+  .callout.gold{background:var(--gold-soft);} .callout.gold b{color:var(--gold);}
+
+  .footer{margin-top:26px; padding-top:14px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink-soft);}
+
+  @media (max-width:480px){
+    body{padding:20px 10px 48px;}
+    .page{padding:26px 16px 26px;}
+    .code{font-size:11.3px;}
+    .svc .n{flex-basis:100%;}
+    .svc{flex-direction:column; gap:2px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <a class="home-btn" href="/">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg>
+    Home
+  </a>
+
+  <div class="eyebrow">learning · cloud</div>
+  <h1>AWS Backend — The Plan</h1>
+
+  <div class="definition">
+    Give the gym app a <span class="accent">real backend</span>: save every workout, sync across devices, log in,
+    and later graph the progress. Built <span class="accent">serverless</span> so idle costs ≈ $0 — and each box is
+    an AWS service to learn.
+  </div>
+
+  <hr>
+
+  <div class="label">The architecture</div>
+  <div class="code">  Static site (GitHub Pages)
+        │  fetch() with a login token
+        ▼
+  [ Cognito ]      ← login / signup · passwords · JWT token
+        │  (token checked here)
+        ▼
+  [ API Gateway ] ─► [ Lambda ] ─► [ DynamoDB ]
+     REST endpoints     Python        workout history
+     POST /workouts     functions     (per user)
+     GET  /workouts</div>
+  <div class="services">
+    <div class="svc"><span class="n">Cognito<small>free: 50k users/mo</small></span><span>Login &amp; signup. Never store passwords yourself — it hands the app a <b>JWT token</b>.</span></div>
+    <div class="svc"><span class="n">API Gateway<small>free: 1M req/mo</small></span><span>Your REST URLs. Checks the token before letting a request through.</span></div>
+    <div class="svc"><span class="n">Lambda<small>always free: 1M req/mo</small></span><span>The <b>Python</b> code behind each endpoint. No server to run.</span></div>
+    <div class="svc"><span class="n">DynamoDB<small>always free: 25 GB</small></span><span>NoSQL table of workouts. Key: <code>pk = USER#id</code>, <code>sk = WORKOUT#date#exercise</code>.</span></div>
+  </div>
+
+  <hr>
+
+  <div class="label">Roadmap — one service per phase</div>
+  <ul class="phases">
+    <li class="phase now"><span class="n">0</span><span class="b"><b>Account &amp; safety</b> — IAM user (not root), MFA, AWS CLI, and a <b>Zero-spend budget alarm</b>. <span class="tagnow">← start here</span></span></li>
+    <li class="phase now"><span class="n">1</span><span class="b"><b>DynamoDB + Lambda</b> — a Python function that writes/reads one workout. Teaches IAM roles.</span></li>
+    <li class="phase"><span class="n">2</span><span class="b"><b>API Gateway</b> — put a URL in front of the Lambda; call it from the site. Teaches CORS.</span></li>
+    <li class="phase"><span class="n">3</span><span class="b"><b>Cognito</b> — add login; API rejects requests without a valid token; Lambda reads <code>userId</code> from the token.</span></li>
+    <li class="phase"><span class="n">4</span><span class="b"><b>Wire the app</b> — on save → POST; on load → GET history → render a progress chart.</span></li>
+    <li class="phase"><span class="n">5</span><span class="b"><b>Infra-as-code</b> — rebuild it all with AWS CDK (Python), reproducibly.</span></li>
+    <li class="phase"><span class="n">6</span><span class="b"><b>Data science</b> — analyze the data (Athena / a notebook): weekly volume, PRs, estimated 1RM.</span></li>
+  </ul>
+
+  <hr>
+
+  <div class="label">Phase 0 — account &amp; safety (do first)</div>
+  <ul class="steps">
+    <li><span class="s">1</span><span>Create the AWS account (needs a card; free tier + the alarm below keep it at $0).</span></li>
+    <li><span class="s">2</span><span>IAM → enable <b>MFA on root</b>, then stop using root.</span></li>
+    <li><span class="s">3</span><span>IAM → create user <code>brayan</code> with console access + <code>AdministratorAccess</code> + MFA. Use this daily.</span></li>
+    <li><span class="s">4</span><span>Billing → Budgets → <b>Zero spend budget</b> template + your email. (The guardrail.)</span></li>
+    <li><span class="s">5</span><span>Pick one region (e.g. <code>us-east-1</code>) and stay in it.</span></li>
+  </ul>
+
+  <div class="label" style="margin-top:20px">Phase 1 — DynamoDB + Lambda</div>
+  <ul class="steps">
+    <li><span class="s">1</span><span><b>DynamoDB</b> → Create table <code>gym-workouts</code> · partition key <code>pk</code> (String) · sort key <code>sk</code> (String) · defaults.</span></li>
+    <li><span class="s">2</span><span><b>Lambda</b> → Create function <code>gym-workout</code> · Python 3.12. Then Configuration → Permissions → attach <code>AmazonDynamoDBFullAccess</code> to its role.</span></li>
+    <li><span class="s">3</span><span>Paste the code below → <b>Deploy</b>.</span></li>
+    <li><span class="s">4</span><span><b>Test</b> tab → run the two events → check DynamoDB → Explore items.</span></li>
+  </ul>
+  <div class="code"><span class="kw">import</span> boto3
+<span class="kw">from</span> boto3.dynamodb.conditions <span class="kw">import</span> Key
+
+table = boto3.resource(<span class="cmt">"dynamodb"</span>).Table(<span class="cmt">"gym-workouts"</span>)
+
+<span class="kw">def</span> <span class="fn">lambda_handler</span>(event, context):
+    action = event.get(<span class="cmt">"action"</span>, <span class="cmt">"save"</span>)
+    user   = event.get(<span class="cmt">"user"</span>, <span class="cmt">"demo"</span>)
+
+    <span class="kw">if</span> action == <span class="cmt">"save"</span>:
+        item = {
+            <span class="cmt">"pk"</span>: f<span class="cmt">"USER#{user}"</span>,
+            <span class="cmt">"sk"</span>: f<span class="cmt">"WORKOUT#{event['date']}#{event['exercise']}"</span>,
+            <span class="cmt">"weight"</span>: str(event.get(<span class="cmt">"weight"</span>, <span class="cmt">""</span>)),
+            <span class="cmt">"reps"</span>:   str(event.get(<span class="cmt">"reps"</span>, <span class="cmt">""</span>)),
+        }
+        table.put_item(Item=item)
+        <span class="kw">return</span> {<span class="cmt">"ok"</span>: True, <span class="cmt">"saved"</span>: item[<span class="cmt">"sk"</span>]}
+
+    <span class="kw">if</span> action == <span class="cmt">"history"</span>:
+        r = table.query(KeyConditionExpression=Key(<span class="cmt">"pk"</span>).eq(f<span class="cmt">"USER#{user}"</span>))
+        <span class="kw">return</span> {<span class="cmt">"ok"</span>: True, <span class="cmt">"items"</span>: r[<span class="cmt">"Items"</span>]}</div>
+  <div class="code"><span class="cmt"># test event — save</span>
+{ "action": "save", "user": "brayan", "date": "2026-08-24",
+  "exercise": "press-inclinado", "weight": 20, "reps": 10 }
+
+<span class="cmt"># test event — history</span>
+{ "action": "history", "user": "brayan" }</div>
+
+  <div class="callout gold"><b>Free-tier safety —</b> the Zero-spend budget alarm emails you at the first cent. Serverless = pay-per-use, so idle ≈ $0.</div>
+  <div class="callout"><b>Never</b> put AWS access keys in the GitHub repo. Lambda uses its IAM <b>role</b> (no keys); your laptop uses an AWS CLI profile. Lambda derives the user from the <b>verified token</b>, never from a value the client sends.</div>
+
+  <div class="footer">Next up · <b>Phase 2</b>: an API Gateway URL in front of the Lambda so the site can call it (this is where CORS shows up).</div>
+
+</div>
+
+</body>
+</html>

@@ -6,10 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Brayan Mendoza's personal static site, served by **GitHub Pages** as an organization page (`esmithco.github.io`) directly from the root of the `main` branch. There is **no build system, no framework, no package.json, no tests, no linter** — every page is hand-written static HTML/CSS/JS. Deploying is `git push`.
 
-Three independent sections, each self-contained:
-- **`index.html` + `site.css`** — the personal home page (links out to the two apps).
+Independent sections, each self-contained:
+- **`index.html` + `site.css`** — the personal home page (card grid linking to the sub-apps).
 - **`fitness/index.html`** — the gym-routine app. A **single file** with all CSS and JS inline; state persists in `localStorage`.
 - **`books/`** — a reading-notes library with a dynamic reader.
+- **`aws/index.html`** — a standalone reference page (the AWS backend learning plan), in the grid-paper note style.
+
+**Shared visual system (keep it cohesive):** cool, light palette — ink `#172033`/`#1e2631`, light surfaces. Three accent hues used consistently: **blue `#2563EB`/`#2F5FE0`** (fitness), **teal `#0E9488`/`#0e8f82`** (books), **amber/orange `#E8730C`** (aws). The **home page** (`index.html`) background is soft rounded color **blobs** (radial-gradients in blue/teal/amber) on `#F5F7FB` — *not* a grid; three white cards with colored top accent bars. Headings are Georgia serif; small labels/links use a monospace stack. Favicons are inline-SVG rounded squares (home = navy "B", books = teal book, fitness = blue dumbbell, aws = amber cloud). Fitness keeps **functional day colors** (`--blue/red/yellow/green` = Mon/Tue/Thu/Fri; brand `--accent` = blue). Book **note pages** and the **aws page** keep the grid-paper study style; the home page deliberately does not.
 
 ## Deploying / running
 

@@ -20,6 +20,7 @@
     --chalk:#1D2939;
     --steel:#5D6B7A;
     --steel-dim:#8793A1;
+    --accent:#2563EB;
     --blue:#2563EB;
     --red:#DC4B43;
     --yellow:#D99D17;
@@ -32,21 +33,21 @@
 
   .wrap{max-width:720px;margin:0 auto;padding:20px 18px 80px;padding-top:calc(20px + env(safe-area-inset-top));}
 
-  .home-nav{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;margin-bottom:16px;border:1px solid var(--panel-line);border-radius:14px;background:var(--panel);color:var(--blue);box-shadow:0 4px 14px rgba(24,39,56,.05);text-decoration:none;}
+  .home-nav{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;margin-bottom:16px;border:1px solid var(--panel-line);border-radius:14px;background:var(--panel);color:var(--accent);box-shadow:0 4px 14px rgba(24,39,56,.05);text-decoration:none;}
   .home-nav svg{width:18px;height:18px;}
   .home-nav:active{background:#EDF1F5;}
 
   .masthead{margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--panel-line);}
   .masthead h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:32px;letter-spacing:.005em;margin:0 0 4px;text-transform:uppercase;line-height:1;}
-  .masthead .subtitle{display:flex;align-items:center;gap:8px;font-family:'Oswald',sans-serif;font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);margin:0 0 10px;}
-  .masthead .subtitle::before{content:'';width:16px;height:2px;border-radius:2px;background:var(--blue);flex:none;}
+  .masthead .subtitle{display:flex;align-items:center;gap:8px;font-family:'Oswald',sans-serif;font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:0 0 10px;}
+  .masthead .subtitle::before{content:'';width:16px;height:2px;border-radius:2px;background:var(--accent);flex:none;}
   .masthead p{color:var(--steel);font-size:13px;margin:0;line-height:1.55;max-width:54ch;}
 
   .reset-btn{flex-shrink:0;background:var(--panel);border:1px solid var(--panel-line);color:var(--steel);font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;border-radius:8px;padding:8px 10px;cursor:pointer;}
   .reset-btn:active{background:#EDF1F5;}
 
   .stopwatch{background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:calc(env(safe-area-inset-top) + 6px);z-index:30;box-shadow:0 6px 18px rgba(24,39,56,.10);}
-  .stopwatch.pinned{box-shadow:0 8px 24px rgba(24,39,56,.16);border-color:var(--blue);}
+  .stopwatch.pinned{box-shadow:0 8px 24px rgba(24,39,56,.16);border-color:var(--accent);}
   .stopwatch .time{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:600;letter-spacing:.03em;color:var(--chalk);font-variant-numeric:tabular-nums;will-change:transform;}
   .stopwatch .label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--steel-dim);text-transform:uppercase;margin-bottom:2px;}
   .stopwatch .btns{display:flex;gap:8px;}
@@ -80,6 +81,7 @@
   .head .tag{display:flex;align-items:center;gap:8px;}
   .head span{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--steel-dim);}
   .head .hoy{font-family:'JetBrains Mono',monospace;font-size:9.5px;background:var(--chalk);color:#fff;padding:2px 6px;border-radius:5px;font-weight:700;letter-spacing:.05em;}
+  .head .mins{color:var(--accent) !important;}
   .head .chev{color:var(--steel-dim);font-size:14px;transition:transform .25s;}
   .day.expanded .head .chev{transform:rotate(180deg);}
 
@@ -89,7 +91,7 @@
   .phase-row td{background:#EEF3F8;}
   .phase-row td.sr{color:var(--steel-dim);}
   .phase-row td.ex .ex-tag{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;margin-bottom:3px;}
-  .phase-row.warm td.ex .ex-tag{color:var(--blue);}
+  .phase-row.warm td.ex .ex-tag{color:var(--accent);}
   .phase-row.stretch td.ex .ex-tag{color:var(--green);}
 
   .caution{margin:0 18px 10px;font-size:12px;color:#8A5D00;background:#FFF7DF;border:1px solid #F3D583;border-radius:8px;padding:8px 10px;line-height:1.4;}
@@ -113,7 +115,7 @@
   }
   .weight-input::-webkit-outer-spin-button, .weight-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
   .weight-input::placeholder{color:var(--steel-dim);}
-  .weight-input:focus{outline:none;border-color:var(--blue);}
+  .weight-input:focus{outline:none;border-color:var(--accent);}
 
   .col-heads td{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--steel-dim);text-transform:uppercase;letter-spacing:.06em;padding-top:2px;padding-bottom:4px;border-top:none;}
 
@@ -128,7 +130,7 @@
   td.ex .ex-name{border-bottom:1px dotted var(--steel-dim);padding-bottom:1px;}
   td.ex .ex-rest{display:block;font-size:10.5px;font-weight:500;color:var(--steel-dim);margin-top:4px;}
   td.ex .ex-i{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:6px;border-radius:50%;border:1px solid var(--steel-dim);color:var(--steel-dim);font-size:10px;font-weight:700;font-style:italic;line-height:1;vertical-align:middle;font-family:Georgia,serif;}
-  tr.info-open td.ex .ex-i{background:var(--blue);border-color:var(--blue);color:#fff;}
+  tr.info-open td.ex .ex-i{background:var(--accent);border-color:var(--accent);color:#fff;}
 
   tr.ex-detail td{padding:0 18px;border-top:none;}
   tr.ex-detail .inner{max-height:0;overflow:hidden;transition:max-height .3s ease;}
@@ -136,7 +138,7 @@
   tr.ex-detail .card{margin:2px 0 12px;background:var(--bg);border:1px solid var(--panel-line);border-radius:10px;padding:11px 13px;}
   tr.ex-detail .imgs{display:flex;gap:8px;margin-bottom:10px;}
   tr.ex-detail .imgs img{flex:1;width:50%;aspect-ratio:1/1;object-fit:cover;background:#fff;border:1px solid var(--panel-line);border-radius:8px;}
-  tr.ex-detail .muscles{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);font-weight:600;margin-bottom:5px;}
+  tr.ex-detail .muscles{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:5px;}
   tr.ex-detail .cue{display:block;font-size:12.8px;color:var(--steel);line-height:1.5;}
 
   .rest{padding:0 18px 18px;font-size:13.5px;color:var(--steel);line-height:1.5;}
@@ -618,12 +620,42 @@
     });
   }
 
+  // Rough expected time per workout day: ~13 min warm-up+stretch + per set (work + rest).
+  function parseRestSec(s){
+    const n = (String(s).match(/\d+/g) || []).map(Number);
+    if(!n.length) return 75;
+    const avg = n.reduce((a,b)=>a+b,0)/n.length;
+    return /min/.test(String(s)) ? avg*60 : avg;
+  }
+  function estimateTimes(){
+    [1,2,4,5].forEach(d=>{
+      const day = document.getElementById('day'+d);
+      if(!day) return;
+      let sec = 13*60;
+      day.querySelectorAll('table tr').forEach(tr=>{
+        const cb = tr.querySelector('input[type=checkbox]:not(.aux)[data-id]');
+        if(!cb) return;
+        const sets = parseInt((tr.querySelector('td.sr')?.textContent || '3'), 10) || 3;
+        sec += sets * (40 + parseRestSec(EX_REST[cb.dataset.id]));
+      });
+      const mins = Math.round(sec/60/5)*5;
+      const tag = day.querySelector('.head .tag');
+      if(tag && !tag.querySelector('.mins')){
+        const span = document.createElement('span');
+        span.className = 'mins';
+        span.textContent = '~' + mins + ' min';
+        tag.insertBefore(span, tag.firstChild);
+      }
+    });
+  }
+
   applyState();
   applyWeights();
   renderTimer();
   markToday();
   setupExerciseInfo();
   injectPhases();
+  estimateTimes();
 </script>
 </body>
 </html>
