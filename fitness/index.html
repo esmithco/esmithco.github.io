@@ -620,30 +620,35 @@
     });
   }
 
-  // Rough expected time per workout day: ~13 min warm-up+stretch + per set (work + rest).
-  function parseRestSec(s){
-    const n = (String(s).match(/\d+/g) || []).map(Number);
-    if(!n.length) return 75;
-    const avg = n.reduce((a,b)=>a+b,0)/n.length;
-    return /min/.test(String(s)) ? avg*60 : avg;
+  // Expected time per workout day, as a RANGE. Everything is a range:
+  // warm-up 5–8 min, stretch 5–10 min, work ~30–45 s/set, and each rest low–high.
+  const WORK_MIN = 30, WORK_MAX = 45;   // seconds of effort per set
+  function parseRestRange(s){
+    const nums = (String(s).match(/\d+/g) || []).map(Number);
+    if(!nums.length) return [75, 75];
+    const unit = /min/.test(String(s)) ? 60 : 1;   // seconds
+    return [Math.min(...nums) * unit, Math.max(...nums) * unit];
   }
   function estimateTimes(){
     [1,2,4,5].forEach(d=>{
       const day = document.getElementById('day'+d);
       if(!day) return;
-      let sec = 13*60;
+      let lo = (5 + 5) * 60;    // warm-up min 5 + stretch min 5
+      let hi = (8 + 10) * 60;   // warm-up max 8 + stretch max 10
       day.querySelectorAll('table tr').forEach(tr=>{
         const cb = tr.querySelector('input[type=checkbox]:not(.aux)[data-id]');
         if(!cb) return;
         const sets = parseInt((tr.querySelector('td.sr')?.textContent || '3'), 10) || 3;
-        sec += sets * (40 + parseRestSec(EX_REST[cb.dataset.id]));
+        const [rMin, rMax] = parseRestRange(EX_REST[cb.dataset.id]);
+        lo += sets * (WORK_MIN + rMin);
+        hi += sets * (WORK_MAX + rMax);
       });
-      const mins = Math.round(sec/60/5)*5;
+      const a = Math.round(lo/60/5)*5, b = Math.round(hi/60/5)*5;
       const tag = day.querySelector('.head .tag');
       if(tag && !tag.querySelector('.mins')){
         const span = document.createElement('span');
         span.className = 'mins';
-        span.textContent = '~' + mins + ' min';
+        span.textContent = a + '–' + b + ' min';
         tag.insertBefore(span, tag.firstChild);
       }
     });
