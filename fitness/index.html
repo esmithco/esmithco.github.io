@@ -140,6 +140,10 @@
   tr.ex-detail .imgs img{flex:1;width:50%;aspect-ratio:1/1;object-fit:cover;background:#fff;border:1px solid var(--panel-line);border-radius:8px;}
   tr.ex-detail .muscles{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:5px;}
   tr.ex-detail .cue{display:block;font-size:12.8px;color:var(--steel);line-height:1.5;}
+  tr.ex-detail .alt{margin-top:11px;padding-top:10px;border-top:1px dashed var(--panel-line);}
+  tr.ex-detail .alt-h{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--steel-dim);margin-bottom:4px;}
+  tr.ex-detail .alt-name{display:block;font-size:13px;font-weight:700;color:var(--chalk);margin-bottom:8px;}
+  tr.ex-detail .alt-imgs img{width:46%;max-width:150px;aspect-ratio:1/1;object-fit:cover;background:#fff;border:1px solid var(--panel-line);border-radius:8px;}
 
   .rest{padding:0 18px 18px;font-size:13.5px;color:var(--steel);line-height:1.5;}
 
@@ -197,11 +201,11 @@
       <table>
         <tr class="col-heads"><td></td><td class="ex"></td><td class="sr"></td><td class="wt">kg</td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d1e1"></td><td class="ex">Press inclinado con mancuernas</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e1" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d1e5"></td><td class="ex">Press de banca con mancuernas</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e5" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d1e2"></td><td class="ex">Remo con mancuerna a una mano</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e2" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d1e6"></td><td class="ex">Aperturas con mancuernas</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e6" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d1e3"></td><td class="ex">Elevaciones laterales</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e3" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d1e4"></td><td class="ex">Curl de bíceps con mancuerna</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e4" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d1e5"></td><td class="ex">Extensión de tríceps en polea</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e5" placeholder="—"></td></tr>
       </table>
     </div>
   </div>
@@ -238,7 +242,7 @@
         <tr><td class="chk"><input type="checkbox" data-id="d4e2"></td><td class="ex">Jalón al pecho (agarre ancho)</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e2" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d4e6"></td><td class="ex">Remo sentado en polea</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e6" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d4e3"></td><td class="ex">Press militar con mancuernas</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e3" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d4e4"></td><td class="ex">Curl martillo</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e4" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d4e4"></td><td class="ex">Face pull (a la cara)</td><td class="sr">3 x 15</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e4" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d4e5"></td><td class="ex">Fondos en banco (tríceps)</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e5" placeholder="—"></td></tr>
       </table>
     </div>
@@ -421,7 +425,7 @@
     d1e2: ['Espalda · dorsal · bíceps', 'Apoya rodilla y mano en el banco. Tira del codo hacia la cadera pegado al cuerpo y aprieta la escápula.'],
     d1e3: ['Hombro · deltoides lateral', 'Sube los brazos por los lados hasta la altura del hombro, codo algo flexionado y sin impulso.'],
     d1e4: ['Bíceps', 'Sube la mancuerna sin mover el codo y baja despacio controlando el peso.'],
-    d1e5: ['Tríceps', 'Codos pegados al cuerpo. Estira el codo hacia abajo y vuelve controlado sin abrir los codos.'],
+    d1e5: ['Pecho · hombro · tríceps', 'Tumbado en banco plano, baja las mancuernas al pecho con los codos a ~45° y empuja arriba sin bloquear. Cubre el pecho medio.'],
     d1e6: ['Pecho (pectoral)', 'Tumbado en banco, brazos casi estirados. Baja las mancuernas en arco abriendo el pecho y ciérralas arriba apretando, sin bloquear el codo.'],
 
     d2e1: ['Cuádriceps · glúteo · core', 'Baja como si te sentaras, rodillas hacia afuera y espalda recta, hasta que los muslos queden paralelos.'],
@@ -433,7 +437,7 @@
     d4e1: ['Pecho · hombro · tríceps', 'Empuja hasta casi estirar los brazos y controla la vuelta. Hombros hacia atrás y pecho arriba.'],
     d4e2: ['Dorsal ancho · espalda · bíceps', 'Agarre ancho. Lleva la barra al pecho tirando con los codos hacia abajo, pecho arriba y sin balancearte.'],
     d4e3: ['Hombro · tríceps', 'Empuja las mancuernas arriba sin arquear la espalda. Core apretado y glúteo firme.'],
-    d4e4: ['Bíceps · antebrazo', 'Agarre neutro (palmas enfrentadas). Sube sin mover el codo y baja controlando.'],
+    d4e4: ['Deltoides posterior · espalda alta', 'Polea a la altura de la cara. Tira de la cuerda hacia la frente abriendo los codos y juntando las escápulas. Ligero y controlado.'],
     d4e5: ['Tríceps · pecho', 'Manos en el banco detrás de ti. Baja el cuerpo flexionando los codos hacia atrás y empuja arriba.'],
     d4e6: ['Espalda media · dorsal · bíceps', 'Sentado, tira del agarre hacia el abdomen juntando las escápulas. Pecho arriba, sin encorvar la espalda ni usar impulso.'],
 
@@ -446,17 +450,42 @@
   // Two demo photos (start / end position) per exercise — free-exercise-db (public domain).
   // Recommended rest between sets — longer for heavy compounds, shorter for isolation/core.
   const EX_REST = {
-    d1e1: '90–120 s', d1e2: '90–120 s', d1e3: '60–90 s', d1e4: '60–90 s', d1e5: '60–90 s', d1e6: '60–90 s',
+    d1e1: '90–120 s', d1e2: '90–120 s', d1e3: '60–90 s', d1e4: '60–90 s', d1e5: '90–120 s', d1e6: '60–90 s',
     d2e1: '2–3 min', d2e2: '2–3 min', d2e3: '90–120 s', d2e4: '90 s', d2e5: '45–60 s',
     d4e1: '90–120 s', d4e2: '90–120 s', d4e3: '90–120 s', d4e4: '60–90 s', d4e5: '60–90 s', d4e6: '90–120 s',
     d5e1: '2–3 min', d5e2: '2 min', d5e3: '90–120 s', d5e4: '45–60 s', d5e5: '45–60 s'
   };
   const IMG_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
   const EX_IMG = {
-    d1e1: 'Incline_Dumbbell_Press', d1e2: 'One-Arm_Dumbbell_Row', d1e3: 'Side_Lateral_Raise', d1e4: 'Dumbbell_Bicep_Curl', d1e5: 'Triceps_Pushdown', d1e6: 'Dumbbell_Flyes',
+    d1e1: 'Incline_Dumbbell_Press', d1e2: 'One-Arm_Dumbbell_Row', d1e3: 'Side_Lateral_Raise', d1e4: 'Dumbbell_Bicep_Curl', d1e5: 'Dumbbell_Bench_Press', d1e6: 'Dumbbell_Flyes',
     d2e1: 'Barbell_Squat', d2e2: 'Romanian_Deadlift', d2e3: 'Dumbbell_Lunges', d2e4: 'Lying_Leg_Curls', d2e5: 'Plank',
-    d4e1: 'Machine_Bench_Press', d4e2: 'Wide-Grip_Lat_Pulldown', d4e3: 'Dumbbell_Shoulder_Press', d4e4: 'Hammer_Curls', d4e5: 'Bench_Dips', d4e6: 'Seated_Cable_Rows',
+    d4e1: 'Machine_Bench_Press', d4e2: 'Wide-Grip_Lat_Pulldown', d4e3: 'Dumbbell_Shoulder_Press', d4e4: 'Face_Pull', d4e5: 'Bench_Dips', d4e6: 'Seated_Cable_Rows',
     d5e1: 'Barbell_Deadlift', d5e2: 'Leg_Press', d5e3: 'Barbell_Hip_Thrust', d5e4: 'Rocking_Standing_Calf_Raise', d5e5: 'Ab_Roller'
+  };
+  // If the machine/bench is busy — one quick alternative per exercise (same muscle), with a photo.
+  const EX_ALT = {
+    d1e1: {name:'Flexiones inclinadas (manos en banco)', img:'Incline_Push-Up'},
+    d1e5: {name:'Press de banca con barra', img:'Barbell_Bench_Press_-_Medium_Grip'},
+    d1e2: {name:'Remo con barra', img:'Bent_Over_Barbell_Row'},
+    d1e6: {name:'Aperturas en máquina (pec-deck)', img:'Butterfly'},
+    d1e3: {name:'Elevaciones laterales en polea', img:'Cable_Seated_Lateral_Raise'},
+    d1e4: {name:'Curl con barra', img:'Barbell_Curl'},
+    d2e1: {name:'Prensa de piernas', img:'Leg_Press'},
+    d2e2: {name:'Curl femoral tumbado', img:'Lying_Leg_Curls'},
+    d2e3: {name:'Zancadas con barra', img:'Barbell_Lunge'},
+    d2e4: {name:'Puente de glúteo', img:'Barbell_Glute_Bridge'},
+    d2e5: {name:'Rueda abdominal', img:'Ab_Roller'},
+    d4e1: {name:'Press de pecho con mancuernas', img:'Dumbbell_Bench_Press'},
+    d4e2: {name:'Dominadas asistidas', img:'Pullups'},
+    d4e6: {name:'Remo con mancuerna a una mano', img:'One-Arm_Dumbbell_Row'},
+    d4e4: {name:'Pájaros / rear-delt en polea', img:'Cable_Rear_Delt_Fly'},
+    d4e3: {name:'Press militar con barra', img:'Standing_Military_Press'},
+    d4e5: {name:'Extensión de tríceps en polea', img:'Triceps_Pushdown'},
+    d5e1: {name:'Peso muerto rumano', img:'Romanian_Deadlift'},
+    d5e2: {name:'Zancadas con mancuernas', img:'Dumbbell_Lunges'},
+    d5e3: {name:'Puente de glúteo', img:'Barbell_Glute_Bridge'},
+    d5e4: {name:'Elevación de talones sentado', img:'Seated_Calf_Raise'},
+    d5e5: {name:'Plancha', img:'Plank'}
   };
   function setupExerciseInfo(){
     document.querySelectorAll('table tr').forEach(row=>{
@@ -492,6 +521,8 @@
         '<td colspan="4"><div class="inner"><div class="card">' +
         '<div class="imgs"></div>' +
         '<span class="muscles"></span><span class="cue"></span>' +
+        '<div class="alt" hidden><span class="alt-h">Alternativa · si la máquina está ocupada</span>' +
+        '<span class="alt-name"></span><div class="alt-imgs"></div></div>' +
         '</div></div></td>';
       detail.querySelector('.muscles').textContent = info[0];
       detail.querySelector('.cue').textContent = info[1];
@@ -500,17 +531,30 @@
       const imgId = EX_IMG[cb.dataset.id];
       const imgsBox = detail.querySelector('.imgs');
       if(!imgId) imgsBox.remove();
+
+      const alt = EX_ALT[cb.dataset.id];
+      if(alt){
+        detail.querySelector('.alt-name').textContent = alt.name;
+        detail.querySelector('.alt').hidden = false;
+      }
+
       let imgsLoaded = false;
       function loadImages(){
-        if(imgsLoaded || !imgId) return;
+        if(imgsLoaded) return;
         imgsLoaded = true;
-        [0,1].forEach(i=>{
+        if(imgId) [0,1].forEach(i=>{
           const im = document.createElement('img');
-          im.alt = '';
-          im.decoding = 'async';
+          im.alt = ''; im.decoding = 'async';
           im.src = IMG_BASE + imgId + '/' + i + '.jpg';
           imgsBox.appendChild(im);
         });
+        if(alt){
+          const box = detail.querySelector('.alt-imgs');
+          const im = document.createElement('img');
+          im.alt = ''; im.decoding = 'async';
+          im.src = IMG_BASE + alt.img + '/0.jpg';
+          box.appendChild(im);
+        }
       }
 
       cell.addEventListener('click', ()=>{
