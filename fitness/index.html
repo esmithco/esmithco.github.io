@@ -247,7 +247,7 @@
         <tr><td class="chk"><input type="checkbox" data-id="d4e6"></td><td class="ex">Remo sentado en polea</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e6" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d4e3"></td><td class="ex">Press militar con mancuernas</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e3" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d4e4"></td><td class="ex">Face pull (a la cara)</td><td class="sr">3 x 15</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e4" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d4e5"></td><td class="ex">Fondos en banco (tríceps)</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e5" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d4e5"></td><td class="ex">Fondos en máquina (tríceps)</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e5" placeholder="—"></td></tr>
       </table>
     </div>
   </div>
@@ -442,7 +442,7 @@
     d4e2: ['Dorsal ancho · espalda · bíceps', 'Agarre ancho. Lleva la barra al pecho tirando con los codos hacia abajo, pecho arriba y sin balancearte.'],
     d4e3: ['Hombro · tríceps', 'Empuja las mancuernas arriba sin arquear la espalda. Core apretado y glúteo firme.'],
     d4e4: ['Deltoides posterior · espalda alta', 'Polea a la altura de la cara. Tira de la cuerda hacia la frente abriendo los codos y juntando las escápulas. Ligero y controlado.'],
-    d4e5: ['Tríceps · pecho', 'Manos en el banco detrás de ti. Baja el cuerpo flexionando los codos hacia atrás y empuja arriba.'],
+    d4e5: ['Tríceps', 'Sentado en la máquina de fondos, empuja las asas hacia abajo estirando los codos y controla la subida sin soltar la tensión.'],
     d4e6: ['Espalda media · dorsal · bíceps', 'Sentado, tira del agarre hacia el abdomen juntando las escápulas. Pecho arriba, sin encorvar la espalda ni usar impulso.'],
 
     d5e1: ['Glúteo · isquios · espalda', 'Espalda recta y pecho arriba. Empuja el suelo con los pies; sube cadera y pecho a la vez.'],
@@ -463,7 +463,7 @@
   const EX_IMG = {
     d1e1: 'Incline_Dumbbell_Press', d1e2: 'Leverage_High_Row', d1e3: 'Side_Lateral_Raise', d1e4: 'Dumbbell_Bicep_Curl', d1e5: 'Dumbbell_Bench_Press', d1e6: 'Dumbbell_Flyes',
     d2e1: 'Barbell_Squat', d2e2: 'Romanian_Deadlift', d2e3: 'Dumbbell_Lunges', d2e4: 'Lying_Leg_Curls', d2e5: 'Plank',
-    d4e1: 'Machine_Bench_Press', d4e2: 'Wide-Grip_Lat_Pulldown', d4e3: 'Dumbbell_Shoulder_Press', d4e4: 'Face_Pull', d4e5: 'Bench_Dips', d4e6: 'Seated_Cable_Rows',
+    d4e1: 'Machine_Bench_Press', d4e2: 'Wide-Grip_Lat_Pulldown', d4e3: 'Dumbbell_Shoulder_Press', d4e4: 'Face_Pull', d4e5: 'Dip_Machine', d4e6: 'Seated_Cable_Rows',
     d5e1: 'Barbell_Deadlift', d5e2: 'Leg_Press', d5e3: 'Barbell_Hip_Thrust', d5e4: 'Rocking_Standing_Calf_Raise', d5e5: 'Ab_Roller'
   };
   // If the machine/bench is busy — one quick alternative per exercise (same muscle), with a photo.
@@ -472,7 +472,7 @@
     d1e5: {name:'Press de banca con barra', img:'Barbell_Bench_Press_-_Medium_Grip'},
     d1e2: {name:'Remo con barra', img:'Bent_Over_Barbell_Row'},
     d1e6: {name:'Aperturas en máquina (pec-deck)', img:'Butterfly'},
-    d1e3: {name:'Elevaciones laterales en polea', img:'Cable_Seated_Lateral_Raise'},
+    d1e3: {name:'Elevaciones laterales en máquina', img:'Seated_Side_Lateral_Raise'},
     d1e4: {name:'Curl con barra', img:'Barbell_Curl'},
     d2e1: {name:'Prensa de piernas', img:'Leg_Press'},
     d2e2: {name:'Hiperextensiones (banco romano)', img:'Hyperextensions_With_No_Hyperextension_Bench'},
