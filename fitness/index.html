@@ -147,6 +147,7 @@
   tr.ex-detail .alt-see{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);white-space:nowrap;}
   tr.ex-detail .alt-imgs{display:flex;gap:8px;margin-top:8px;}
   tr.ex-detail .alt-imgs[hidden]{display:none;}
+  tr.ex-detail .alt-desc{margin-top:8px;font-size:13px;color:var(--steel);line-height:1.5;}
   tr.ex-detail .alt-imgs img{flex:1 1 0;min-width:0;width:50%;height:auto;object-fit:contain;background:#fff;border:1px solid var(--panel-line);border-radius:8px;}
 
   .rest{padding:0 18px 18px;font-size:13.5px;color:var(--steel);line-height:1.5;}
@@ -472,7 +473,7 @@
     d1e5: {name:'Press de banca con barra', img:'Barbell_Bench_Press_-_Medium_Grip'},
     d1e2: {name:'Remo con barra', img:'Bent_Over_Barbell_Row'},
     d1e6: {name:'Aperturas en máquina (pec-deck)', img:'Butterfly'},
-    d1e3: {name:'Elevaciones laterales en máquina', img:'Seated_Side_Lateral_Raise'},
+    d1e3: {name:'Elevaciones laterales en máquina (deltoides)', desc:'Pecho apoyado en la almohadilla, sentado. Los codos/brazos empujan contra las palancas acolchadas y subes los brazos a los lados hasta la altura del hombro. Baja despacio, sin soltar la tensión. (No hay foto libre de esta máquina.)'},
     d1e4: {name:'Curl con barra', img:'Barbell_Curl'},
     d2e1: {name:'Prensa de piernas', img:'Leg_Press'},
     d2e2: {name:'Hiperextensiones (banco romano)', img:'Hyperextensions_With_No_Hyperextension_Bench'},
@@ -546,22 +547,31 @@
         detail.querySelector('.alt').hidden = false;
         const altBtn = detail.querySelector('.alt-name');
         const altBox = detail.querySelector('.alt-imgs');
-        let altLoaded = false;
-        altBtn.addEventListener('click', ()=>{
-          const show = altBox.hidden;
-          if(show && !altLoaded){
-            altLoaded = true;
-            [0,1].forEach(i=>{
-              const im = document.createElement('img');
-              im.alt = ''; im.decoding = 'async';
-              im.src = IMG_BASE + alt.img + '/' + i + '.jpg';
-              altBox.appendChild(im);
-            });
-          }
-          altBox.hidden = !show;
-          altBtn.setAttribute('aria-expanded', String(show));
-          altBtn.querySelector('.alt-see').textContent = show ? 'ocultar ▴' : 'ver fotos ▾';
-        });
+        if(alt.img){
+          let altLoaded = false;
+          altBtn.addEventListener('click', ()=>{
+            const show = altBox.hidden;
+            if(show && !altLoaded){
+              altLoaded = true;
+              [0,1].forEach(i=>{
+                const im = document.createElement('img');
+                im.alt = ''; im.decoding = 'async';
+                im.src = IMG_BASE + alt.img + '/' + i + '.jpg';
+                altBox.appendChild(im);
+              });
+            }
+            altBox.hidden = !show;
+            altBtn.setAttribute('aria-expanded', String(show));
+            altBtn.querySelector('.alt-see').textContent = show ? 'ocultar ▴' : 'ver fotos ▾';
+          });
+        } else if(alt.desc){
+          // No public-domain photo for this machine: show a text setup instead.
+          altBtn.querySelector('.alt-see').remove();
+          altBtn.style.cursor = 'default';
+          altBox.hidden = false;
+          altBox.className = 'alt-desc';
+          altBox.textContent = alt.desc;
+        }
       }
 
       let imgsLoaded = false;
