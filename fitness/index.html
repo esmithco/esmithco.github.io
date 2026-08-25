@@ -142,8 +142,11 @@
   tr.ex-detail .cue{display:block;font-size:12.8px;color:var(--steel);line-height:1.5;}
   tr.ex-detail .alt{margin-top:11px;padding-top:10px;border-top:1px dashed var(--panel-line);}
   tr.ex-detail .alt-h{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--steel-dim);margin-bottom:4px;}
-  tr.ex-detail .alt-name{display:block;font-size:13px;font-weight:700;color:var(--chalk);margin-bottom:8px;}
-  tr.ex-detail .alt-imgs img{width:46%;max-width:150px;aspect-ratio:1/1;object-fit:cover;background:#fff;border:1px solid var(--panel-line);border-radius:8px;}
+  tr.ex-detail .alt-name{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:1px solid var(--panel-line);background:#fff;border-radius:8px;padding:8px 11px;font:inherit;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent;}
+  tr.ex-detail .alt-label{font-size:13px;font-weight:700;color:var(--chalk);}
+  tr.ex-detail .alt-see{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);white-space:nowrap;}
+  tr.ex-detail .alt-imgs{display:flex;gap:8px;margin-top:8px;}
+  tr.ex-detail .alt-imgs img{flex:1;width:50%;aspect-ratio:1/1;object-fit:cover;background:#fff;border:1px solid var(--panel-line);border-radius:8px;}
 
   .rest{padding:0 18px 18px;font-size:13.5px;color:var(--steel);line-height:1.5;}
 
@@ -202,7 +205,7 @@
         <tr class="col-heads"><td></td><td class="ex"></td><td class="sr"></td><td class="wt">kg</td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d1e1"></td><td class="ex">Press inclinado con mancuernas</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e1" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d1e5"></td><td class="ex">Press de banca con mancuernas</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e5" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d1e2"></td><td class="ex">Remo con mancuerna a una mano</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e2" placeholder="—"></td></tr>
+        <tr><td class="chk"><input type="checkbox" data-id="d1e2"></td><td class="ex">Remo en máquina (apoyo en pecho)</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e2" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d1e6"></td><td class="ex">Aperturas con mancuernas</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e6" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d1e3"></td><td class="ex">Elevaciones laterales</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e3" placeholder="—"></td></tr>
         <tr><td class="chk"><input type="checkbox" data-id="d1e4"></td><td class="ex">Curl de bíceps con mancuerna</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e4" placeholder="—"></td></tr>
@@ -422,7 +425,7 @@
   // Tap an exercise name to reveal muscles + a short form cue below it.
   const EX_INFO = {
     d1e1: ['Pecho superior · hombro · tríceps', 'Banco a ~30°. Baja las mancuernas al pecho alto con los codos a ~45° y empuja arriba sin bloquear de golpe.'],
-    d1e2: ['Espalda · dorsal · bíceps', 'Apoya rodilla y mano en el banco. Tira del codo hacia la cadera pegado al cuerpo y aprieta la escápula.'],
+    d1e2: ['Espalda media · dorsal · bíceps', 'Pecho apoyado, tira del agarre hacia ti juntando las escápulas. Cargas más y sientes mejor la espalda que con mancuerna.'],
     d1e3: ['Hombro · deltoides lateral', 'Sube los brazos por los lados hasta la altura del hombro, codo algo flexionado y sin impulso.'],
     d1e4: ['Bíceps', 'Sube la mancuerna sin mover el codo y baja despacio controlando el peso.'],
     d1e5: ['Pecho · hombro · tríceps', 'Tumbado en banco plano, baja las mancuernas al pecho con los codos a ~45° y empuja arriba sin bloquear. Cubre el pecho medio.'],
@@ -457,21 +460,21 @@
   };
   const IMG_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
   const EX_IMG = {
-    d1e1: 'Incline_Dumbbell_Press', d1e2: 'One-Arm_Dumbbell_Row', d1e3: 'Side_Lateral_Raise', d1e4: 'Dumbbell_Bicep_Curl', d1e5: 'Dumbbell_Bench_Press', d1e6: 'Dumbbell_Flyes',
+    d1e1: 'Incline_Dumbbell_Press', d1e2: 'Leverage_High_Row', d1e3: 'Side_Lateral_Raise', d1e4: 'Dumbbell_Bicep_Curl', d1e5: 'Dumbbell_Bench_Press', d1e6: 'Dumbbell_Flyes',
     d2e1: 'Barbell_Squat', d2e2: 'Romanian_Deadlift', d2e3: 'Dumbbell_Lunges', d2e4: 'Lying_Leg_Curls', d2e5: 'Plank',
     d4e1: 'Machine_Bench_Press', d4e2: 'Wide-Grip_Lat_Pulldown', d4e3: 'Dumbbell_Shoulder_Press', d4e4: 'Face_Pull', d4e5: 'Bench_Dips', d4e6: 'Seated_Cable_Rows',
     d5e1: 'Barbell_Deadlift', d5e2: 'Leg_Press', d5e3: 'Barbell_Hip_Thrust', d5e4: 'Rocking_Standing_Calf_Raise', d5e5: 'Ab_Roller'
   };
   // If the machine/bench is busy — one quick alternative per exercise (same muscle), with a photo.
   const EX_ALT = {
-    d1e1: {name:'Flexiones inclinadas (manos en banco)', img:'Incline_Push-Up'},
+    d1e1: {name:'Press inclinado en máquina', img:'Leverage_Incline_Chest_Press'},
     d1e5: {name:'Press de banca con barra', img:'Barbell_Bench_Press_-_Medium_Grip'},
     d1e2: {name:'Remo con barra', img:'Bent_Over_Barbell_Row'},
     d1e6: {name:'Aperturas en máquina (pec-deck)', img:'Butterfly'},
     d1e3: {name:'Elevaciones laterales en polea', img:'Cable_Seated_Lateral_Raise'},
     d1e4: {name:'Curl con barra', img:'Barbell_Curl'},
     d2e1: {name:'Prensa de piernas', img:'Leg_Press'},
-    d2e2: {name:'Curl femoral tumbado', img:'Lying_Leg_Curls'},
+    d2e2: {name:'Hiperextensiones (banco romano)', img:'Hyperextensions_With_No_Hyperextension_Bench'},
     d2e3: {name:'Zancadas con barra', img:'Barbell_Lunge'},
     d2e4: {name:'Puente de glúteo', img:'Barbell_Glute_Bridge'},
     d2e5: {name:'Rueda abdominal', img:'Ab_Roller'},
@@ -521,8 +524,11 @@
         '<td colspan="4"><div class="inner"><div class="card">' +
         '<div class="imgs"></div>' +
         '<span class="muscles"></span><span class="cue"></span>' +
-        '<div class="alt" hidden><span class="alt-h">Alternativa · si la máquina está ocupada</span>' +
-        '<span class="alt-name"></span><div class="alt-imgs"></div></div>' +
+        '<div class="alt" hidden>' +
+          '<span class="alt-h">Alternativa · si la máquina está ocupada</span>' +
+          '<button class="alt-name" type="button" aria-expanded="false"><span class="alt-label"></span><span class="alt-see">ver fotos ▾</span></button>' +
+          '<div class="alt-imgs" hidden></div>' +
+        '</div>' +
         '</div></div></td>';
       detail.querySelector('.muscles').textContent = info[0];
       detail.querySelector('.cue').textContent = info[1];
@@ -532,10 +538,29 @@
       const imgsBox = detail.querySelector('.imgs');
       if(!imgId) imgsBox.remove();
 
+      // Alternative: show only its name; reveal its two photos on a second tap.
       const alt = EX_ALT[cb.dataset.id];
       if(alt){
-        detail.querySelector('.alt-name').textContent = alt.name;
+        detail.querySelector('.alt-label').textContent = alt.name;
         detail.querySelector('.alt').hidden = false;
+        const altBtn = detail.querySelector('.alt-name');
+        const altBox = detail.querySelector('.alt-imgs');
+        let altLoaded = false;
+        altBtn.addEventListener('click', ()=>{
+          const show = altBox.hidden;
+          if(show && !altLoaded){
+            altLoaded = true;
+            [0,1].forEach(i=>{
+              const im = document.createElement('img');
+              im.alt = ''; im.decoding = 'async';
+              im.src = IMG_BASE + alt.img + '/' + i + '.jpg';
+              altBox.appendChild(im);
+            });
+          }
+          altBox.hidden = !show;
+          altBtn.setAttribute('aria-expanded', String(show));
+          altBtn.querySelector('.alt-see').textContent = show ? 'ocultar ▴' : 'ver fotos ▾';
+        });
       }
 
       let imgsLoaded = false;
@@ -548,13 +573,6 @@
           im.src = IMG_BASE + imgId + '/' + i + '.jpg';
           imgsBox.appendChild(im);
         });
-        if(alt){
-          const box = detail.querySelector('.alt-imgs');
-          const im = document.createElement('img');
-          im.alt = ''; im.decoding = 'async';
-          im.src = IMG_BASE + alt.img + '/0.jpg';
-          box.appendChild(im);
-        }
       }
 
       cell.addEventListener('click', ()=>{
