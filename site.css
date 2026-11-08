@@ -2,7 +2,7 @@
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   color: #172033; background: #F5F7FB;
   --ink: #172033; --muted: #55606F; --faint: #8A94A3;
-  --blue: #2F5FE0; --teal: #0E9488; --amber: #E8730C;
+  --blue: #2F5FE0; --teal: #0E9488; --amber: #E8730C; --violet: #7C3AED;
   --line: #E3E7EF; --surface: #FFFFFF;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -26,7 +26,7 @@ body {
 h1 { max-width: 820px; margin: 0; font-family: Georgia, serif; font-size: clamp(3.2rem, 8vw, 6rem); line-height: .95; letter-spacing: -.055em; color: var(--ink); }
 .intro { max-width: 640px; margin: 30px 0 0; color: var(--muted); font-size: clamp(1.05rem, 2vw, 1.2rem); line-height: 1.65; }
 
-.sections { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 58px; }
+.sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 58px; }
 .section-card {
   position: relative; min-height: 288px; padding: 28px; overflow: hidden;
   background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--line);
@@ -42,6 +42,8 @@ h1 { max-width: 820px; margin: 0; font-family: Georgia, serif; font-size: clamp(
 .books .icon, .books .card-label, .books .card-link { color: var(--teal); }
 .aws { border-top-color: var(--amber); }
 .aws .icon, .aws .card-label, .aws .card-link { color: var(--amber); }
+.chess { border-top-color: var(--violet); }
+.chess .icon, .chess .card-label, .chess .card-link { color: var(--violet); }
 
 .icon { position: absolute; top: 22px; right: 24px; font-size: 1.35rem; font-weight: 700; }
 .card-label { margin: 0 0 36px; }
@@ -50,7 +52,6 @@ h2 { margin: 0; font-family: Georgia, serif; font-size: clamp(1.9rem, 3.4vw, 2.6
 .card-link { position: absolute; bottom: 28px; font-family: var(--mono); font-size: .82rem; font-weight: 600; letter-spacing: .04em; }
 .footer-note { margin-top: 54px; color: var(--faint); font-size: .9rem; }
 
-@media (max-width: 900px) { .sections { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 620px) {
   .home { width: min(100% - 28px, 1040px); }
   .sections { grid-template-columns: 1fr; margin-top: 42px; }

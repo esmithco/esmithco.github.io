@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taller de Aperturas</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%237C3AED'/%3E%3Ctext x='50' y='74' font-family='serif' font-size='66' fill='%23ffffff' text-anchor='middle'%3E%E2%99%9E%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%237C3AED'/%3E%3Ctext x='50' y='74' font-family='serif' font-size='66' fill='%23ffffff' text-anchor='middle'%3E%E2%99%9E%3C/text%3E%3C/svg%3E">
+<style>
+/* Layout: one narrow column; board first, controls under it. Light palette shared with the rest of the site, violet accent for this section. */
+:root{
+  --bg:#F5F7FB; --surface:#FFFFFF; --ink:#172033; --muted:#55606F; --faint:#8A94A3; --line:#E3E7EF;
+  --accent:#7C3AED; --accent-soft:#F1EAFE; --accent-ink:#FFFFFF;
+  --sq-light:#EBECD0; --sq-dark:#739552;
+  --good:#0E9488; --bad:#C2410C; --warn:#E8730C;
+  --f-display:Georgia, "Times New Roman", serif;
+  --f-body:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+*{box-sizing:border-box}
+html{overflow-x:clip;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45}
+.wrap{max-width:600px;margin:0 auto;padding:22px max(16px,env(safe-area-inset-right)) 56px max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:16px}
+.back{font:600 .78rem var(--f-mono);letter-spacing:.04em;color:var(--accent);text-decoration:none}
+.eyebrow{font:600 .7rem var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:14px 0 6px}
+h1{font-family:var(--f-display);font-weight:700;font-size:2.2rem;letter-spacing:-.04em;line-height:1;margin:0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.3rem;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:8px 0 0}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;padding:9px 12px;font:600 .92rem var(--f-body);color:var(--muted);cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{display:flex;flex-direction:column;gap:14px}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;font-size:.9rem;color:var(--muted)}
+.meta b{color:var(--ink);font-variant-numeric:tabular-nums}
+.meta select{margin-left:auto}
+.prompt{font-size:1rem}
+.prompt .op{font:600 .72rem var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
+.pill{display:inline-block;font:600 .72rem var(--f-body);padding:1px 8px;border-radius:99px;border:1px solid currentColor;white-space:nowrap;vertical-align:1px}
+.pill.blunder{color:var(--bad)} .pill.mistake{color:var(--warn)} .pill.inacc{color:var(--muted)} .pill.trap{color:#fff;background:var(--bad);border-color:var(--bad)}
+
+/* board */
+.board{position:relative;width:100%;max-width:520px;aspect-ratio:1/1;align-self:center;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));border-radius:6px;overflow:hidden;box-shadow:0 10px 26px rgba(23,32,51,.14);user-select:none;-webkit-user-select:none;touch-action:none}
+.sq{position:relative;min-width:0;min-height:0}
+.sq.l{background:var(--sq-light)} .sq.d{background:var(--sq-dark)}
+.sq .pc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.sq.last{box-shadow:inset 0 0 0 999px rgba(246,246,105,.5)}
+.sq.sel{box-shadow:inset 0 0 0 999px rgba(124,58,237,.35)}
+.sq.hint{box-shadow:inset 0 0 0 4px var(--warn)}
+.sq.ok{box-shadow:inset 0 0 0 999px rgba(14,148,136,.5)}
+.sq.bad{box-shadow:inset 0 0 0 999px rgba(194,65,12,.5)}
+.sq.drag-from .pc{opacity:.25}
+.sq .dot{position:absolute;left:36%;top:36%;width:28%;height:28%;border-radius:50%;background:rgba(0,0,0,.18);pointer-events:none}
+.sq .ring{position:absolute;inset:4%;border-radius:50%;box-shadow:inset 0 0 0 5px rgba(0,0,0,.18);pointer-events:none}
+.sq .cf,.sq .cr{position:absolute;font:700 10px/1 var(--f-mono);pointer-events:none}
+.sq .cf{right:3px;bottom:3px} .sq .cr{left:3px;top:3px}
+.sq.l .cf,.sq.l .cr{color:var(--sq-dark)} .sq.d .cf,.sq.d .cr{color:var(--sq-light)}
+.ghost{position:absolute;pointer-events:none;z-index:5;width:12.5%;height:12.5%;transform:translate(-50%,-50%) scale(1.12);filter:drop-shadow(0 4px 6px rgba(0,0,0,.3))}
+
+.line{font-family:var(--f-mono);font-size:.84rem;color:var(--muted);overflow-wrap:anywhere}
+.line .cur{color:var(--ink);font-weight:700}
+.feedback{min-height:1.4em;font-weight:600}
+.feedback.good{color:var(--good)} .feedback.bad{color:var(--bad)}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 .9rem var(--f-body);padding:9px 14px;border-radius:10px;cursor:pointer;text-decoration:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.45;cursor:default}
+.bar{display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden;background:var(--line)}
+.bar span{display:block;background:var(--accent)}
+.note{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-size:.93rem}
+.empty{color:var(--muted);text-align:center;padding:20px 8px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.stat b{display:block;font:700 1.5rem var(--f-display);font-variant-numeric:tabular-nums}
+.stat span{font-size:.8rem;color:var(--muted)}
+.tblwrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{text-align:left;font:600 .7rem var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:6px;border-bottom:1px solid var(--line)}
+td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--accent-soft)}
+.mono{font-family:var(--f-mono);font-size:.84rem}
+textarea,input[type=text],select{max-width:100%;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font:400 .9rem var(--f-body)}
+textarea{width:100%;min-height:120px;resize:vertical;font-family:var(--f-mono);font-size:.82rem}
+label.f{font-weight:600;font-size:.88rem;display:flex;flex-direction:column;gap:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.progress{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.progress span{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.small{font-size:.85rem;color:var(--muted)}
+details summary{cursor:pointer;font-weight:600}
+@media (max-width:460px){.grid2,.stats{grid-template-columns:1fr 1fr}.stat b{font-size:1.25rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden" xmlns="http://www.w3.org/2000/svg"><defs><g id="wk" stroke-linecap="round" stroke-linejoin="round" transform="translate(5.000000, 5.000000)" stroke="#000000" stroke-width="1.5"> <line x1="15" y1="4.96764706" x2="15" y2="0"/> <line x1="12.8571429" y1="1.76470588" x2="17.1428571" y2="1.76470588"/> <path d="M17.5714286,7.5 C17.5714286,7.5 16.7142857,5.29411765 15,5.29411765 C13.2857143,5.29411765 12.4285714,7.5 12.4285714,7.5 C11.1428571,10.1470588 15,16.7647059 15,16.7647059 C15,16.7647059 18.8571429,10.1470588 17.5714286,7.5 Z" fill="#FFFFFF"/> <path d="M5.57142857,27.3529412 C10.2857143,30.4411765 18.8571429,30.4411765 23.5714286,27.3529412 L23.5714286,21.1764706 C23.5714286,21.1764706 31.2857143,17.2058824 28.7142857,11.9117647 C25.2857143,6.17647059 17.1428571,8.82352941 15,15.4411765 L15,18.5294118 L15,15.4411765 C12,8.82352941 3.85714286,6.17647059 1.28571429,11.9117647 C-1.28571429,17.2058824 5.57142857,20.7352941 5.57142857,20.7352941 L5.57142857,27.3529412 Z" fill="#FFFFFF"/> <path d="M5.57142857,21.1764706 C10.2857143,18.5294118 18.8571429,18.5294118 23.5714286,21.1764706" fill-opacity="0" fill="#000000"/> <path d="M5.57142857,24.2647059 C10.2857143,21.6176471 18.8571429,21.6176471 23.5714286,24.2647059" fill-opacity="0" fill="#000000" stroke-linecap="square"/> <path d="M5.57142857,27.3529412 C10.2857143,24.7058824 18.8571429,24.7058824 23.5714286,27.3529412" fill-opacity="0" fill="#000000"/> </g> <g id="wq" stroke-linecap="round" stroke-linejoin="round" transform="translate(4.000000, 5.000000)" stroke="#000000" stroke-width="1.5"> <path d="M3.45945946,6.2 C3.45945946,7.17833299 2.68503308,7.97142857 1.72972973,7.97142857 C0.774426379,7.97142857 0,7.17833299 0,6.2 C0,5.22166701 0.774426379,4.42857143 1.72972973,4.42857143 C2.68503308,4.42857143 3.45945946,5.22166701 3.45945946,6.2 Z" fill="#FFFFFF"/> <path d="M17.7297297,2.21428571 C17.7297297,3.1926187 16.9553034,3.98571429 16,3.98571429 C15.0446966,3.98571429 14.2702703,3.1926187 14.2702703,2.21428571 C14.2702703,1.23595273 15.0446966,0.442857143 16,0.442857143 C16.9553034,0.442857143 17.7297297,1.23595273 17.7297297,2.21428571 Z" fill="#FFFFFF"/> <path d="M32,6.2 C32,7.17833299 31.2255736,7.97142857 30.2702703,7.97142857 C29.3149669,7.97142857 28.5405405,7.17833299 28.5405405,6.2 C28.5405405,5.22166701 29.3149669,4.42857143 30.2702703,4.42857143 C31.2255736,4.42857143 32,5.22166701 32,6.2 Z" fill="#FFFFFF"/> <path d="M10.3783784,3.1 C10.3783784,4.07833299 9.603952,4.87142857 8.64864865,4.87142857 C7.6933453,4.87142857 6.91891892,4.07833299 6.91891892,3.1 C6.91891892,2.12166701 7.6933453,1.32857143 8.64864865,1.32857143 C9.603952,1.32857143 10.3783784,2.12166701 10.3783784,3.1 Z" fill="#FFFFFF"/> <path d="M25.0810811,3.54285714 C25.0810811,4.52119013 24.3066547,5.31428571 23.3513514,5.31428571 C22.396048,5.31428571 21.6216216,4.52119013 21.6216216,3.54285714 C21.6216216,2.56452416 22.396048,1.77142857 23.3513514,1.77142857 C24.3066547,1.77142857 25.0810811,2.56452416 25.0810811,3.54285714 Z" fill="#FFFFFF"/> <path d="M4.32432432,18.6 C11.6756757,17.2714286 22.4864865,17.2714286 27.6756757,18.6 L29.4054054,7.97142857 L23.3513514,17.7142857 L23.3513514,5.31428571 L18.5945946,17.2714286 L16,3.98571429 L13.4054054,17.2714286 L8.64864865,4.87142857 L8.64864865,17.7142857 L2.59459459,7.97142857 L4.32432432,18.6 Z" fill="#FFFFFF"/> <path d="M4.32432432,18.6 C4.32432432,20.3714286 5.62162162,20.3714286 6.48648649,22.1428571 C7.35135135,23.4714286 7.35135135,23.0285714 6.91891892,25.2428571 C5.62162162,26.1285714 5.62162162,27.4571429 5.62162162,27.4571429 C4.32432432,28.7857143 6.05405405,29.6714286 6.05405405,29.6714286 C11.6756757,30.5571429 20.3243243,30.5571429 25.9459459,29.6714286 C25.9459459,29.6714286 27.2432432,28.7857143 25.9459459,27.4571429 C25.9459459,27.4571429 26.3783784,26.1285714 25.0810811,25.2428571 C24.6486486,23.0285714 24.6486486,23.4714286 25.5135135,22.1428571 C26.3783784,20.3714286 27.6756757,20.3714286 27.6756757,18.6 C20.3243243,17.2714286 11.6756757,17.2714286 4.32432432,18.6 Z" fill="#FFFFFF"/> <path d="M6.48648649,22.1428571 C9.51351351,21.2571429 22.4864865,21.2571429 25.5135135,22.1428571"/> <path d="M6.91891892,25.2428571 C12.1081081,24.3571429 19.8918919,24.3571429 25.0810811,25.2428571"/> </g> <g id="wb" stroke-linecap="round" stroke-linejoin="round" transform="translate(6.000000, 5.000000)" stroke="#000000" stroke-width="1.5"> <g fill="#FFFFFF"> <path d="M2.54545455,27.3529412 C5.42181818,26.4970588 11.1236364,27.7323529 14,25.5882353 C16.8763636,27.7323529 22.5781818,26.4970588 25.4545455,27.3529412 C25.4545455,27.3529412 26.8545455,27.8294118 28,29.1176471 C27.4230303,29.9735294 26.6,29.9911765 25.4545455,29.5588235 C22.5781818,28.7029412 16.8763636,29.9647059 14,28.6764706 C11.1236364,29.9647059 5.42181818,28.7029412 2.54545455,29.5588235 C1.39660606,29.9911765 0.574424242,29.9735294 0,29.1176471 C1.14884848,27.4058824 2.54545455,27.3529412 2.54545455,27.3529412 Z"/> <path d="M7.63636364,23.8235294 C9.75757576,26.0294118 18.2424242,26.0294118 20.3636364,23.8235294 C20.7878788,22.5 20.3636364,22.0588235 20.3636364,22.0588235 C20.3636364,19.8529412 18.2424242,18.5294118 18.2424242,18.5294118 C22.9090909,17.2058824 23.3333333,8.38235294 14,4.85294118 C4.66666667,8.38235294 5.09090909,17.2058824 9.75757576,18.5294118 C9.75757576,18.5294118 7.63636364,19.8529412 7.63636364,22.0588235 C7.63636364,22.0588235 7.21212121,22.5 7.63636364,23.8235294 Z"/> <path d="M16.1212121,2.64705882 C16.1212121,3.86533401 15.1715131,4.85294118 14,4.85294118 C12.8284869,4.85294118 11.8787879,3.86533401 11.8787879,2.64705882 C11.8787879,1.42878364 12.8284869,0.441176471 14,0.441176471 C15.1715131,0.441176471 16.1212121,1.42878364 16.1212121,2.64705882 Z"/> </g> <path d="M9.75757576,18.5294118 L18.2424242,18.5294118 M7.63636364,22.0588235 L20.3636364,22.0588235 M14,9.26470588 L14,13.6764706 M11.8787879,11.4705882 L16.1212121,11.4705882"/> </g> <g id="wn" stroke-linecap="round" stroke-linejoin="round" transform="translate(6.000000, 6.000000)" stroke="#000000"> <path d="M13.5757576,2.625 C22.4848485,3.5 27.5757576,9.625 27.1515152,28 L7.63636364,28 C7.63636364,20.125 16.1212121,22.3125 14.4242424,9.625" stroke-width="1.5" fill="#FFFFFF"/> <path d="M15.2727273,9.625 C15.5951515,12.17125 10.5636364,16.07375 8.48484848,17.5 C5.93939394,19.25 6.09212121,21.2975 4.24242424,21 C3.35830303,20.1775 5.43878788,18.34 4.24242424,18.375 C3.39393939,18.375 4.40363636,19.45125 3.39393939,20.125 C2.54545455,20.125 -0.00254545455,21 -1.90580876e-06,16.625 C-1.90580876e-06,14.875 5.09090909,6.125 5.09090909,6.125 C5.09090909,6.125 6.69454545,4.4625 6.78787879,3.0625 C6.16848485,2.19275 6.36363636,1.3125 6.36363636,0.4375 C7.21212121,-0.4375 8.90909091,2.625 8.90909091,2.625 L10.6060606,2.625 C10.6060606,2.625 11.2678788,0.882 12.7272727,0 C13.5757576,0 13.5757576,2.625 13.5757576,2.625" stroke-width="1.5" fill="#FFFFFF"/> <path d="M2.96969697,16.1875 C2.96969697,16.4291246 2.77975717,16.625 2.54545455,16.625 C2.31115192,16.625 2.12121212,16.4291246 2.12121212,16.1875 C2.12121212,15.9458754 2.31115192,15.75 2.54545455,15.75 C2.77975717,15.75 2.96969697,15.9458754 2.96969697,16.1875 Z" stroke-width="1.5" fill="#000000"/> <path d="M7.6363543,7.4375 C7.6363543,8.16235779 7.44641868,8.74997112 7.21212121,8.74997112 C6.97782375,8.74997112 6.78788812,8.16235779 6.78788812,7.4375 C6.78788812,6.71264221 6.97782375,6.12502888 7.21212121,6.12502888 C7.44641868,6.12502888 7.6363543,6.71264221 7.6363543,7.4375 L7.6363543,7.4375 Z" stroke-width="1.499967" fill="#000000" transform="translate(7.212121, 7.437500) rotate(30.000728) translate(-7.212121, -7.437500) "/> </g> <g id="wr" stroke-linecap="round" stroke-linejoin="round" transform="translate(9.000000, 8.000000)" stroke="#000000" stroke-width="1.5"> <polygon fill="#FFFFFF" points="0 26 22 26 22 23.4 0 23.4"/> <polygon fill="#FFFFFF" points="2.44444444 23.4 2.44444444 19.9333333 19.5555556 19.9333333 19.5555556 23.4"/> <polyline fill="#FFFFFF" points="1.62962963 4.33333333 1.62962963 0 4.88888889 0 4.88888889 1.73333333 8.96296296 1.73333333 8.96296296 0 13.037037 0 13.037037 1.73333333 17.1111111 1.73333333 17.1111111 0 20.3703704 0 20.3703704 4.33333333"/> <polyline fill="#FFFFFF" points="20.3703704 4.33333333 17.9259259 6.93333333 4.07407407 6.93333333 1.62962963 4.33333333"/> <polyline fill="#FFFFFF" points="17.9259259 6.93333333 17.9259259 17.7666667 4.07407407 17.7666667 4.07407407 6.93333333"/> <polyline fill="#FFFFFF" points="17.9259259 17.7666667 19.1481481 19.9333333 2.85185185 19.9333333 4.07407407 17.7666667"/> <line x1="1.62962963" y1="4.33333333" x2="20.3703704" y2="4.33333333"/> </g> <g id="wp" transform="translate(10.000000, 9.000000)" fill="#FFFFFF" stroke="#000000" stroke-linecap="round" stroke-width="1.5"> <path d="M10,0 C8.15833333,0 6.66666667,1.50129032 6.66666667,3.35483871 C6.66666667,4.10129032 6.90833333,4.78903226 7.31666667,5.35096774 C5.69166667,6.29032258 4.58333333,8.04322581 4.58333333,10.0645161 C4.58333333,11.7670968 5.36666667,13.2851613 6.59166667,14.2832258 C4.09166667,15.1722581 0.416666667,18.9380645 0.416666667,25.5806452 L19.5833333,25.5806452 C19.5833333,18.9380645 15.9083333,15.1722581 13.4083333,14.2832258 C14.6333333,13.2851613 15.4166667,11.7670968 15.4166667,10.0645161 C15.4166667,8.04322581 14.3083333,6.29032258 12.6833333,5.35096774 C13.0916667,4.78903226 13.3333333,4.10129032 13.3333333,3.35483871 C13.3333333,1.50129032 11.8416667,0 10,0 Z"/> </g> <g id="bk" stroke-linecap="round" stroke-linejoin="round" transform="translate(5.000000, 5.000000)" stroke-width="1.5"> <line x1="15" y1="4.96764706" x2="15" y2="0" stroke="#000000"/> <path d="M15,16.7647059 C15,16.7647059 18.8571429,10.1470588 17.5714286,7.5 C17.5714286,7.5 16.7142857,5.29411765 15,5.29411765 C13.2857143,5.29411765 12.4285714,7.5 12.4285714,7.5 C11.1428571,10.1470588 15,16.7647059 15,16.7647059" stroke="#000000" fill="#000000"/> <path d="M5.57142857,27.3529412 C10.2857143,30.4411765 18.8571429,30.4411765 23.5714286,27.3529412 L23.5714286,21.1764706 C23.5714286,21.1764706 31.2857143,17.2058824 28.7142857,11.9117647 C25.2857143,6.17647059 17.1428571,8.82352941 15,15.4411765 L15,18.5294118 L15,15.4411765 C12,8.82352941 3.85714286,6.17647059 1.28571429,11.9117647 C-1.28571429,17.2058824 5.57142857,20.7352941 5.57142857,20.7352941 L5.57142857,27.3529412 Z" stroke="#000000" fill="#000000"/> <line x1="12.8571429" y1="1.76470588" x2="17.1428571" y2="1.76470588" stroke="#000000"/> <path d="M23.1428571,20.7352941 C23.1428571,20.7352941 30.4285714,17.2058824 28.3114286,12.2205882 C24.9857143,7.05882353 17.1428571,10.5882353 15,16.3235294 L15.0085714,18.1764706 L15,16.3235294 C12.8571429,10.5882353 4.20514286,7.05882353 1.71171429,12.2205882 C-0.428571429,17.2058824 5.87142857,20.1617647 5.87142857,20.1617647" stroke="#FFFFFF"/> <path d="M5.57142857,21.1764706 C10.2857143,18.5294118 18.8571429,18.5294118 23.5714286,21.1764706 M5.57142857,24.2647059 C10.2857143,21.6176471 18.8571429,21.6176471 23.5714286,24.2647059 M5.57142857,27.3529412 C10.2857143,24.7058824 18.8571429,24.7058824 23.5714286,27.3529412" stroke="#FFFFFF"/> </g> <g id="bq" stroke-linecap="round" stroke-linejoin="round" transform="translate(3.000000, 4.000000)"> <g fill="#000000"> <ellipse cx="2.61538462" cy="6.22222222" rx="2.3974359" ry="2.44444444"/> <ellipse cx="9.58974359" cy="3.55555556" rx="2.3974359" ry="2.44444444"/> <ellipse cx="17" cy="2.66666667" rx="2.3974359" ry="2.44444444"/> <ellipse cx="24.4102564" cy="3.55555556" rx="2.3974359" ry="2.44444444"/> <ellipse cx="31.3846154" cy="6.22222222" rx="2.3974359" ry="2.44444444"/> </g> <path d="M5.23076923,18.6666667 C12.6410256,17.3333333 23.5384615,17.3333333 28.7692308,18.6666667 L30.9487179,7.55555556 L24.4102564,17.7777778 L24.1487179,5.24444444 L19.6153846,17.3333333 L17,4.44444444 L14.3846154,17.3333333 L9.85128205,5.24444444 L9.58974359,17.7777778 L3.05128205,7.55555556 L5.23076923,18.6666667 Z" stroke="#000000" stroke-width="1.5" fill="#000000"/> <path d="M5.23076923,18.6666667 C5.23076923,20.4444444 6.53846154,20.4444444 7.41025641,22.2222222 C8.28205128,23.5555556 8.28205128,23.1111111 7.84615385,25.3333333 C6.53846154,26.2222222 6.53846154,27.5555556 6.53846154,27.5555556 C5.23076923,28.8888889 6.97435897,29.7777778 6.97435897,29.7777778 C12.6410256,30.6666667 21.3589744,30.6666667 27.025641,29.7777778 C27.025641,29.7777778 28.3333333,28.8888889 27.025641,27.5555556 C27.025641,27.5555556 27.4615385,26.2222222 26.1538462,25.3333333 C25.7179487,23.1111111 25.7179487,23.5555556 26.5897436,22.2222222 C27.4615385,20.4444444 28.7692308,20.4444444 28.7692308,18.6666667 C21.3589744,17.3333333 12.6410256,17.3333333 5.23076923,18.6666667 Z" stroke="#000000" stroke-width="1.5" fill="#000000"/> <path d="M6.97435897,29.7777778 C13.4672777,32.080866 20.5327223,32.080866 27.025641,29.7777778" stroke="#000000" stroke-width="1.5"/> <path d="M6.97435897,21.3333333 C13.4672777,19.0302452 20.5327223,19.0302452 27.025641,21.3333333" stroke="#FFFFFF" stroke-width="1.5"/> <line x1="8.28205128" y1="23.5555556" x2="25.7179487" y2="23.5555556" stroke="#FFFFFF" stroke-width="1.5"/> <path d="M7.41025641,26.2222222 C13.6372326,28.3241535 20.3627674,28.3241535 26.5897436,26.2222222" stroke="#FFFFFF" stroke-width="1.5"/> <path d="M6.53846154,28.8888889 C13.2948481,31.4031829 20.7051519,31.4031829 27.4615385,28.8888889" stroke="#FFFFFF" stroke-width="1.5"/> </g> <g id="bb" stroke-linecap="round" stroke-linejoin="round" transform="translate(6.000000, 5.000000)" stroke-width="1.5"> <g fill="#000000" stroke="#000000"> <path d="M2.54545455,27.3529412 C5.42181818,26.4970588 11.1236364,27.7323529 14,25.5882353 C16.8763636,27.7323529 22.5781818,26.4970588 25.4545455,27.3529412 C25.4545455,27.3529412 26.8545455,27.8294118 28,29.1176471 C27.4230303,29.9735294 26.6,29.9911765 25.4545455,29.5588235 C22.5781818,28.7029412 16.8763636,29.9647059 14,28.6764706 C11.1236364,29.9647059 5.42181818,28.7029412 2.54545455,29.5588235 C1.39660606,29.9911765 0.574424242,29.9735294 0,29.1176471 C1.14884848,27.4058824 2.54545455,27.3529412 2.54545455,27.3529412 Z"/> <path d="M7.63636364,23.8235294 C9.75757576,26.0294118 18.2424242,26.0294118 20.3636364,23.8235294 C20.7878788,22.5 20.3636364,22.0588235 20.3636364,22.0588235 C20.3636364,19.8529412 18.2424242,18.5294118 18.2424242,18.5294118 C22.9090909,17.2058824 23.3333333,8.38235294 14,4.85294118 C4.66666667,8.38235294 5.09090909,17.2058824 9.75757576,18.5294118 C9.75757576,18.5294118 7.63636364,19.8529412 7.63636364,22.0588235 C7.63636364,22.0588235 7.21212121,22.5 7.63636364,23.8235294 Z"/> <path d="M16.1212121,2.64705882 C16.1212121,3.86533401 15.1715131,4.85294118 14,4.85294118 C12.8284869,4.85294118 11.8787879,3.86533401 11.8787879,2.64705882 C11.8787879,1.42878364 12.8284869,0.441176471 14,0.441176471 C15.1715131,0.441176471 16.1212121,1.42878364 16.1212121,2.64705882 Z"/> </g> <path d="M9.75757576,18.5294118 L18.2424242,18.5294118 M7.63636364,22.0588235 L20.3636364,22.0588235 M14,9.26470588 L14,13.6764706 M11.8787879,11.4705882 L16.1212121,11.4705882" stroke="#FFFFFF"/> </g> <g id="bn" stroke-linecap="round" stroke-linejoin="round" transform="translate(6.000000, 6.000000)"> <path d="M13.5757576,2.63636364 C22.4848485,3.51515152 27.5757576,9.66666667 27.1515152,28.1212121 L7.63636364,28.1212121 C7.63636364,20.2121212 16.1212121,22.4090909 14.4242424,9.66666667" stroke="#000000" stroke-width="1.5" fill="#000000"/> <path d="M15.2727273,9.66666667 C15.5951515,12.2239394 10.5636364,16.1433333 8.48484848,17.5757576 C5.93939394,19.3333333 6.09212121,21.389697 4.24242424,21.0909091 C3.35830303,20.2648485 5.43878788,18.4193939 4.24242424,18.4545455 C3.39393939,18.4545455 4.40363636,19.5354545 3.39393939,20.2121212 C2.54545455,20.2121212 -0.00254545455,21.0909091 -1.90580876e-06,16.6969697 C-1.90580876e-06,14.9393939 5.09090909,6.15151515 5.09090909,6.15151515 C5.09090909,6.15151515 6.69454545,4.48181818 6.78787879,3.07575758 C6.16848485,2.20224242 6.36363636,1.31818182 6.36363636,0.439393939 C7.21212121,-0.439393939 8.90909091,2.63636364 8.90909091,2.63636364 L10.6060606,2.63636364 C10.6060606,2.63636364 11.2678788,0.885818182 12.7272727,0 C13.5757576,0 13.5757576,2.63636364 13.5757576,2.63636364" stroke="#000000" stroke-width="1.5" fill="#000000"/> <path d="M2.96969697,16.2575758 C2.96969697,16.5002463 2.77975717,16.6969697 2.54545455,16.6969697 C2.31115192,16.6969697 2.12121212,16.5002463 2.12121212,16.2575758 C2.12121212,16.0149052 2.31115192,15.8181818 2.54545455,15.8181818 C2.77975717,15.8181818 2.96969697,16.0149052 2.96969697,16.2575758 Z" stroke="#FFFFFF" stroke-width="1.5" fill="#FFFFFF"/> <path d="M7.6363543,7.46969697 C7.6363543,8.19769267 7.44641868,8.78784979 7.21212121,8.78784979 C6.97782375,8.78784979 6.78788812,8.19769267 6.78788812,7.46969697 C6.78788812,6.74170127 6.97782375,6.15154415 7.21212121,6.15154415 C7.44641868,6.15154415 7.6363543,6.74170127 7.6363543,7.46969697 L7.6363543,7.46969697 Z" stroke="#FFFFFF" stroke-width="1.499967" fill="#FFFFFF" transform="translate(7.212121, 7.469697) rotate(30.000728) translate(-7.212121, -7.469697) "/> <path d="M15.7393939,2.98787879 L15.3575758,4.26212121 L15.7818182,4.39393939 C18.4545455,5.27272727 20.5757576,6.58212121 22.4848485,10.3257576 C24.3939394,14.0693939 25.2424242,19.3860606 24.8181818,28.1212121 L24.7757576,28.5606061 L26.6848485,28.5606061 L26.7272727,28.1212121 C27.1515152,19.2806061 25.9806061,13.3136364 23.969697,9.36787879 C21.9587879,5.42212121 19.0569697,3.53272727 16.1721212,3.07575758 L15.7393939,2.98787879 Z" fill="#FFFFFF"/> </g> <g id="br" stroke-linecap="round" stroke-linejoin="round" transform="translate(9.000000, 8.000000)"> <polygon stroke="#000000" stroke-width="1.5" fill="#000000" points="0 26 22 26 22 23.4 0 23.4"/> <polygon stroke="#000000" stroke-width="1.5" fill="#000000" points="2.85185185 19.9333333 4.07407407 17.7666667 17.9259259 17.7666667 19.1481481 19.9333333"/> <polygon stroke="#000000" stroke-width="1.5" fill="#000000" points="2.44444444 23.4 2.44444444 19.9333333 19.5555556 19.9333333 19.5555556 23.4"/> <polygon stroke="#000000" stroke-width="1.5" fill="#000000" points="4.07407407 17.7666667 4.07407407 6.5 17.9259259 6.5 17.9259259 17.7666667"/> <polygon stroke="#000000" stroke-width="1.5" fill="#000000" points="4.07407407 6.5 1.62962963 4.33333333 20.3703704 4.33333333 17.9259259 6.5"/> <polygon stroke="#000000" stroke-width="1.5" fill="#000000" points="1.62962963 4.33333333 1.62962963 0 4.88888889 0 4.88888889 1.73333333 8.96296296 1.73333333 8.96296296 0 13.037037 0 13.037037 1.73333333 17.1111111 1.73333333 17.1111111 0 20.3703704 0 20.3703704 4.33333333"/> <polyline stroke="#FFFFFF" points="2.44444444 22.9666667 19.5555556 22.9666667 19.5555556 22.9666667"/> <line x1="3.25925926" y1="19.5" x2="18.7407407" y2="19.5" stroke="#FFFFFF"/> <line x1="4.07407407" y1="17.7666667" x2="17.9259259" y2="17.7666667" stroke="#FFFFFF"/> <line x1="4.07407407" y1="6.5" x2="17.9259259" y2="6.5" stroke="#FFFFFF"/> <line x1="1.62962963" y1="4.33333333" x2="20.3703704" y2="4.33333333" stroke="#FFFFFF"/> </g> <g id="bp" transform="translate(10.000000, 8.000000)" fill="#000000" stroke="#000000" stroke-linecap="round" stroke-width="1.5"> <path d="M10,0 C8.15833333,0 6.66666667,1.50129032 6.66666667,3.35483871 C6.66666667,4.10129032 6.90833333,4.78903226 7.31666667,5.35096774 C5.69166667,6.29032258 4.58333333,8.04322581 4.58333333,10.0645161 C4.58333333,11.7670968 5.36666667,13.2851613 6.59166667,14.2832258 C4.09166667,15.1722581 0.416666667,18.9380645 0.416666667,25.5806452 L19.5833333,25.5806452 C19.5833333,18.9380645 15.9083333,15.1722581 13.4083333,14.2832258 C14.6333333,13.2851613 15.4166667,11.7670968 15.4166667,10.0645161 C15.4166667,8.04322581 14.3083333,6.29032258 12.6833333,5.35096774 C13.0916667,4.78903226 13.3333333,4.10129032 13.3333333,3.35483871 C13.3333333,1.50129032 11.8416667,0 10,0 Z"/> </g></defs></svg>
+<div class="wrap">
+  <header>
+    <a class="back" href="../">← Inicio</a>
+    <p class="eyebrow">Ajedrez · Aperturas y trampas</p>
+    <h1>Taller de Aperturas</h1>
+    <p class="sub">Las posiciones exactas donde te equivocaste o caíste en una trampa, para repetirlas hasta que salgan solas.</p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-p="p-train">Entrenar</button>
+    <button class="tab" role="tab" aria-selected="false" data-p="p-traps">Trampas</button>
+    <button class="tab" role="tab" aria-selected="false" data-p="p-open">Mis aperturas</button>
+    <button class="tab" role="tab" aria-selected="false" data-p="p-imp">Analizar</button>
+  </nav>
+
+  <section class="panel" id="p-train">
+    <div class="meta">
+      <span>Para hoy <b id="mDue">0</b></span><span>Posiciones <b id="mTotal">0</b></span><span>Dominadas <b id="mDone">0</b></span>
+      <select id="fKind" aria-label="Qué entrenar">
+        <option value="all">Todo</option>
+        <option value="trap">Solo trampas</option>
+        <option value="open">Solo aperturas</option>
+      </select>
+    </div>
+    <div class="bar" id="bar" title="Posiciones por nivel de repaso"></div>
+    <div class="prompt" id="prompt"></div>
+    <div class="board" id="board" aria-label="Tablero"></div>
+    <div class="line" id="line"></div>
+    <div class="feedback" id="fb" aria-live="polite"></div>
+    <div class="row">
+      <button class="btn" id="bReplay">Ver la línea</button>
+      <button class="btn" id="bHint">Pista</button>
+      <button class="btn" id="bShow">Mostrar respuesta</button>
+      <button class="btn" id="bPunish" hidden>Ver cómo te castigaron</button>
+      <button class="btn primary" id="bNext" hidden>Siguiente</button>
+    </div>
+  </section>
+
+  <section class="panel" id="p-traps" hidden>
+    <h2>Trampas en las que caíste</h2>
+    <p class="small">Partidas perdidas en 25 jugadas o menos. Para cada una busco el momento en que pasaste de estar bien a estar perdido.</p>
+    <div class="stats">
+      <div class="stat"><b id="sQuick">0</b><span>derrotas rápidas revisadas</span></div>
+      <div class="stat"><b id="sTraps">0</b><span>trampas encontradas</span></div>
+      <div class="stat"><b id="sCapt">0</b><span>fueron por comer algo envenenado</span></div>
+    </div>
+    <div class="row"><button class="btn primary" id="bTrainTraps">Entrenar solo trampas</button></div>
+    <h2>Dónde caes más</h2>
+    <div class="tblwrap"><table id="tTrapOpen"></table></div>
+    <h2>Las trampas una por una</h2>
+    <p class="small">Toca una fila para entrenarla.</p>
+    <div class="tblwrap"><table id="tTraps"></table></div>
+    <h2>Gambitos que te han jugado</h2>
+    <div class="tblwrap"><table id="tGambits"></table></div>
+  </section>
+
+  <section class="panel" id="p-open" hidden>
+    <h2>Dónde pierdes puntos en la apertura</h2>
+    <p class="small">Agrupado por la apertura que marca Chess.com. "Errores" cuenta tus jugadas de las primeras 12 que bajaron tu probabilidad de ganar.</p>
+    <div class="tblwrap"><table id="tOpen"></table></div>
+    <h2>Errores que repites</h2>
+    <div class="tblwrap"><table id="tRep"></table></div>
+  </section>
+
+  <section class="panel" id="p-imp" hidden>
+    <div class="card">
+      <h2>Desde Chess.com</h2>
+      <div class="grid2">
+        <label class="f" for="iUser">Usuario<input type="text" id="iUser" value="Esmithco" autocomplete="off" autocapitalize="off"></label>
+        <label class="f" for="iDepth">Velocidad
+          <select id="iDepth"><option value="250">Rápido</option><option value="500" selected>Normal</option><option value="1000">Profundo</option></select>
+        </label>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="bRecent">Errores de apertura (últimos 3 meses)</button>
+        <button class="btn" id="bTrapsAll">Trampas (todo el historial)</button>
+        <button class="btn" id="bStop" hidden>Detener</button>
+      </div>
+      <div class="progress"><span id="prog"></span></div>
+      <div class="small" id="impStatus">El análisis corre en tu dispositivo con Stockfish y se salta lo que ya revisaste. Puedes detenerlo y seguir otro día.</div>
+    </div>
+    <details class="card">
+      <summary>Pegar un PGN (Lichess u otra fuente)</summary>
+      <textarea id="iPgn" placeholder='[White "Esmithco"]&#10;[Black "..."]&#10;&#10;1. d4 d5 2. Bf4 ...'></textarea>
+      <div class="row"><button class="btn" id="bPgn">Analizar este PGN</button></div>
+    </details>
+    <details class="card">
+      <summary>Respaldo</summary>
+      <p class="small">El progreso se guarda en este navegador. Copia el respaldo para pasarlo a otro dispositivo.</p>
+      <div class="row"><button class="btn" id="bBackup">Copiar respaldo</button><button class="btn" id="bRestore">Restaurar desde el cuadro</button><button class="btn" id="bBase">Cargar análisis base</button><button class="btn" id="bReset">Borrar todo</button></div>
+      <textarea id="iBackup" placeholder="Pega aquí un respaldo para restaurarlo"></textarea>
+      <div class="small" id="bkStatus"></div>
+    </details>
+    <p class="small">Piezas: Colin M.L. Burnett (CC BY-SA 3.0). Motor: Stockfish.js (GPL).</p>
+  </section>
+</div>
+
+<script src="chess.js"></script>
+<script>
+(function(){
+'use strict';
+var KEY='taller-aperturas.v2';
+var DAYS=[0,1,3,7,16,35,80];
+var LOSS={checkmated:1,resigned:1,timeout:1,abandoned:1,lose:1};
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function now(){return Date.now()}
+
+/* ---------- state ---------- */
+function blank(){return {v:2,user:'Esmithco',games:{},cards:{},gambits:{}}}
+var S=blank();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function merge(base){
+  Object.keys(base.games||{}).forEach(function(k){if(!S.games[k])S.games[k]=base.games[k];else{var g=S.games[k],b=base.games[k];g.op=g.op||b.op;g.tr=g.tr||b.tr}});
+  Object.keys(base.cards||{}).forEach(function(k){if(!S.cards[k])S.cards[k]=base.cards[k]});
+  if(base.gambits&&!Object.keys(S.gambits||{}).length)S.gambits=base.gambits;
+}
+function boot(){
+  var raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
+  if(raw){try{S=JSON.parse(raw)}catch(e){S=blank()}}
+  if(!S.gambits)S.gambits={};
+  if(raw){refreshAll();return}
+  fetch('datos.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(b){merge(b);save()}).catch(function(){}).then(refreshAll);
+}
+
+function fenOf(line){var c=new Chess();for(var i=0;i<line.length;i++)c.move(line[i],{sloppy:true});return c.fen()}
+
+/* ---------- engine ---------- */
+var Engine=(function(){
+  var w=null,ready=null,listeners=[],busy=Promise.resolve();
+  function attach(worker){
+    return new Promise(function(res,rej){
+      var t=setTimeout(function(){rej(new Error('timeout'))},20000);
+      worker.onmessage=function(e){var l=String(e.data);if(l==='uciok'){clearTimeout(t);res(worker)}listeners.slice().forEach(function(f){f(l)})};
+      worker.onerror=function(){clearTimeout(t);rej(new Error('worker'))};
+      worker.postMessage('uci');
+    });
+  }
+  function make(){
+    var tries=[function(){return new Worker('stockfish.asm.js')},
+      function(){return new Worker(URL.createObjectURL(new Blob(['importScripts("https://cdn.jsdelivr.net/npm/stockfish@10.0.2/src/stockfish.asm.js")'],{type:'text/javascript'})))}];
+    var i=0;
+    function next(){if(i>=tries.length)return Promise.reject(new Error('no engine'));var wk;try{wk=tries[i++]()}catch(e){return next()}
+      return attach(wk).catch(function(){try{wk.terminate()}catch(e){}return next()})}
+    return next();
+  }
+  function init(){if(!ready){ready=make().then(function(wk){w=wk;w.postMessage('setoption name Hash value 32');return true}).catch(function(){ready=null;return false})}return ready}
+  function go(fen,ms){
+    var job=busy.then(init).then(function(ok){
+      if(!ok)return null;
+      return new Promise(function(res){
+        var last={score:0,pv:null};
+        function on(l){
+          if(l.indexOf('info')===0&&l.indexOf(' pv ')>0){
+            var m=l.match(/score (cp|mate) (-?\d+)/),p=l.match(/ pv (\S+)/);
+            if(m){var v=parseInt(m[2],10);last.score=m[1]==='cp'?v:(v>0?10000-v:-10000-v)}
+            if(p)last.pv=p[1];
+          }else if(l.indexOf('bestmove')===0){
+            listeners.splice(listeners.indexOf(on),1);
+            var b=l.split(' ')[1];res({score:last.score,best:(b&&b!=='(none)')?b:last.pv});
+          }
+        }
+        listeners.push(on);w.postMessage('position fen '+fen);w.postMessage('go movetime '+ms);
+      });
+    });
+    busy=job.catch(function(){});return job;
+  }
+  return {init:init,go:go};
+})();
+function wp(cp){cp=Math.max(-1000,Math.min(1000,cp));return 50+50*(2/(1+Math.exp(-0.00368208*cp))-1)}
+function uciToSan(fen,u){if(!u)return null;var c=new Chess(fen);var m=c.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u[4]||'q'});return m?m.san:null}
+function evalPos(fen,ms){var c=new Chess(fen);if(c.in_checkmate())return Promise.resolve({score:-10000,best:null});if(c.in_draw()||c.in_stalemate())return Promise.resolve({score:0,best:null});return Engine.go(fen,ms)}
+
+/* ---------- board ---------- */
+var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,locked:true,drag:null};
+var boardEl=$('board');
+function piece(p){return '<svg class="pc" viewBox="0 0 40 40"><use href="#'+p.color+p.type+'"/></svg>'}
+function drawBoard(){
+  var h='';
+  for(var vr=0;vr<8;vr++)for(var vf=0;vf<8;vf++){
+    var f=B.flip?7-vf:vf,r=B.flip?vr:7-vr,n='abcdefgh'[f]+(r+1);
+    var pc=B.chess?B.chess.get(n):null;
+    var cls='sq '+((f+r)%2?'l':'d')+(B.marks[n]?' '+B.marks[n]:'')+(B.sel===n?' sel':'')+(B.drag&&B.drag.from===n?' drag-from':'');
+    var inner=pc?piece(pc):'';
+    if(B.targets.indexOf(n)>=0)inner+=pc?'<span class="ring"></span>':'<span class="dot"></span>';
+    if(vr===7)inner+='<span class="cf">'+'abcdefgh'[f]+'</span>';
+    if(vf===0)inner+='<span class="cr">'+(r+1)+'</span>';
+    h+='<div class="'+cls+'" data-sq="'+n+'">'+inner+'</div>';
+  }
+  boardEl.innerHTML=h;
+  if(B.drag&&B.drag.ghost)boardEl.appendChild(B.drag.ghost);
+}
+function sqAt(x,y){var r=boardEl.getBoundingClientRect();if(x<r.left||y<r.top||x>=r.right||y>=r.bottom)return null;
+  var vf=Math.floor((x-r.left)/r.width*8),vr=Math.floor((y-r.top)/r.height*8);var f=B.flip?7-vf:vf,rk=B.flip?vr:7-vr;return 'abcdefgh'[f]+(rk+1)}
+function tryMove(from,to){
+  var mv=B.chess.move({from:from,to:to,promotion:'q'});B.sel=null;B.targets=[];
+  if(mv){B.marks={};B.marks[from]='last';B.marks[to]='last';drawBoard();if(B.onMove)B.onMove(mv);return true}
+  drawBoard();return false;
+}
+function select(n){B.sel=n;B.targets=B.chess.moves({square:n,verbose:true}).map(function(m){return m.to})}
+boardEl.addEventListener('pointerdown',function(e){
+  if(B.locked||!B.chess)return;
+  var n=sqAt(e.clientX,e.clientY);if(!n)return;
+  e.preventDefault();
+  if(B.sel&&B.targets.indexOf(n)>=0){tryMove(B.sel,n);return}
+  var pc=B.chess.get(n);
+  if(pc&&pc.color===B.chess.turn()){
+    var wasSel=B.sel===n;select(n);
+    var g=document.createElement('div');g.className='ghost';g.innerHTML=piece(pc);
+    var r=boardEl.getBoundingClientRect();g.style.left=(e.clientX-r.left)+'px';g.style.top=(e.clientY-r.top)+'px';
+    B.drag={from:n,ghost:g,moved:false,wasSel:wasSel,id:e.pointerId};
+    try{boardEl.setPointerCapture(e.pointerId)}catch(_){}
+    drawBoard();
+  }else{B.sel=null;B.targets=[];drawBoard()}
+});
+boardEl.addEventListener('pointermove',function(e){
+  if(!B.drag)return;var r=boardEl.getBoundingClientRect();
+  B.drag.moved=true;B.drag.ghost.style.left=(e.clientX-r.left)+'px';B.drag.ghost.style.top=(e.clientY-r.top)+'px';
+});
+function endDrag(e){
+  if(!B.drag)return;var d=B.drag;B.drag=null;
+  var to=e&&e.type==='pointerup'?sqAt(e.clientX,e.clientY):null;
+  if(to&&to!==d.from&&B.targets.indexOf(to)>=0){tryMove(d.from,to);return}
+  if(to===d.from&&d.wasSel&&!d.moved){B.sel=null;B.targets=[]}
+  drawBoard();
+}
+boardEl.addEventListener('pointerup',endDrag);
+boardEl.addEventListener('pointercancel',endDrag);
+
+/* ---------- training ---------- */
+var queue=[],cur=null,answered=false,timer=null;
+function cards(){return Object.keys(S.cards).map(function(k){return S.cards[k]})}
+function kindOk(c){var f=$('fKind').value;return f==='all'||(f==='trap'?!!c.trap:!c.trap)}
+function buildQueue(){queue=cards().filter(function(c){return kindOk(c)&&(c.due||0)<=now()}).sort(function(a,b){return (b.trap?1:0)-(a.trap?1:0)||(a.due||0)-(b.due||0)||(b.count||1)-(a.count||1)})}
+function renderMeta(){
+  var cs=cards().filter(kindOk);
+  $('mDue').textContent=cs.filter(function(c){return (c.due||0)<=now()}).length;
+  $('mTotal').textContent=cs.length;
+  $('mDone').textContent=cs.filter(function(c){return (c.box||0)>=4}).length;
+  var k=[0,0,0,0,0,0,0];cs.forEach(function(c){k[Math.min(6,c.box||0)]++});
+  $('bar').innerHTML=cs.length?k.map(function(n,i){return n?'<span style="flex:'+n+';opacity:'+(0.2+i*0.13)+'" title="Nivel '+i+': '+n+'"></span>':''}).join(''):'';
+}
+function moveText(line,upto,hi,start){var o='';start=start||0;for(var i=start;i<upto&&i<line.length;i++){if(i%2===0)o+=(i/2+1)+'. ';else if(i===start)o+=((i+1)/2)+'… ';o+=(i===hi?'<span class="cur">'+esc(line[i])+'</span>':esc(line[i]))+' '}return o}
+function sevLabel(c){return c.sev==='blunder'?'Error grave':c.sev==='mistake'?'Error':'Imprecisión'}
+function setButtons(state){
+  var on=state==='ask';
+  $('bHint').disabled=!on;$('bShow').disabled=!on;$('bReplay').disabled=!cur;
+  $('bNext').hidden=state!=='done';$('bPunish').hidden=!(state==='done'&&cur&&cur.after&&cur.after.length);
+}
+function showCard(c){
+  clearTimeout(timer);answered=false;$('fb').textContent='';$('fb').className='feedback';
+  renderMeta();
+  cur=c||queue.shift()||null;
+  B.sel=null;B.targets=[];B.marks={};B.drag=null;
+  if(!cur){
+    B.chess=new Chess();B.flip=false;B.locked=true;drawBoard();
+    var any=cards().length;
+    $('prompt').innerHTML=any?'<b>Listo por hoy.</b> No quedan posiciones pendientes con este filtro.':'<div class="note"><b>Aún no hay posiciones.</b> Ve a <b>Analizar</b> y baja tus partidas de Chess.com.</div>';
+    $('line').textContent='';setButtons('none');return;
+  }
+  var color=cur.side==='w'?'blancas':'negras';
+  var tag=cur.trap?'<span class="pill trap">Trampa</span>':'<span class="pill '+cur.sev+'">'+sevLabel(cur)+'</span>';
+  var extra=cur.trap?(cur.played.indexOf('x')>=0?' Comiste y ahí empezó el desastre.':' Desde aquí la partida se perdió.')+(cur.lostIn?' Perdiste en '+cur.lostIn+' jugadas.':''):'';
+  var times=(cur.count||1)>1?' Te pasó en '+cur.count+' partidas.':'';
+  $('prompt').innerHTML='<div class="op">'+esc(cur.opening||'Apertura')+' · juegas con '+color+'</div>'+
+    'Jugaste <b class="mono">'+esc(cur.played)+'</b> '+tag+'.'+extra+times+' <b>Encuentra una jugada mejor.</b>';
+  B.flip=cur.side==='b';B.chess=new Chess(fenOf(cur.line));
+  if(cur.line.length){var t=new Chess(fenOf(cur.line.slice(0,-1)));var lm=t.move(cur.line[cur.line.length-1],{sloppy:true});if(lm){B.marks[lm.from]='last';B.marks[lm.to]='last'}}
+  B.locked=false;B.onMove=onUserMove;drawBoard();
+  $('line').innerHTML=moveText(cur.line,cur.line.length,cur.line.length-1)+'…';
+  setButtons('ask');Engine.init();
+}
+function grade(ok){
+  if(ok){cur.box=Math.min(6,(cur.box||0)+1);cur.due=now()+DAYS[cur.box]*864e5-36e5}
+  else{cur.lapses=(cur.lapses||0)+1;cur.box=1;cur.due=now()+10*6e4;if(queue.indexOf(cur)<0)queue.splice(Math.min(3,queue.length),0,cur)}
+  cur.reps=(cur.reps||0)+1;S.cards[cur.id]=cur;save();renderMeta();
+}
+function finish(ok,msg){answered=true;B.locked=true;$('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=msg;setButtons('done');$('bNext').focus()}
+function bestSq(){var c=new Chess(fenOf(cur.line));var m=c.move(cur.best,{sloppy:true});return m?[m.from,m.to]:null}
+function onUserMove(mv){
+  if(answered)return;B.locked=true;
+  if(mv.san===cur.best){B.marks[mv.to]='ok';drawBoard();grade(true);finish(true,'Correcto: '+esc(mv.san)+' es la jugada del motor.');return}
+  if(mv.san===cur.played){B.marks[mv.to]='bad';drawBoard();grade(false);reveal('Esa es la que jugaste en la partida.');return}
+  $('fb').className='feedback';$('fb').textContent='Revisando '+mv.san+'…';
+  evalPos(B.chess.fen(),600).then(function(r){
+    if(!r){B.marks[mv.to]='bad';drawBoard();grade(false);reveal('No pude revisar esa jugada.');return}
+    var drop=wp(cur.s0)-wp(-r.score);
+    if(drop<5){B.marks[mv.to]='ok';drawBoard();grade(true);finish(true,'Bien: '+esc(mv.san)+' también sirve. La del motor era <span class="mono">'+esc(cur.best)+'</span>.')}
+    else{B.marks[mv.to]='bad';drawBoard();grade(false);reveal(esc(mv.san)+' tampoco: baja tu probabilidad de ganar '+Math.round(drop)+' puntos.')}
+  });
+}
+function reveal(prefix){
+  var sq=bestSq();
+  timer=setTimeout(function(){B.chess=new Chess(fenOf(cur.line));B.marks={};if(sq){B.marks[sq[0]]='hint';B.marks[sq[1]]='ok'}drawBoard()},800);
+  finish(false,prefix+' Lo mejor era <span class="mono">'+esc(cur.best)+'</span>. Volverá a salir en unos minutos.');
+}
+function animate(start,moves,first){
+  clearTimeout(timer);var c=new Chess(start?fenOf(start):undefined),i=0;B.locked=true;B.chess=c;B.marks={};B.sel=null;B.targets=[];drawBoard();
+  var all=(start||[]).concat(moves);var base=(start||[]).length;
+  (function step(){
+    if(i>=moves.length){B.locked=answered||!!start;return}
+    var m=c.move(moves[i],{sloppy:true});B.marks={};if(m){B.marks[m.from]=(first&&i===0)?'bad':'last';B.marks[m.to]=(first&&i===0)?'bad':'last'}
+    drawBoard();$('line').innerHTML=moveText(all,base+i+1,base+i,start?Math.max(0,base-2):0);i++;timer=setTimeout(step,first?900:480);
+  })();
+}
+$('bReplay').onclick=function(){if(cur)animate(null,cur.line,false)};
+$('bPunish').onclick=function(){if(cur)animate(cur.line,[cur.played].concat(cur.after||[]),true)};
+$('bHint').onclick=function(){if(!cur||answered)return;var sq=bestSq();if(sq){B.marks[sq[0]]='hint';drawBoard()}};
+$('bShow').onclick=function(){if(!cur||answered)return;grade(false);reveal('')};
+$('bNext').onclick=function(){showCard()};
+$('fKind').onchange=function(){buildQueue();showCard()};
+
+/* ---------- tables ---------- */
+function res(g){return g.r||'?'}
+function renderOpenings(){
+  var by={};
+  Object.keys(S.games).forEach(function(k){var g=S.games[k];if(!g.op)return;var key=g.side+'|'+g.opening;var o=by[key]||(by[key]={side:g.side,name:g.opening,n:0,W:0,D:0,L:0,err:0});o.n++;o[res(g)]=(o[res(g)]||0)+1;o.err+=g.errors||0});
+  var rows=Object.keys(by).map(function(k){return by[k]}).sort(function(a,b){return b.err-a.err||b.n-a.n}).slice(0,25);
+  $('tOpen').innerHTML=rows.length?'<thead><tr><th>Apertura</th><th>Color</th><th class="n">Partidas</th><th class="n">G-T-P</th><th class="n">Errores</th></tr></thead><tbody>'+
+    rows.map(function(o){return '<tr><td>'+esc(o.name)+'</td><td>'+(o.side==='w'?'Blancas':'Negras')+'</td><td class="n">'+o.n+'</td><td class="n">'+o.W+'-'+o.D+'-'+o.L+'</td><td class="n">'+o.err+'</td></tr>'}).join('')+'</tbody>':'<tr><td class="empty">Todavía no has analizado partidas.</td></tr>';
+  var cs=cards().filter(function(c){return !c.trap}).sort(function(a,b){return (b.count||1)-(a.count||1)||(b.lapses||0)-(a.lapses||0)}).slice(0,15);
+  $('tRep').innerHTML=cs.length?'<thead><tr><th>Posición</th><th>Jugaste</th><th>Mejor</th><th class="n">Veces</th></tr></thead><tbody>'+
+    cs.map(function(c){return '<tr class="click" data-id="'+esc(c.id)+'"><td class="mono">'+moveText(c.line,c.line.length,-1)+'</td><td class="mono">'+esc(c.played)+'</td><td class="mono">'+esc(c.best)+'</td><td class="n">'+(c.count||1)+'</td></tr>'}).join('')+'</tbody>':'<tr><td class="empty">Sin errores registrados.</td></tr>';
+}
+function family(name){var w=(name||'Desconocida').split(' ');var stop=['Variation','Defense','Opening','Game','Attack','System','Gambit','Countergambit'];for(var i=0;i<w.length;i++){if(stop.indexOf(w[i])>=0)return w.slice(0,i+1).join(' ')}return w.slice(0,3).join(' ')}
+function renderTraps(){
+  var gs=Object.keys(S.games).map(function(k){return S.games[k]});
+  var quick=gs.filter(function(g){return g.tr});
+  var tc=cards().filter(function(c){return c.trap});
+  $('sQuick').textContent=quick.length;$('sTraps').textContent=tc.length;
+  $('sCapt').textContent=tc.filter(function(c){return c.played.indexOf('x')>=0}).length;
+  var by={};tc.forEach(function(c){var k=c.side+'|'+family(c.opening);var o=by[k]||(by[k]={side:c.side,name:family(c.opening),n:0,caps:0});o.n+=(c.count||1);if(c.played.indexOf('x')>=0)o.caps+=(c.count||1)});
+  var rows=Object.keys(by).map(function(k){return by[k]}).sort(function(a,b){return b.n-a.n}).slice(0,15);
+  $('tTrapOpen').innerHTML=rows.length?'<thead><tr><th>Apertura</th><th>Color</th><th class="n">Veces</th><th class="n">Comiendo</th></tr></thead><tbody>'+
+    rows.map(function(o){return '<tr><td>'+esc(o.name)+'</td><td>'+(o.side==='w'?'Blancas':'Negras')+'</td><td class="n">'+o.n+'</td><td class="n">'+o.caps+'</td></tr>'}).join('')+'</tbody>':'<tr><td class="empty">Aún no hay trampas analizadas. Ve a Analizar → Trampas.</td></tr>';
+  var list=tc.slice().sort(function(a,b){return (b.count||1)-(a.count||1)||(a.line.length-b.line.length)}).slice(0,40);
+  $('tTraps').innerHTML=list.length?'<thead><tr><th>Posición</th><th>Jugaste</th><th>Mejor</th><th class="n">Veces</th></tr></thead><tbody>'+
+    list.map(function(c){return '<tr class="click" data-id="'+esc(c.id)+'"><td><div class="small">'+esc(family(c.opening))+' · '+(c.side==='w'?'blancas':'negras')+'</div><span class="mono">'+moveText(c.line,c.line.length,-1)+'</span></td><td class="mono">'+esc(c.played)+'</td><td class="mono">'+esc(c.best)+'</td><td class="n">'+(c.count||1)+'</td></tr>'}).join('')+'</tbody>':'';
+  var gm=Object.keys(S.gambits||{}).map(function(k){return S.gambits[k]}).sort(function(a,b){return b.n-a.n}).slice(0,15);
+  $('tGambits').innerHTML=gm.length?'<thead><tr><th>Gambito</th><th>Tú con</th><th class="n">Partidas</th><th class="n">G-T-P</th></tr></thead><tbody>'+
+    gm.map(function(o){return '<tr><td>'+esc(o.name)+'</td><td>'+(o.side==='w'?'Blancas':'Negras')+'</td><td class="n">'+o.n+'</td><td class="n">'+o.W+'-'+o.D+'-'+o.L+'</td></tr>'}).join('')+'</tbody>':'<tr><td class="empty">Se llena al analizar trampas con todo el historial.</td></tr>';
+}
+document.addEventListener('click',function(e){var tr=e.target.closest('tr.click');if(!tr)return;var c=S.cards[tr.getAttribute('data-id')];if(!c)return;openTab('p-train');showCard(c)});
+$('bTrainTraps').onclick=function(){$('fKind').value='trap';buildQueue();openTab('p-train');showCard()};
+
+/* ---------- fetching ---------- */
+function openingName(url){
+  var seg=decodeURIComponent((url||'').split('/').pop()||'');if(!seg)return 'Desconocida';
+  var parts=seg.split('-'),keep=[];for(var i=0;i<parts.length;i++){if(/\d|\.\.\./.test(parts[i]))break;keep.push(parts[i])}
+  return keep.join(' ').trim()||'Desconocida';
+}
+function cleanPgn(p){return p.replace(/\{[^}]*\}/g,'').replace(/\s\d+\.\.\.\s/g,' ')}
+function movesOf(pgn){var c=new Chess();if(!c.load_pgn(cleanPgn(pgn),{sloppy:true}))return null;return c.history()}
+function resultCode(r){return r==='win'?'W':LOSS[r]?'L':'D'}
+function fetchGames(user,months){
+  return fetch('https://api.chess.com/pub/player/'+encodeURIComponent(user)+'/games/archives').then(function(r){if(!r.ok)throw new Error('user');return r.json()})
+  .then(function(a){
+    var urls=a.archives||[];if(months)urls=urls.slice(-months);
+    var out=[],i=0;
+    return new Promise(function(resolve,reject){
+      (function next(){
+        if(i>=urls.length){resolve(out);return}
+        status('Bajando partidas de Chess.com: mes '+(i+1)+' de '+urls.length+'…');
+        fetch(urls[i++]).then(function(r){return r.json()}).then(function(j){(j.games||[]).forEach(function(g){if(g.rules==='chess'&&g.pgn)out.push(g)});next()}).catch(reject);
+      })();
+    });
+  });
+}
+function gameInfo(g,user){
+  var side=g.white.username.toLowerCase()===user?'w':'b';var me=side==='w'?g.white:g.black;
+  return {id:g.url,white:g.white.username,black:g.black.username,date:g.end_time,opening:openingName(g.eco),side:side,r:resultCode(me.result),how:me.result};
+}
+function gambitStats(games,user){
+  var out={};
+  games.forEach(function(g){var info=gameInfo(g,user);var n=info.opening;var w=n.split(' ');var idx=-1;for(var i=0;i<w.length;i++)if(/Gambit/.test(w[i])){idx=i;break}
+    if(idx<0)return;var name=w.slice(0,idx+1).join(' ');var k=info.side+'|'+name;var o=out[k]||(out[k]={name:name,side:info.side,n:0,W:0,D:0,L:0});o.n++;o[info.r]++});
+  return out;
+}
+
+/* ---------- analysis ---------- */
+var running=false,stopFlag=false;
+function status(t){$('impStatus').textContent=t}
+function posKey(fen){return fen.split(' ').slice(0,4).join(' ')}
+function setRunning(on){running=on;$('bRecent').disabled=on;$('bTrapsAll').disabled=on;$('bPgn').disabled=on;$('bStop').hidden=!on}
+function addCard(info,sans,fens,p,s0,s1,bestSan,trap){
+  var drop=wp(s0)-wp(s1);var key=posKey(fens[p])+'|'+sans[p];var ex=S.cards[key];
+  var sev=drop>=20?'blunder':drop>=12?'mistake':'inacc';
+  if(ex){if((ex.games||[]).indexOf(info.id)<0){ex.games=(ex.games||[]).concat(info.id);ex.count=(ex.count||1)+1}if(trap&&!ex.trap){ex.trap=true;ex.after=sans.slice(p+1,p+6);ex.lostIn=Math.ceil(sans.length/2)}ex.due=Math.min(ex.due||0,now());return false}
+  S.cards[key]={id:key,games:[info.id],side:info.side,opening:info.opening,line:sans.slice(0,p),played:sans[p],best:bestSan,s0:s0,drop:Math.round(drop),sev:sev,trap:!!trap,
+    after:sans.slice(p+1,p+6),lostIn:trap?Math.ceil(sans.length/2):null,box:0,due:0,count:1};
+  return true;
+}
+/* mode 'open': all errors in the first maxPly plies. mode 'trap': stop at the move that turned a fine position into a lost one. */
+function analyseGame(info,sans,mode,ms){
+  var maxPly=mode==='open'?24:30;var n=Math.min(sans.length,maxPly);
+  var c=new Chess(),fens=[c.fen()];for(var i=0;i<n;i++){c.move(sans[i],{sloppy:true});fens.push(c.fen())}
+  var sc=[],best=[],errs=0,found=0;
+  function ev(k){if(sc[k]!==undefined)return Promise.resolve();return evalPos(fens[k],ms).then(function(r){sc[k]=r?r.score:0;best[k]=r?r.best:null})}
+  var p=info.side==='w'?0:1;
+  return new Promise(function(resolve){
+    (function next(){
+      if(stopFlag||p>=n){resolve({errs:errs,found:found,stopped:stopFlag&&p<n});return}
+      ev(p).then(function(){return ev(p+1)}).then(function(){
+        var s0=sc[p],s1=-sc[p+1],drop=wp(s0)-wp(s1);
+        var bestSan=uciToSan(fens[p],best[p]);
+        var isTrap=drop>=20&&s0>=-200&&s1<=-300;
+        if(mode==='trap'){
+          if(isTrap&&bestSan&&bestSan!==sans[p]){errs++;if(addCard(info,sans,fens,p,s0,s1,bestSan,true))found++;resolve({errs:errs,found:found});return}
+          if(s0<-300){resolve({errs:errs,found:found});return}
+        }else if(Math.abs(s0)<=600&&drop>=8&&bestSan&&bestSan!==sans[p]){errs++;if(addCard(info,sans,fens,p,s0,s1,bestSan,isTrap))found++}
+        p+=2;next();
+      });
+    })();
+  });
+}
+function runJobs(jobs,mode,label){
+  var ms=+$('iDepth').value,total=jobs.length,done=0,found=0;
+  if(!total){status('No hay partidas nuevas para '+label+'.');setRunning(false);return}
+  status('Cargando el motor…');
+  Engine.init().then(function(ok){
+    if(!ok){status('No pude cargar Stockfish en este navegador. Prueba en Chrome o Safari actualizados.');setRunning(false);return}
+    (function next(){
+      if(stopFlag||!jobs.length){
+        status((stopFlag?'Detenido. ':'Listo. ')+done+' de '+total+' partidas revisadas, '+found+' posiciones nuevas para entrenar.');
+        setRunning(false);refreshAll();return}
+      var j=jobs.shift();
+      status(label+': partida '+(done+1)+' de '+total+' · '+j.info.white+' vs '+j.info.black);
+      analyseGame(j.info,j.sans,mode,ms).then(function(r){
+        if(r.stopped){next();return}
+        var g=S.games[j.info.id]||j.info;
+        if(mode==='open'){g.op=1;g.errors=r.errs}else g.tr=1;
+        S.games[j.info.id]=g;found+=r.found;done++;save();
+        $('prog').style.width=(done/total*100)+'%';renderMeta();next();
+      });
+    })();
+  });
+}
+function start(mode){
+  if(running)return;
+  var user=$('iUser').value.trim().toLowerCase();if(!user){status('Escribe tu usuario de Chess.com.');return}
+  S.user=$('iUser').value.trim();setRunning(true);stopFlag=false;$('prog').style.width='0';
+  fetchGames(user,mode==='open'?3:0).then(function(games){
+    if(mode==='trap'){S.gambits=gambitStats(games,user);save()}
+    var jobs=[];
+    games.forEach(function(g){
+      var info=gameInfo(g,user);var prev=S.games[info.id];
+      if(mode==='open'&&prev&&prev.op)return;
+      if(mode==='trap'){if(prev&&prev.tr)return;if(info.r!=='L'||info.how==='timeout'||info.how==='abandoned')return}
+      var sans=movesOf(g.pgn);if(!sans)return;
+      if(mode==='trap'&&sans.length>50)return;
+      jobs.push({info:info,sans:sans});
+    });
+    jobs.sort(function(a,b){return (b.info.date||0)-(a.info.date||0)});
+    runJobs(jobs,mode,mode==='open'?'Aperturas':'Trampas');
+  }).catch(function(){setRunning(false);status('No pude bajar las partidas. Revisa el usuario o tu conexión e inténtalo de nuevo.')});
+}
+$('bRecent').onclick=function(){start('open')};
+$('bTrapsAll').onclick=function(){start('trap')};
+$('bStop').onclick=function(){stopFlag=true;status('Deteniendo al terminar la jugada actual…')};
+$('bPgn').onclick=function(){
+  if(running)return;var user=$('iUser').value.trim().toLowerCase();
+  var chunks=$('iPgn').value.replace(/\r/g,'').split(/(?=\[Event\s)/).map(function(s){return s.trim()}).filter(function(s){return /\d+\.\s*\S/.test(s)});
+  if(!chunks.length){status('No encontré partidas en el texto pegado.');return}
+  var jobs=[];chunks.forEach(function(p){var c=new Chess();if(!c.load_pgn(cleanPgn(p),{sloppy:true}))return;var h=c.header();
+    var side=(h.White||'').toLowerCase()===user?'w':(h.Black||'').toLowerCase()===user?'b':null;if(!side)return;
+    var id=h.Link||[h.White,h.Black,h.Date,h.UTCTime||'',c.history().slice(0,16).join('')].join('|');if(S.games[id]&&S.games[id].op)return;
+    var won=h.Result==='1-0'?'w':h.Result==='0-1'?'b':null;
+    jobs.push({info:{id:id,white:h.White,black:h.Black,date:0,opening:openingName(h.ECOUrl)||h.Opening||'Desconocida',side:side,r:won?(won===side?'W':'L'):'D'},sans:c.history()})});
+  setRunning(true);stopFlag=false;runJobs(jobs,'open','PGN');
+};
+
+/* ---------- backup ---------- */
+$('bBackup').onclick=function(){var t=JSON.stringify(S);$('iBackup').value=t;
+  try{navigator.clipboard.writeText(t).then(function(){$('bkStatus').textContent='Respaldo copiado.'},function(){$('iBackup').select();$('bkStatus').textContent='Selecciona y copia el texto del cuadro.'})}catch(e){$('iBackup').select()}};
+$('bRestore').onclick=function(){try{var o=JSON.parse($('iBackup').value);if(!o.cards||!o.games)throw 0;S=o;save();refreshAll();$('bkStatus').textContent='Respaldo restaurado.'}catch(e){$('bkStatus').textContent='Ese texto no es un respaldo válido.'}};
+$('bBase').onclick=function(){fetch('datos.json',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(b){merge(b);save();refreshAll();$('bkStatus').textContent='Análisis base cargado sin borrar tu progreso.'}).catch(function(){$('bkStatus').textContent='No hay análisis base disponible.'})};
+var armed=false;
+$('bReset').onclick=function(){if(!armed){armed=true;$('bReset').textContent='Toca otra vez para borrar';setTimeout(function(){armed=false;$('bReset').textContent='Borrar todo'},4000);return}
+  S=blank();save();armed=false;$('bReset').textContent='Borrar todo';refreshAll();$('bkStatus').textContent='Se borró todo.'};
+
+/* ---------- tabs ---------- */
+function openTab(id){document.querySelectorAll('.tab').forEach(function(x){var on=x.dataset.p===id;x.setAttribute('aria-selected',on);$(x.dataset.p).hidden=!on});
+  if(id==='p-open')renderOpenings();if(id==='p-traps')renderTraps();window.scrollTo(0,0)}
+document.querySelectorAll('.tab').forEach(function(t){t.onclick=function(){openTab(t.dataset.p)}});
+function refreshAll(){if(S.user)$('iUser').value=S.user;renderOpenings();renderTraps();buildQueue();if(!cur||answered||!S.cards[cur.id])showCard();else renderMeta()}
+
+B.chess=new Chess();drawBoard();
+boot();
+})();
+</script>
+</body>
+</html>
