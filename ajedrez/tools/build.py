@@ -26,13 +26,18 @@ for k,c in selP:
       'oppBest':pr['pv'][0] if pr['pv'] else None,'best':nw['pv'][0],'s0':s0,'s1':s1,'gain':round(wp(s1)-wp(s0)),'pvBest':nw['pv'],
       'gameMove':gm,'missed':any(x[2] is False for x in c['g']),'games':[x[0] for x in c['g']],'count':len(c['g']),
       'date':max(x[1] for x in c['g']),'rep':rep(g),'box':0,'due':0}
+RT={x['url']:(x['white' if x['white']['username'].lower()=='esmithco' else 'black']['rating'],x.get('time_class')) for x in json.load(open('games.json'))}
 games={}
-cnt=collections.Counter()
-for k,c in cards.items():
-    for gid in c['games']:
-        if c['kind']=='mine': cnt[gid]+=1
+# mistakes per game = every flagged own move (not only the ones kept as cards), for the progress chart
+import pickle
+C=pickle.load(open('cache12.pkl','rb'));cnt=collections.Counter()
 for g in G:
-    games[g['id']]={'white':g['white'],'black':g['black'],'date':g['date'],'opening':g['opening'],'side':g['side'],'r':g['r'],'how':g['how'],'op':1,'tr':1,'errors':cnt[g['id']]}
+    f=g['fens'];s=g['sans'];us=0 if g['side']=='w' else 1
+    for p in range(us,min(len(s),30),2):
+        a=C.get(pk(f[p]));b=C.get(pk(f[p+1]))
+        if a and b and abs(a['s'])<=500 and wp(a['s'])-wp(-b['s'])>=10 and a['pv'] and a['pv'][0]!=s[p]: cnt[g['id']]+=1
+for g in G:
+    games[g['id']]={'white':g['white'],'black':g['black'],'date':g['date'],'opening':g['opening'],'side':g['side'],'r':g['r'],'how':g['how'],'op':1,'tr':1,'errors':cnt[g['id']],'rt':RT.get(g['id'],(None,None))[0],'tc':RT.get(g['id'],(None,None))[1]}
 # opponent/own move frequencies in repertoire games, first 16 plies
 st=collections.defaultdict(collections.Counter)
 for g in G:
