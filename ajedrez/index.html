@@ -157,6 +157,8 @@ details summary{cursor:pointer;font-weight:600}
 .chart{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 12px 6px}
 .chart svg{width:100%;height:auto;display:block}
 .chart .cap{font-size:.82rem;color:var(--muted);margin:2px 0 6px}
+.cloudline{appearance:none;background:none;border:0;padding:0;font:600 .82rem var(--f-body);color:var(--good);cursor:pointer;text-align:left}.cloudline.warn{color:var(--warn)}
+.steps{margin:0;padding-left:20px}.steps li{margin:4px 0}.steps a{color:var(--accent)}
 .counter{font:600 .85rem var(--f-mono);color:var(--muted)}
 @media (max-width:420px){.tiles{grid-template-columns:1fr 1fr}.tile{padding:12px}.evalbar{width:16px;flex-basis:16px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -181,7 +183,7 @@ details summary{cursor:pointer;font-weight:600}
       <button class="btn" id="bToday"></button>
       <div class="streak" id="hStreak"></div>
     </div>
-    <div class="sync"><button class="btn" id="bSync" data-t="bSync"></button><span class="small" id="syncStatus"></span></div>
+    <div class="sync"><button class="btn" id="bSync" data-t="bSync"></button><span class="small" id="syncStatus"></span><button class="cloudline" id="clHome" type="button"></button></div>
     <div class="tiles">
       <button class="tile" data-go="mine" style="--tc:var(--c-mist)"><b data-t="tMine"></b><span data-t="tMineD"></span><em id="tMineN"></em></button>
       <button class="tile" data-go="punish" style="--tc:var(--good)"><b data-t="tPun"></b><span data-t="tPunD"></span><em id="tPunN"></em></button>
@@ -251,6 +253,15 @@ details summary{cursor:pointer;font-weight:600}
 
   <!-- DATA -->
   <section class="screen" id="s-data" hidden>
+    <div class="card" id="clCard">
+      <h2 data-t="clTitle"></h2>
+      <p class="small" id="clStatus"></p>
+      <div id="clSetup">
+        <ol class="small steps"><li data-t="clStep1"></li><li data-t="clStep2"></li><li data-t="clStep3"></li></ol>
+        <div class="row" style="align-items:center"><input type="password" id="iToken" autocomplete="off" autocapitalize="off" data-ph="clPh" style="flex:1;min-width:0"><button class="btn primary" id="bClConnect" data-t="clConnect"></button></div>
+      </div>
+      <div class="row" id="clOn" hidden><button class="btn" id="bClNow" data-t="clNow"></button><button class="btn" id="bClOff" data-t="clDisc"></button></div>
+    </div>
     <h2 data-t="dataTitle"></h2>
     <div class="card">
       <div class="grid2">
@@ -289,9 +300,9 @@ details summary{cursor:pointer;font-weight:600}
   <button data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg><span data-t="navProg"></span></button>
 </nav>
 <script src="chess.js"></script>
-<script src="textos.js?v=5"></script>
+<script src="textos.js?v=6"></script>
 <script src="repertorio.js?v=1"></script>
 <script src="curso.js?v=1"></script>
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>

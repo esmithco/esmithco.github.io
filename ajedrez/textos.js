@@ -1,6 +1,12 @@
 /* UI strings (es/en) and the "key ideas" lessons. {0},{1}… are placeholders. */
 window.TXT = {
 es: {
+  clTitle: 'Guardar mi progreso en la nube', clConnect: 'Conectar', clNow: 'Sincronizar ahora', clDisc: 'Desconectar este dispositivo', clPh: 'Pega aquí tu token (ghp_…)',
+  clStep1: 'Abre <a href="https://github.com/settings/tokens/new?scopes=gist&description=Taller%20de%20Aperturas" target="_blank" rel="noopener">este enlace de GitHub</a> (ya marca el permiso "gist").',
+  clStep2: 'En "Expiration" elige <b>No expiration</b>, baja y toca <b>Generate token</b>. Copia el código que empieza por ghp_.',
+  clStep3: 'Pégalo aquí y toca Conectar. Repite solo este paso en cada dispositivo o navegador (el mismo token sirve).',
+  clOff: '⚠ Tu progreso solo está en este navegador. Toca para guardarlo en la nube.', clBusy: '☁ Sincronizando…', clOk: '☁ Progreso guardado en la nube · {0}',
+  clErr: '☁ No pude sincronizar ({0}). Lo intento de nuevo luego.', clBad: 'Ese token no funcionó ({0}). Revisa que tenga el permiso gist.',
   navToday: 'Hoy', navRep: 'Repertorio', navLearn: 'Aprender', navProg: 'Progreso',
   bSync: '↻ Actualizar mis partidas', syncHint: 'Baja tus partidas nuevas de Chess.com y busca tus errores.', lastSync: 'Última actualización: {0}',
   learnIntro: 'Un curso en orden: primero lo que más puntos te da (tácticas), luego mates y finales. Cada lección: idea corta + problemas reales de Lichess cerca de tu nivel.',
@@ -26,7 +32,7 @@ es: {
   tMine: 'Mis errores', tMineD: 'Tus jugadas malas, como ejercicios.',
   tPun: 'Castiga errores', tPunD: 'El rival se equivoca: encuentra cómo ganarle.',
   tIdeas: 'Ideas clave', tIdeasD: 'Lo que tienes que saber: centro, alfil malo, rey activo…',
-  tData: 'Analizar partidas nuevas, estadísticas y respaldo',
+  tData: 'Guardar progreso, partidas y respaldo',
   pending: '{0} pendientes', learned: '{0}/{1} aprendidas',
   // kinds
   kMine: 'Tu error', kPun: 'Castiga', kRep: 'Repertorio', kTrap: 'Trampa', kIdea: 'Idea clave',
@@ -119,6 +125,12 @@ es: {
   langBtn: 'EN', langName: 'English'
 },
 en: {
+  clTitle: 'Save my progress to the cloud', clConnect: 'Connect', clNow: 'Sync now', clDisc: 'Disconnect this device', clPh: 'Paste your token here (ghp_…)',
+  clStep1: 'Open <a href="https://github.com/settings/tokens/new?scopes=gist&description=Taller%20de%20Aperturas" target="_blank" rel="noopener">this GitHub link</a> (the "gist" permission is already ticked).',
+  clStep2: 'Under "Expiration" pick <b>No expiration</b>, scroll down and tap <b>Generate token</b>. Copy the code starting with ghp_.',
+  clStep3: 'Paste it here and tap Connect. Repeat just this step on each device or browser (the same token works).',
+  clOff: '⚠ Your progress lives only in this browser. Tap to save it to the cloud.', clBusy: '☁ Syncing…', clOk: '☁ Progress saved to the cloud · {0}',
+  clErr: '☁ Couldn\'t sync ({0}). I\'ll retry later.', clBad: 'That token didn\'t work ({0}). Check it has the gist permission.',
   navToday: 'Today', navRep: 'Repertoire', navLearn: 'Learn', navProg: 'Progress',
   bSync: '↻ Update my games', syncHint: 'Downloads your new Chess.com games and finds your mistakes.', lastSync: 'Last update: {0}',
   learnIntro: 'A course in order: first what wins you the most points (tactics), then mates and endgames. Each lesson: a short idea + real Lichess puzzles near your level.',
@@ -144,7 +156,7 @@ en: {
   tMine: 'My mistakes', tMineD: 'Your bad moves, as exercises.',
   tPun: 'Punish mistakes', tPunD: 'When your opponent slips: find how to win.',
   tIdeas: 'Key ideas', tIdeasD: 'What you need to know: center, bad bishop, active king…',
-  tData: 'Analyze new games, stats and backup',
+  tData: 'Save progress, games and backup',
   pending: '{0} due', learned: '{0}/{1} learned',
   kMine: 'Your mistake', kPun: 'Punish', kRep: 'Repertoire', kTrap: 'Trap', kIdea: 'Key idea',
   white: 'White', black: 'Black', White: 'White', Black: 'Black',

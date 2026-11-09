@@ -29,7 +29,7 @@ function upgrade(){
   var b=blank();Object.keys(b).forEach(function(k){if(S[k]==null)S[k]=b[k]});
   Object.keys(S.cards).forEach(function(k){if(!S.cards[k].kind)S.cards[k].kind='mine'});S.v=3;
 }
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof cloudSoon==='function')cloudSoon()}
 function mergeBase(D){
   var nc={};
   Object.keys(D.cards||{}).forEach(function(k){var c=D.cards[k],o=S.cards[k];if(o){c.box=o.box||0;c.due=o.due||0;c.reps=o.reps||0;c.lapses=o.lapses||0}nc[k]=c});
@@ -45,7 +45,7 @@ function boot(){
   fetch('datos.json?v=4',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
     DATA.stats=D.stats||{};
     if(!S.base||S.base<(D.base||0)){mergeBase(D);save()}
-  }).catch(function(){}).then(function(){route()});
+  }).catch(function(){}).then(function(){route();clStatus();cloudPull()});
 }
 
 /* ---------- chess helpers ---------- */
@@ -840,7 +840,7 @@ function runJobs(jobs){
       if(stopFlag||!jobs.length){status(stopFlag?'stopped':'done',done,total,found);setRunning(false);save();if(!$('s-home').hidden){var m=counts('mine'),q=counts('punish');$('tMineN').textContent=fmtCount(m);$('tPunN').textContent=fmtCount(q)}return}
       var j=jobs.shift();status('game',done+1,total,j.info.white,j.info.black);
       analyseGame(j.info,j.sans,ms).then(function(r){if(r.stopped){next();return}
-        var g=S.games[j.info.id]||j.info;g.op=1;g.tr=1;g.errors=r.errs;S.games[j.info.id]=g;found+=r.found;done++;save();
+        var g=S.games[j.info.id]||j.info;if(!S.games[j.info.id])g.src='app';g.op=1;g.tr=1;g.errors=r.errs;S.games[j.info.id]=g;found+=r.found;done++;save();
         $('prog').style.width=(done/total*100)+'%';next()})})()});
 }
 $('bRecent').onclick=function(){
@@ -871,6 +871,73 @@ $('bBase').onclick=function(){fetch('datos.json?v=4',{cache:'no-cache'}).then(fu
 var armed=false;
 $('bReset').onclick=function(){if(!armed){armed=true;$('bReset').textContent=t('bkResetSure');setTimeout(function(){armed=false;$('bReset').textContent=t('bkReset')},4000);return}
   S=blank();save();armed=false;$('bReset').textContent=t('bkReset');$('bkStatus').textContent=t('bkWiped')};
+
+/* ---------- cloud save: progress in a private GitHub gist (token stays on this device only) ---------- */
+var CKEY='taller-aperturas.cloud',GDESC='taller-aperturas-progress',GFILE='progress.json';
+var CL={token:'',gist:'',at:0};try{var cj=JSON.parse(localStorage.getItem(CKEY)||'{}');CL.token=cj.token||'';CL.gist=cj.gist||'';CL.at=cj.at||0}catch(e){}
+var clTimer=null,clBusy=false,clPulled=0,clErr='';
+function clSave(){try{localStorage.setItem(CKEY,JSON.stringify(CL))}catch(e){}}
+function cloudOn(){return !!(CL.token&&CL.gist)}
+function prog(o){return {box:o.box||0,due:o.due||0,reps:o.reps||0,lapses:o.lapses||0}}
+function payload(){
+  var cards={},app={},games={};
+  Object.keys(S.cards).forEach(function(k){var c=S.cards[k];if(c.src==='app')app[k]=c;else if(c.reps)cards[k]=prog(c)});
+  Object.keys(S.games).forEach(function(k){if(S.games[k].src==='app')games[k]=S.games[k]});
+  var m=function(o){var r={};Object.keys(o||{}).forEach(function(k){r[k]=prog(o[k])});return r};
+  return {v:1,at:now(),user:S.user,cards:cards,appCards:app,games:games,rep:m(S.rep),ideas:m(S.ideas),puz:m(S.puz),tech:m(S.tech),
+    seenLesson:S.seenLesson,log:S.log,daily:S.daily,streak:S.streak,lastSync:S.lastSync};
+}
+function newer(a,b){return (a.reps||0)>(b.reps||0)||((a.reps||0)===(b.reps||0)&&(a.due||0)>(b.due||0))}
+function mergeProgress(R){
+  if(!R||!R.v)return;
+  Object.keys(R.appCards||{}).forEach(function(k){if(!S.cards[k])S.cards[k]=R.appCards[k]});
+  Object.keys(R.games||{}).forEach(function(k){if(!S.games[k])S.games[k]=R.games[k]});
+  Object.keys(R.cards||{}).forEach(function(k){var c=S.cards[k],r=R.cards[k];if(c&&newer(r,c)){c.box=r.box;c.due=r.due;c.reps=r.reps;c.lapses=r.lapses}});
+  ['rep','ideas','puz','tech'].forEach(function(f){S[f]=S[f]||{};Object.keys(R[f]||{}).forEach(function(k){var a=S[f][k],r=R[f][k];if(!a||newer(r,a))S[f][k]=r})});
+  Object.keys(R.seenLesson||{}).forEach(function(k){S.seenLesson[k]=1});
+  var seen={};S.log=(S.log||[]).concat(R.log||[]).filter(function(e){var k=e[0]+e[1];if(seen[k])return false;seen[k]=1;return true}).sort(function(a,b){return a[0]-b[0]}).slice(-4000);
+  if(R.streak&&(R.streak.last>(S.streak.last||'')||R.streak.last===S.streak.last&&R.streak.n>S.streak.n))S.streak=R.streak;
+  if(R.daily&&(!S.daily||R.daily.date>S.daily.date||(R.daily.date===S.daily.date&&(R.daily.idx||0)>(S.daily.idx||0))))S.daily=R.daily;
+  if((R.lastSync||0)>(S.lastSync||0))S.lastSync=R.lastSync;
+  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+}
+function gh(path,method,body,keep){
+  return fetch('https://api.github.com'+path,{method:method||'GET',keepalive:!!keep,headers:{'Authorization':'token '+CL.token,'Accept':'application/vnd.github+json'},body:body?JSON.stringify(body):undefined})
+    .then(function(r){if(!r.ok)throw r.status;return r.json()});
+}
+function clStatus(){
+  var tx=!CL.token?t('clOff'):clErr?t('clErr',clErr):clBusy?t('clBusy'):CL.at?t('clOk',new Date(CL.at).toLocaleTimeString(LANG,{hour:'2-digit',minute:'2-digit'})):t('clBusy');
+  ['clStatus','clHome'].forEach(function(id){var el=$(id);if(el)el.textContent=tx});
+  $('clSetup').hidden=!!CL.token;$('clOn').hidden=!CL.token;$('clHome').classList.toggle('warn',!CL.token);
+}
+function cloudPush(keep){
+  if(!cloudOn())return Promise.resolve();clearTimeout(clTimer);clBusy=true;clStatus();
+  var files={};files[GFILE]={content:JSON.stringify(payload())};
+  return gh('/gists/'+CL.gist,'PATCH',{files:files},keep).then(function(){CL.at=now();clErr='';clSave()}).catch(function(e){clErr=String(e)}).then(function(){clBusy=false;clStatus()});
+}
+function cloudPull(){
+  if(!cloudOn())return Promise.resolve();clBusy=true;clStatus();
+  return gh('/gists/'+CL.gist).then(function(g){var f=g.files&&g.files[GFILE];if(!f)return null;
+    return f.truncated?fetch(f.raw_url).then(function(r){return r.text()}):f.content}).then(function(tx){
+    if(tx){mergeProgress(JSON.parse(tx));clPulled=now()}clErr='';
+  }).catch(function(e){clErr=String(e)}).then(function(){clBusy=false;return cloudPush()}).then(function(){if(!$('s-home').hidden)renderHome()});
+}
+function cloudSoon(){if(!cloudOn())return;clearTimeout(clTimer);clTimer=setTimeout(function(){cloudPush()},4000)}
+function cloudConnect(token){
+  CL.token=token.trim();CL.gist='';clErr='';clBusy=true;clStatus();
+  return gh('/gists?per_page=100').then(function(list){
+    var g=list.filter(function(x){return x.description===GDESC&&x.files&&x.files[GFILE]})[0];
+    if(g){CL.gist=g.id;clSave();return cloudPull()}
+    var files={};files[GFILE]={content:JSON.stringify(payload())};
+    return gh('/gists','POST',{description:GDESC,public:false,files:files}).then(function(n){CL.gist=n.id;CL.at=now();clSave()});
+  }).then(function(){clBusy=false;clStatus()}).catch(function(e){clBusy=false;CL.token='';clSave();clErr='';clStatus();$('clStatus').textContent=t('clBad',e)});
+}
+$('bClConnect').onclick=function(){var v=$('iToken').value;if(!v.trim())return;$('iToken').value='';cloudConnect(v)};
+$('bClOff').onclick=function(){CL={token:'',gist:'',at:0};clSave();clStatus()};
+$('bClNow').onclick=function(){cloudPull()};
+$('clHome').onclick=function(){if(!CL.token)go('data')};
+document.addEventListener('visibilitychange',function(){if(!cloudOn())return;
+  if(document.hidden)cloudPush(true);else if(now()-clPulled>60000)cloudPull()});
 
 /* ---------- start ---------- */
 applyStatic();B.chess=new Chess();drawBoard();boot();
