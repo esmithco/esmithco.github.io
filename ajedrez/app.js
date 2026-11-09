@@ -23,7 +23,7 @@ function applyStatic(){
 $('bLang').onclick=function(){LANG=LANG==='es'?'en':'es';try{localStorage.setItem(LKEY,LANG)}catch(e){}applyStatic();rerender()};
 
 /* ---------- state ---------- */
-function blank(){return {v:3,user:'Esmithco',games:{},cards:{},gambits:{},rep:{},ideas:{},puz:{},tech:{},seenLesson:{},log:[],daily:null,streak:{n:0,last:''},base:0,lastSync:0}}
+function blank(){return {v:3,user:'Esmithco',games:{},cards:{},gambits:{},rep:{},ideas:{},puz:{},tech:{},drill:{},quiz:{},seenLesson:{},log:[],daily:null,streak:{n:0,last:''},base:0,lastSync:0}}
 var S=blank(),DATA={stats:{}};
 function upgrade(){
   var b=blank();Object.keys(b).forEach(function(k){if(S[k]==null)S[k]=b[k]});
@@ -245,10 +245,11 @@ function buildToday(){
   var seen=seenLines(),nq=seen.length>=3?seen[Math.floor(Math.random()*seen.length)]:null;
   var cl=curLesson(),pz=lessonItems(cl,3),rv=reviewPuz(1);pz=pz.concat(rv);
   var P=function(i){return pz[i]||null};
-  var it=[L(pickL[0]),P(0),C(mine[0]),P(1),C(pun[0]),nq?{t:'name',op:nq.op,i:nq.i}:C(mine[1]),P(2),C(mine[2]),P(3),P(4),idea?{t:'idea',id:idea.id}:null].filter(Boolean);
-  S.daily={v:2,date:today(),items:it,idx:0,ok:0,done:false};save();
+  var dr=['coord','nota','sqname'][new Date().getDate()%3],qz=QUIZ.filter(function(q){var s=S.quiz[q.id];return !s||(s.due||0)<=now()})[0];
+  var it=[{t:'drill',f:dr},L(pickL[0]),P(0),C(mine[0]),P(1),C(pun[0]),nq?{t:'name',op:nq.op,i:nq.i}:C(mine[1]),P(2),C(mine[2]),P(3),qz?{t:'quiz',id:qz.id}:null,idea?{t:'idea',id:idea.id}:null].filter(Boolean);
+  S.daily={v:3,date:today(),items:it,idx:0,ok:0,done:false};save();
 }
-function dailyNow(){if(!S.daily||S.daily.date!==today()||(!S.daily.v&&!S.daily.idx))buildToday();return S.daily}
+function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<3&&!S.daily.idx))buildToday();return S.daily}
 
 /* ---------- routing / screens ---------- */
 var SCREENS=['home','train','rep','learn','progress','data'],LISTS={mine:1,punish:1},TABS={home:'navToday',rep:'navRep',learn:'navLearn',progress:'navProg',data:'tData'};
@@ -301,12 +302,15 @@ function renderItem(){
   var it=X.items[X.i];cur={it:it,answered:false,first:true};
   $('trCount').textContent=(X.i+1)+'/'+X.items.length;$('trProg').style.width=(X.i/X.items.length*100)+'%';
   ['fb','why','choices','note'].forEach(function(id){$(id).innerHTML='';$(id).className=id==='fb'?'feedback':id;$(id).hidden=id!=='fb'});
-  $('line').textContent='';$('trEnd').hidden=true;$('trBody').hidden=false;
+  $('line').textContent='';$('trEnd').hidden=true;$('trBody').hidden=false;$('boardwrap').hidden=false;$('choices').classList.remove('grid');boardEl.classList.remove('nocoords');B.onMove=null;
   if(it.t==='card'){var c=S.cards[it.id];if(!c){skip();return}cur.card=c;loadCard(c)}
   else if(it.t==='line'){if(!REP[it.op]||!REP[it.op].lines[it.i]){skip();return}loadLine(it.op,it.i)}
   else if(it.t==='name'){if(!REP[it.op]||!REP[it.op].lines[it.i]){skip();return}loadName(it.op,it.i)}
   else if(it.t==='theory'){var lt=lessonById(it.l);if(!lt){skip();return}loadTheory(lt)}
   else if(it.t==='puz'){var lp=lessonById(it.l),pp=lp&&lp.p.filter(function(x){return x.id===it.id})[0];if(!pp){skip();return}loadPuz(lp,pp)}
+  else if(it.t==='ftheory'){var ff=fundById(it.f);if(!ff){skip();return}loadFTheory(ff)}
+  else if(it.t==='quiz'){var qq=quizById(it.id);if(!qq){skip();return}loadQuiz(qq)}
+  else if(it.t==='drill'){loadDrill(it.f)}
   else if(it.t==='play'){var tx=techById(it.id);if(!tx){skip();return}loadPlay(tx)}
   else if(it.t==='idea'){var idea=IDEAS.filter(function(x){return x.id===it.id})[0];if(!idea){skip();return}loadIdea(idea)}
 }
@@ -621,6 +625,89 @@ function quickSession(kind){
   startSession(due.slice(0,10).map(function(c){return {t:'card',id:c.id}}),kind);X.back='home';
 }
 
+/* ---------- fundamentals: coordinates, notation, concept quiz ---------- */
+var FILES='abcdefgh';
+function rndSq(){return FILES[Math.floor(Math.random()*8)]+(1+Math.floor(Math.random()*8))}
+function fundById(id){return FUND.filter(function(f){return f.id===id})[0]}
+function quizById(id){return QUIZ.filter(function(q){return q.id===id})[0]}
+function fundItems(id){
+  var o=[];if(!S.seenLesson['f_'+id])o.push({t:'ftheory',f:id});
+  if(id==='quiz'){var qs=QUIZ.filter(function(q){var s=S.quiz[q.id];return !s||(s.due||0)<=now()});if(qs.length<3)qs=QUIZ.slice();
+    return o.concat(qs.slice(0,8).map(function(q){return {t:'quiz',id:q.id}}))}
+  return o.concat([{t:'drill',f:id},{t:'drill',f:id},{t:'drill',f:id}]);
+}
+function loadFTheory(f){
+  S.seenLesson['f_'+f.id]=1;save();setBar(null,false);setBoard(new Chess().fen(),false);B.locked=true;
+  $('prompt').innerHTML='<div class="op">'+kindPill('idea',t('unitFund'))+'</div><h3 class="ideaT">'+esc(tt(f.t))+'</h3><ul class="ideaB">'+tt(f.body).map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul><p class="small">'+t('theoryGo')+'</p>';
+  setBtns({next:true});cur.answered=true;
+}
+function loadQuiz(q){
+  cur.quiz=q;setBar(null,false);$('boardwrap').hidden=true;
+  $('prompt').innerHTML='<div class="op">'+kindPill('idea',t('unitFund'))+'</div><h3 class="ideaT">'+esc(tt(q.q))+'</h3>';
+  var ch=$('choices');ch.hidden=false;var order=tt(q.o).map(function(_,i){return i}).sort(function(){return Math.random()-.5});
+  ch.innerHTML=order.map(function(i){return '<button class="btn opt" data-i="'+i+'">'+esc(tt(q.o)[i])+'</button>'}).join('');
+  ch.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(cur.answered)return;var i=+b.getAttribute('data-i'),ok=i===q.a;
+    b.classList.add(ok?'okb':'badb');if(!ok)ch.querySelector('[data-i="'+q.a+'"]').classList.add('okb');
+    var s=S.quiz[q.id]||(S.quiz[q.id]={box:0,due:0});gradeObj(s,ok);
+    $('fb').className='feedback '+(ok?'good':'bad');$('fb').textContent=ok?'✓':'✗';showWhy([esc(tt(q.w))]);itemDone(ok);setBtns({next:true})}});
+  setBtns({});
+}
+/* a drill = one timed round */
+function loadDrill(id){
+  var D=cur.drill={id:id,n:0,ok:0,total:id==='nota'?6:id==='sqname'?8:10,t0:now()};
+  setBar(null,false);boardEl.classList.toggle('nocoords',id!=='nota');
+  D.flip=Math.random()<.5;setBtns({});drillNext();
+}
+function drillHead(){var D=cur.drill,f=fundById(D.id);return '<div class="op">'+kindPill('idea',esc(tt(f.t)))+' <span class="counter">'+(D.n+1)+'/'+D.total+' · ✓ '+D.ok+'</span></div>'}
+function drillStep(ok){var D=cur.drill;D.n++;if(ok)D.ok++;if(D.n>=D.total){drillEnd();return}later(drillNext,ok?350:1900)}
+function drillNext(){
+  var D=cur.drill;$('choices').hidden=true;$('choices').innerHTML='';$('fb').innerHTML='';
+  if(D.id==='coord'){
+    if(D.n===5)D.flip=!D.flip;var sq=rndSq();D.sq=sq;
+    setBoard('8/8/8/8/8/8/8/8 w - - 0 1',D.flip);
+    $('prompt').innerHTML=drillHead()+'<div class="bigq">'+t('tapSq','<b class="mono">'+sq+'</b>')+'</div><p class="small">'+(D.flip?t('blackBottom'):t('whiteBottom'))+'</p>';
+    B.locked=false;B.onTap=function(s){B.locked=true;B.marks={};B.marks[sq]='ok';if(s!==sq)B.marks[s]='bad';drawBoard();
+      if(s!==sq)$('fb').innerHTML='<span class="mono">'+s+'</span> ≠ <span class="mono">'+sq+'</span>';drillStep(s===sq)};
+  }else if(D.id==='sqname'){
+    if(D.n===4)D.flip=!D.flip;var q=rndSq(),opts=[q];while(opts.length<4){var x=rndSq();if(opts.indexOf(x)<0)opts.push(x)}opts.sort();
+    setBoard('8/8/8/8/8/8/8/8 w - - 0 1',D.flip);B.marks[q]='sel';drawBoard();B.locked=true;
+    $('prompt').innerHTML=drillHead()+'<div class="bigq">'+t('nameSq')+'</div><p class="small">'+(D.flip?t('blackBottom'):t('whiteBottom'))+'</p>';
+    choices(opts.map(function(o){return [o,o]}),q,function(ok,pick){B.marks={};B.marks[q]='ok';if(!ok)B.marks[pick]='bad';drawBoard();drillStep(ok)});
+  }else{ /* nota: alternate "play this move" and "which move was played?" */
+    var c=randomPos(),mv=pickMove(c);if(!mv){drillNext();return}var fen=c.fen();
+    setBoard(fen,c.turn()==='b');
+    if(D.n%2===0){
+      $('prompt').innerHTML=drillHead()+'<div class="bigq">'+t('playMv','<b class="mono">'+esc(mv.san)+'</b>')+'</div>';
+      B.locked=false;B.onMove=function(m){B.locked=true;var ok=m.san===mv.san;
+        if(!ok){B.marks[m.to]='bad';var a=arrowFor(fen,mv.san,'#0E9488');B.arrows=a?[a]:[];$('fb').innerHTML=t('wasMv','<span class="mono">'+esc(m.san)+'</span>','<span class="mono">'+esc(mv.san)+'</span>')}else B.marks[m.to]='ok';
+        drawBoard();drillStep(ok)};
+    }else{
+      var others=c.moves().filter(function(s){return s!==mv.san}).sort(function(){return Math.random()-.5}).slice(0,3);
+      c.move(mv.san);setBoard(c.fen(),c.turn()==='w',mv.san,fen);B.locked=true;
+      $('prompt').innerHTML=drillHead()+'<div class="bigq">'+t('whichMv')+'</div><p class="small">'+t('markedMv')+'</p>';
+      choices(others.concat([mv.san]).sort().map(function(o){return [o,o]}),mv.san,function(ok){drillStep(ok)});
+    }
+  }
+}
+function choices(opts,right,cb){var ch=$('choices');ch.hidden=false;ch.classList.add('grid');
+  ch.innerHTML=opts.map(function(o){return '<button class="btn opt mono" data-v="'+esc(o[0])+'">'+esc(o[1])+'</button>'}).join('');
+  ch.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(ch.dataset.done)return;ch.dataset.done=1;var v=b.getAttribute('data-v'),ok=v===right;
+    b.classList.add(ok?'okb':'badb');if(!ok){var r=ch.querySelector('[data-v="'+right+'"]');if(r)r.classList.add('okb')}cb(ok,v)}});delete ch.dataset.done}
+function randomPos(){
+  var cs=Object.keys(S.cards).map(function(k){return S.cards[k]}).filter(function(c){return c.line&&c.line.length>=6});
+  var line=cs.length?cs[Math.floor(Math.random()*cs.length)].line:[];var c=new Chess();line.forEach(function(s){c.move(s,{sloppy:true})});return c;
+}
+function pickMove(c){var ms=c.moves({verbose:true});if(!ms.length)return null;
+  var pieces=ms.filter(function(m){return m.piece!=='p'}),caps=ms.filter(function(m){return m.captured});
+  var pool=Math.random()<.35&&caps.length?caps:Math.random()<.7&&pieces.length?pieces:ms;return pool[Math.floor(Math.random()*pool.length)]}
+function drillEnd(){
+  var D=cur.drill,sec=Math.round((now()-D.t0)/1000),s=S.drill[D.id]||(S.drill[D.id]={best:0,bestT:0,runs:0});s.runs++;
+  var better=D.ok>s.best||(D.ok===s.best&&(!s.bestT||sec<s.bestT));if(better){s.best=D.ok;s.bestT=sec}save();
+  boardEl.classList.remove('nocoords');
+  $('fb').className='feedback '+(D.ok>=D.total*.8?'good':'bad');$('fb').innerHTML=t('drillRes',D.ok,D.total,sec)+(better&&D.ok>0?' 🏆 '+t('newBest'):' · '+t('bestWas2',s.best,s.bestT));
+  itemDone(D.ok>=D.total*.8);setBtns({next:true});
+}
+
 /* ---------- learn: course of tactics, mates, endgames (+ strategy ideas) ---------- */
 function lessonById(id){return CURSO.lessons.filter(function(l){return l.id===id})[0]}
 function techById(id){return CURSO.tech.filter(function(x){return x.id===id})[0]}
@@ -635,7 +722,11 @@ function lessonItems(l,max){
 }
 function reviewPuz(n){var o=[];CURSO.lessons.forEach(function(l){l.p.forEach(function(p){var s=S.puz[p.id];if(s&&s.lapses&&(s.due||0)<=now())o.push({t:'puz',l:l.id,id:p.id})})});return o.slice(0,n)}
 function renderLearn(){
-  var h='';
+  var h='<div class="unit"><h3>'+t('unitFund')+'</h3>'+FUND.map(function(f){var sub;
+    if(f.id==='quiz'){var k=QUIZ.filter(function(q){return S.quiz[q.id]&&S.quiz[q.id].box>=2}).length;sub=t('learned',k,QUIZ.length)}
+    else{var d=S.drill[f.id];sub=d?t('bestWas2',d.best,d.bestT):t('drillNew')}
+    var ok=f.id==='quiz'?QUIZ.filter(function(q){return S.quiz[q.id]&&S.quiz[q.id].box>=2}).length>=QUIZ.length*.7:(S.drill[f.id]&&S.drill[f.id].best>=(f.id==='nota'?6:f.id==='sqname'?8:10)*.9);
+    return '<button class="lrow" data-f="'+f.id+'"><span class="dotst '+(ok?'ok':S.seenLesson['f_'+f.id]?'due':'new')+'"></span><span class="lname">'+esc(tt(f.t))+'<span class="small">'+sub+'</span></span></button>'}).join('')+'</div>';
   CURSO.units.forEach(function(u){
     h+='<div class="unit"><h3>'+esc(tt(u.t))+'</h3>';
     CURSO.lessons.filter(function(l){return l.unit===u.id}).forEach(function(l){var p=lessonProg(l);
@@ -648,6 +739,7 @@ function renderLearn(){
   h+='<div class="unit"><h3>'+t('unitIdeas')+'</h3>'+IDEAS.map(function(x,i){var s=S.ideas[x.id];return '<button class="lrow" data-i="'+i+'"><span class="dotst '+(!s?'new':s.box>=2?'ok':'due')+'"></span><span class="lname">'+esc(tt(x.t))+'<span class="small">'+esc(tt(x.body)[0])+'</span></span></button>'}).join('')+'</div>';
   $('learnList').innerHTML=h;
   $('learnList').querySelectorAll('[data-l]').forEach(function(b){b.onclick=function(){var l=lessonById(b.getAttribute('data-l'));var it=lessonItems(l,8);if(it.length<2)it=[{t:'theory',l:l.id}].concat(l.p.slice(0,8).map(function(p){return {t:'puz',l:l.id,id:p.id}}));startSession(it,'learn')}});
+  $('learnList').querySelectorAll('[data-f]').forEach(function(b){b.onclick=function(){startSession(fundItems(b.getAttribute('data-f')),'learn')}});
   $('learnList').querySelectorAll('[data-tech]').forEach(function(b){b.onclick=function(){startSession([{t:'play',id:b.getAttribute('data-tech')}],'learn')}});
   $('learnList').querySelectorAll('[data-i]').forEach(function(b){b.onclick=function(){startSession([{t:'idea',id:IDEAS[+b.getAttribute('data-i')].id}],'learn')}});
 }
@@ -779,6 +871,7 @@ function renderProgress(){
   var rows=CURSO.units.map(function(u){var ls=CURSO.lessons.filter(function(l){return l.unit===u.id}),ok=0,n=0;ls.forEach(function(l){var p=lessonProg(l);ok+=p.ok;n+=p.n});return [tt(u.t),ok,n]});
   var rl=allLines(),rok=rl.filter(function(x){return x.st&&x.st.box>=3}).length;rows.push([t('tRep'),rok,rl.length]);
   var ik=IDEAS.filter(function(x){return S.ideas[x.id]&&S.ideas[x.id].box>=2}).length;rows.push([t('unitIdeas'),ik,IDEAS.length]);
+  rows.unshift([t('unitFund'),QUIZ.filter(function(q){return S.quiz[q.id]&&S.quiz[q.id].box>=2}).length,QUIZ.length]);
   $('chCourse').innerHTML=rows.map(function(r){return '<div><div class="small" style="display:flex;justify-content:space-between"><span>'+esc(r[0])+'</span><span>'+r[1]+'/'+r[2]+'</span></div><div class="bar2"><span style="width:'+(r[2]?Math.round(r[1]/r[2]*100):0)+'%"></span></div></div>'}).join('');
 }
 
@@ -884,7 +977,7 @@ function payload(){
   Object.keys(S.cards).forEach(function(k){var c=S.cards[k];if(c.src==='app')app[k]=c;else if(c.reps)cards[k]=prog(c)});
   Object.keys(S.games).forEach(function(k){if(S.games[k].src==='app')games[k]=S.games[k]});
   var m=function(o){var r={};Object.keys(o||{}).forEach(function(k){r[k]=prog(o[k])});return r};
-  return {v:1,at:now(),user:S.user,cards:cards,appCards:app,games:games,rep:m(S.rep),ideas:m(S.ideas),puz:m(S.puz),tech:m(S.tech),
+  return {v:1,at:now(),user:S.user,cards:cards,appCards:app,games:games,rep:m(S.rep),ideas:m(S.ideas),puz:m(S.puz),tech:m(S.tech),quiz:m(S.quiz),drill:S.drill,
     seenLesson:S.seenLesson,log:S.log,daily:S.daily,streak:S.streak,lastSync:S.lastSync};
 }
 function newer(a,b){return (a.reps||0)>(b.reps||0)||((a.reps||0)===(b.reps||0)&&(a.due||0)>(b.due||0))}
@@ -893,7 +986,8 @@ function mergeProgress(R){
   Object.keys(R.appCards||{}).forEach(function(k){if(!S.cards[k])S.cards[k]=R.appCards[k]});
   Object.keys(R.games||{}).forEach(function(k){if(!S.games[k])S.games[k]=R.games[k]});
   Object.keys(R.cards||{}).forEach(function(k){var c=S.cards[k],r=R.cards[k];if(c&&newer(r,c)){c.box=r.box;c.due=r.due;c.reps=r.reps;c.lapses=r.lapses}});
-  ['rep','ideas','puz','tech'].forEach(function(f){S[f]=S[f]||{};Object.keys(R[f]||{}).forEach(function(k){var a=S[f][k],r=R[f][k];if(!a||newer(r,a))S[f][k]=r})});
+  Object.keys(R.drill||{}).forEach(function(k){var a=S.drill[k],r=R.drill[k];if(!a||r.best>a.best||(r.best===a.best&&r.bestT&&r.bestT<a.bestT))S.drill[k]=r});
+  ['rep','ideas','puz','tech','quiz'].forEach(function(f){S[f]=S[f]||{};Object.keys(R[f]||{}).forEach(function(k){var a=S[f][k],r=R[f][k];if(!a||newer(r,a))S[f][k]=r})});
   Object.keys(R.seenLesson||{}).forEach(function(k){S.seenLesson[k]=1});
   var seen={};S.log=(S.log||[]).concat(R.log||[]).filter(function(e){var k=e[0]+e[1];if(seen[k])return false;seen[k]=1;return true}).sort(function(a,b){return a[0]-b[0]}).slice(-4000);
   if(R.streak&&(R.streak.last>(S.streak.last||'')||R.streak.last===S.streak.last&&R.streak.n>S.streak.n))S.streak=R.streak;
