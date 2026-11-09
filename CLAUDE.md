@@ -11,7 +11,7 @@ Independent sections, each self-contained:
 - **`fitness/index.html`** — the gym-routine app. A **single file** with all CSS and JS inline; state persists in `localStorage`.
 - **`books/`** — a reading-notes library with a dynamic reader.
 - **`aws/index.html`** — a standalone reference page (the AWS backend learning plan), in the grid-paper note style.
-- **`ajedrez/`** — chess opening & trap trainer (Spanish UI). See "Chess trainer architecture" below.
+- **`ajedrez/`** — chess trainer (ES/EN): daily practice, repertoire, own mistakes, punish mistakes, key ideas. See "Chess trainer architecture" below.
 
 **Shared visual system (keep it cohesive):** cool, light palette — ink `#172033`/`#1e2631`, light surfaces. Three accent hues used consistently: **blue `#2563EB`/`#2F5FE0`** (fitness), **teal `#0E9488`/`#0e8f82`** (books), **amber/orange `#E8730C`** (aws). The **home page** (`index.html`) background is soft rounded color **blobs** (radial-gradients in blue/teal/amber) on `#F5F7FB` — *not* a grid; four white cards (2×2 grid) with colored top accent bars; the chess card uses **violet `#7C3AED`**. Headings are Georgia serif; small labels/links use a monospace stack. Favicons are inline-SVG rounded squares (home = navy "B", books = teal book, fitness = blue dumbbell, aws = amber cloud). Fitness keeps **functional day colors** (`--blue/red/yellow/green` = Mon/Tue/Thu/Fri; brand `--accent` = blue). Book **note pages** and the **aws page** keep the grid-paper study style; the home page deliberately does not.
 
@@ -53,26 +53,27 @@ Each note is a standalone HTML page (works both in the iframe and opened directl
 
 ## Chess trainer architecture (`ajedrez/`)
 
-Built Nov 2026 to replace/extend the Lotus Chess app: drills the exact positions where Brayan (Chess.com user **Esmithco**, 10-min rapid; repertoire: **London System** as White, **Caro-Kann** as Black, also vs 1.d4) went wrong in his own games, with spaced repetition.
+Built Nov 2026 (rebuilt Nov 9) to replace/extend the Lotus Chess app. Brayan = Chess.com **Esmithco**, 10-min rapid; repertoire **London** (White), **Caro-Kann** vs 1.e4 and **Slav** (…d5/…c6) vs 1.d4 (Black). He wants it simple, daily, bilingual, and to understand *why* moves are good/bad (intuition, not "you lose in 40 moves").
 
-Files (all static, no build):
-- `index.html` — single file, all CSS/JS inline. Inline SVG piece sprite (cburnett, CC BY-SA 3.0) at the top of `<body>`; pieces drawn with `<use href="#wk">` etc. Board = CSS grid with explicit 8×8 `minmax(0,1fr)` rows/cols (an earlier version without explicit rows rendered non-square squares). Tap-to-move **and** drag (pointer events). Chess.com board colors.
-- `chess.js` — chess.js **0.10.3** (old API: `move(san,{sloppy:true})`, `load_pgn`, `in_checkmate()`…). Don't upgrade casually; 1.x renamed methods.
-- `stockfish.asm.js` — Stockfish.js 10.0.2 asm build, run as a same-origin Web Worker (UCI over postMessage; falls back to jsDelivr via `importScripts`).
-- `datos.json` — preloaded analysis (~575 KB): 549 games, 860 drill positions, 194 traps. Loaded only when the browser has **no** localStorage state; "Cargar análisis base" in Analizar → Respaldo merges it without wiping progress.
+Structure — one page, **hash-routed screens** (`#home` hub, `#train`, `#rep`, `#mine`, `#punish`, `#ideas`, `#data`), all static:
+- `index.html` — markup + CSS only (inline cburnett SVG piece sprite, CC BY-SA 3.0). Loads `chess.js`, `textos.js`, `repertorio.js`, `app.js` with `?v=` — **bump them when you change those files**.
+- `app.js` — all logic. One shared trainer screen runs every exercise type: `card` (kind `mine` = your mistake, `punish` = opponent's mistake to punish), `line` (repertoire line; the app plays the opponent's moves), `idea` (key-idea lesson: `move` / `square` tap / `choice`). Eval bar + arrows + "Explore" mode (free moves with live engine eval/best-move arrow). Explanations are generated in JS from engine PVs (`explainBad`/`explainBest`: hanging piece, double attack/fork, mate, material lost, threat via null-move, simple heuristics: king pawns, early queen, same piece twice, pawn grab). **All displayed evals are from the player's perspective** (+ = good for you); the bar fill is White-from-bottom flipped with the board.
+- `textos.js` — `TXT.es/en` UI strings (`t('key',…)`, `{0}` placeholders) + `IDEAS` (12 bilingual key-idea lessons; move answers were checked with Stockfish).
+- `repertorio.js` — **generated** (`window.REP`) from `tools/rep.py` (bilingual notes per ply; `kind` main/trap/punish). Edit `rep.py`, then run it + `build.py`; `tools/verify.py` checks every repertoire move with Stockfish (depth 18).
+- `datos.json` (~1.2 MB) — preloaded analysis: `{v:3, base:YYYYMMDD, games, cards, gambits, stats}`. `stats[posKey] = {san: count}` (move frequencies in his repertoire games, used for "they play this in N% of your games"). Merged into localStorage whenever `datos.base` > `S.base`, keeping progress (box/due/reps) for matching card ids.
+- `chess.js` 0.10.3 (old API: `move(san,{sloppy:true})`, `in_checkmate()`… don't upgrade casually). `stockfish.asm.js` (Stockfish.js 10, Web Worker, jsDelivr fallback). **No backend**: engine runs in the browser; Chess.com public API is fetched directly (CORS ok).
 
-State: `localStorage['taller-aperturas.v2']` = `{v, user, games:{[chessComUrl]:{opening, side, r:W/D/L, how, op, errors, tr, date}}, cards:{[fen4|playedSan]:{side, opening, line[SAN], played, best, s0, drop, sev, trap, after[], lostIn, count, games[], box, due, reps, lapses}}, gambits:{}}`. Card key = first 4 FEN fields + played move, so the same mistake across games increments `count`.
+State: `localStorage['taller-aperturas.v2']` (key kept for migration; `S.v=3`) = `{games, cards, gambits, rep:{"op:i":{box,due}}, ideas:{id:{box,due}}, daily:{date,items,idx,ok,done}, streak:{n,last}, base}`; language in `taller-aperturas.lang`. Card id = first 4 FEN fields + `|played` (mine) or `P|`+FEN (punish). Spaced repetition boxes 0–6 → `[0,1,3,7,16,35,80]` days; miss → box 1, 10 min.
 
-Analysis (in-browser, resumable, skips already-done games):
-- Data comes straight from the **Chess.com public API** (CORS works): `/pub/player/<user>/games/archives` then each month.
-- **Errores de apertura** (last 3 months): first 24 plies, flags the user's moves whose win-probability drop ≥ 8 (Lichess-style `wp(cp)` curve), skipping positions already |eval| > 600.
-- **Trampas** (whole history): only losses ending in ≤ 50 plies, excluding timeout/abandoned; walks the first 30 plies and stops at the first move with drop ≥ 20 where the position was ≥ −200 before and ≤ −300 after. `after` = the opponent's punishing follow-up (shown by "Ver cómo te castigaron").
-- Gambit stats table is computed over all games when the trap analysis runs (it also counts gambits he played himself, e.g. his old Scotch Gambit).
-- Spaced repetition: boxes 0–6 → intervals `[0,1,3,7,16,35,80]` days; a miss resets to box 1 and requeues in 10 min. Alternative moves are accepted if the engine says they lose < 5 points.
+Daily practice (`buildToday`): ~9 items — 2 repertoire lines (one trap/punish line first), 4 own mistakes (repertoire openings first), 2 punish positions (material-winning first), 1 key idea. Resumes mid-session; streak counter.
 
-Findings so far (Nov 2026; 2,473 games, 320 losses in ≤ 25 moves): most quick losses came from openings he no longer plays (1…e5 as Black, Scotch Gambit as White). Recurring repertoire traps: 1.d4 d5 2.Bf4 Nc6 3.Nc3 **Nxd4?** (twice; play 3…e6); Caro-Kann Fantasy 3.f3 dxe4 4.fxe4 Bg4? (play 4…e5); Caro Advance 4.h3 h5 5.Bg5 **e6??** loses the queen (5…Qb6); London …Nh5 hitting Bf4, 7.g4? (7.c3). Worst gambit records: vs Queen's Gambit as Black 8-0-18, Danish 1-0-4, Englund 4-0-6.
+Criteria (same offline and in-app): **own move** flagged if win-probability (Lichess `wp(cp)`) drops ≥ 10 in one move within the first 30 plies and |eval before| ≤ 500; **punish** if the opponent's move drops ≥ 15 (|eval| ≤ 400). `trap` = good (≥ −200) → lost (≤ −300) in one move. No "lost game" requirement any more.
 
-Ideas not done yet: refresh `datos.json` periodically; a curated "known traps" list for his repertoire; tactics from middlegame blunders.
+Regenerating `datos.json` offline (needs `brew install stockfish` + a venv with `pip install chess`; run from a scratch dir, **not** the repo): `tools/fetch.py` (all games via curl — Chess.com needs a User-Agent; python.org Python lacks certs) → `analyse.py` (depth 12 on every opening position, 7 processes, ~10 min) → `deep.py` (depth 16 PVs + null-move threats for selected positions) → `rep.py` → `build.py` → copy `datos.json` + `repertorio.js` into `ajedrez/`.
+
+Findings (Nov 2026; 2,478 games): quick losses mostly from openings he dropped (1…e5, Scotch Gambit). Repertoire traps he fell for are encoded as trap lines (Caro Advance Bg5/…e6??, London …Nh5/g4?, Englund, Fantasy …Bg4?). Vs Queen's Gambit as Black he scored badly → Slav lines.
+
+Ideas not done yet: a refresh button that re-downloads only new months; more key ideas drawn from his own middlegame blunders.
 
 ## Gotchas that have bitten before
 
