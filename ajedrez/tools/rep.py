@@ -258,6 +258,18 @@ for k, op in R.items():
         # user must make the last move
         last_by_white = (len(ln['moves']) - 1) % 2 == 0
         if last_by_white != (op['side'] == 'w'): print('LAST MOVE NOT OURS', k, ln['name'][1])
+# same position must never expect two different moves from us (Lotus-style ambiguity)
+for k, op in R.items():
+    seen = {}
+    for ln in op['lines']:
+        b = chess.Board()
+        for s in ln['moves']:
+            key = ' '.join(b.fen().split()[:4]); ours = (b.turn == chess.WHITE) == (op['side'] == 'w')
+            if ours:
+                if key in seen and seen[key][0] != s:
+                    print('CONFLICT', k, ln['name'][1], s, 'vs', seen[key]); ok = False
+                seen.setdefault(key, (s, ln['name'][1]))
+            b.push_san(s)
 if not ok: sys.exit(1)
 
 out = {}

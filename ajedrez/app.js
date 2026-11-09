@@ -242,20 +242,22 @@ function buildToday(){
   var pun=dueList('punish',true).filter(function(c){return c.mat>=1});if(pun.length<2)pun=pun.concat(dueList('punish',false).filter(function(c){return pun.indexOf(c)<0}));
   var idea=IDEAS.filter(function(x){var s=S.ideas[x.id];return !s})[0]||IDEAS.filter(function(x){var s=S.ideas[x.id];return s&&(s.due||0)<=now()})[0];
   var L=function(x){return x?{t:'line',op:x.op,i:x.i}:null},C=function(c){return c?{t:'card',id:c.id}:null};
-  var it=[L(pickL[0]),C(mine[0]),C(pun[0]),C(mine[1]),L(pickL[1]),C(mine[2]),C(pun[1]),C(mine[3]),idea?{t:'idea',id:idea.id}:null].filter(Boolean);
+  var seen=seenLines(),nq=seen.length>=3?seen[Math.floor(Math.random()*seen.length)]:null;
+  var it=[L(pickL[0]),C(mine[0]),C(pun[0]),nq?{t:'name',op:nq.op,i:nq.i}:C(mine[1]),L(pickL[1]),C(mine[2]),C(pun[1]),C(mine[3]),idea?{t:'idea',id:idea.id}:null].filter(Boolean);
   S.daily={date:today(),items:it,idx:0,ok:0,done:false};save();
 }
 function dailyNow(){if(!S.daily||S.daily.date!==today())buildToday();return S.daily}
 
 /* ---------- routing / screens ---------- */
-var SCREENS=['home','train','rep','mine','punish','ideas','data'];
+var SCREENS=['home','train','rep','mine','punish','ideas','data'],LISTS={mine:1,punish:1};
 function route(){
   var h=(location.hash||'#home').slice(1).split('/');var s=h[0];if(SCREENS.indexOf(s)<0)s='home';
   if(s==='train'&&!X.items.length)s='home';
   if(s!=='train')stopTimers();
-  SCREENS.forEach(function(x){$('s-'+x).hidden=x!==s});
+  SCREENS.forEach(function(x){if(!LISTS[x])$('s-'+x).hidden=x!==s});
   $('backLink').hidden=s==='home';$('homeLink').hidden=s!=='home';$('intro').hidden=s!=='home';
-  if(s==='home')renderHome();if(s==='rep')renderRep(h[1]);if(s==='mine')renderList('mine');if(s==='punish')renderList('punish');
+  if(s==='mine'||s==='punish'){quickSession(s);return}
+  if(s==='home')renderHome();if(s==='rep')renderRep(h[1]);
   if(s==='ideas')renderIdeas();if(s==='data')renderData();if(s==='train')renderItem();
   window.scrollTo(0,0);
 }
@@ -281,7 +283,7 @@ $('bToday').onclick=function(){
   var d=dailyNow();if(d.done){buildToday();d=S.daily}
   startSession(d.items,'today',d.idx);
 };
-document.querySelectorAll('[data-go]').forEach(function(b){b.onclick=function(){go(b.getAttribute('data-go'))}});
+document.querySelectorAll('[data-go]').forEach(function(b){b.onclick=function(){var g=b.getAttribute('data-go');if(LISTS[g])quickSession(g);else go(g)}});
 
 /* ---------- session runner ---------- */
 var X={items:[],i:0,src:'',ok:0,back:'home'};
@@ -290,7 +292,7 @@ function later(f,ms){var id=setTimeout(f,ms);timers.push(id);return id}
 function stopTimers(){timers.forEach(clearTimeout);timers=[]}
 function startSession(items,src,from){X.items=items.slice();X.i=from||0;X.src=src;X.ok=0;X.back=src==='today'?'home':src.split(':')[0];cur=null;go('train')}
 function renderItem(){
-  stopTimers();EX.on=false;$('exBar').hidden=true;
+  stopTimers();EX.on=false;$('exBar').hidden=true;$('demoBar').hidden=true;
   if(X.i>=X.items.length){endSession();return}
   var it=X.items[X.i];cur={it:it,answered:false,first:true};
   $('trCount').textContent=(X.i+1)+'/'+X.items.length;$('trProg').style.width=(X.i/X.items.length*100)+'%';
@@ -298,6 +300,7 @@ function renderItem(){
   $('line').textContent='';$('trEnd').hidden=true;$('trBody').hidden=false;
   if(it.t==='card'){var c=S.cards[it.id];if(!c){skip();return}cur.card=c;loadCard(c)}
   else if(it.t==='line'){if(!REP[it.op]||!REP[it.op].lines[it.i]){skip();return}loadLine(it.op,it.i)}
+  else if(it.t==='name'){if(!REP[it.op]||!REP[it.op].lines[it.i]){skip();return}loadName(it.op,it.i)}
   else if(it.t==='idea'){var idea=IDEAS.filter(function(x){return x.id===it.id})[0];if(!idea){skip();return}loadIdea(idea)}
 }
 function skip(){X.i++;saveDaily();renderItem()}
@@ -320,7 +323,7 @@ function setBtns(o){
   var map={hint:'bHint',show:'bShow',explore:'bExplore',bad:'bBad',good:'bGood',replay:'bReplay',next:'bNext'};
   Object.keys(map).forEach(function(k){$(map[k]).hidden=!o[k]});
 }
-function kindPill(k,extra){var m={mine:['kMine','mist'],punish:['kPun','good'],rep:['kRep','rep'],trap:['kTrap','blun'],idea:['kIdea','idea']}[k];
+function kindPill(k,extra){var m={mine:['kMine','mist'],punish:['kPun','good'],rep:['kRep','rep'],name:['kName','rep'],trap:['kTrap','blun'],idea:['kIdea','idea']}[k];
   return '<span class="pill '+m[1]+'">'+t(m[0])+'</span>'+(extra?' <span class="small">'+extra+'</span>':'')}
 function sideTxt(side){return t('youPlay',side==='w'?t('white'):t('black'))}
 
@@ -330,9 +333,9 @@ function loadCard(c){
   setBoard(fen,c.side==='b',c.line[c.line.length-1],prev);
   var ref=c.kind==='mine'?c.s0:c.s1;cur.fen=fen;cur.ref=ref;
   setBar(toW(ref,c.side));
-  var head=kindPill(c.kind==='mine'?(c.trap?'trap':'mine'):'punish',esc(c.opening||'')+' · '+sideTxt(c.side));
-  var p=c.kind==='mine'?t('pMine',esc(c.played),evalTxt(c.s0),evalTxt(c.s1))+((c.count||1)>1?t('pMineRep',c.count):'')
-    :t('pPun',esc(c.oppMove),evalTxt(c.s0),evalTxt(c.s1))+(c.missed&&c.gameMove?t('pPunMissed','<span class="mono">'+esc(c.gameMove)+'</span>'):'');
+  var head=kindPill(c.kind==='mine'?(c.trap?'trap':'mine'):'punish',sideTxt(c.side));
+  var p=c.kind==='mine'?t('pMine',esc(c.played),evalTxt(c.s0),evalTxt(c.s1))
+    :t('pPun',esc(c.oppMove),evalTxt(c.s0),evalTxt(c.s1));
   $('prompt').innerHTML='<div class="op">'+head+'</div>'+p;
   $('line').innerHTML=moveLine(c.line);
   B.locked=false;B.onMove=onCardMove;drawBoard();
@@ -401,14 +404,56 @@ $('bShow').onclick=function(){if(!cur||cur.answered)return;cur.first=false;
 /* repertoire line: follow the book, but any move the engine finds fine is accepted and the game goes on from there */
 var REP_OK=7; /* max win-probability drop that still counts as "fine" */
 function bookMap(op){var m={};REP[op].lines.forEach(function(l,i){var c=new Chess();for(var p=0;p<l.moves.length;p++){var k=posKey(c.fen());if(!m[k])m[k]={i:i,ply:p};c.move(l.moves[p],{sloppy:true})}});return m}
-function loadLine(op,i){
+function loadLine(op,i,played){
   var o=REP[op],l=o.lines[i];
+  if(!played&&!S.rep[lineId(op,i)]){loadDemo(op,i);return}
+  $('demoBar').hidden=true;
   cur.rep={op:op,i:i,l:l,ply:0,err:0,side:o.side,book:true,hist:[],end:Math.max(l.moves.length,16),map:bookMap(op),reply:null,replyFen:null};
   setBoard(new Chess().fen(),o.side==='b');setBar(null,false);
   var k=l.kind==='trap'?'trap':l.kind==='punish'?'punish':'rep';
   $('prompt').innerHTML='<div class="op">'+kindPill(k,esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div>'+(l.kind==='trap'?t('pRepTrap'):l.kind==='punish'?t('pRepPunish'):t('pRep'))+' <span class="small">'+t('pRepFree')+'</span>';
   setBtns({hint:true,show:true});B.onMove=onRepMove;repStep();
 }
+/* new line: watch it first, move by move with its notes, then play it */
+function loadDemo(op,i){
+  var o=REP[op],l=o.lines[i];cur.demo={op:op,i:i,l:l,ply:0,side:o.side};
+  setBar(null,false);B.locked=true;
+  $('prompt').innerHTML='<div class="op">'+kindPill('rep',esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div><b>'+t('demoT')+'</b> <span class="small">'+t('demoHint')+'</span>';
+  $('demoBar').hidden=false;setBtns({});demoShow();
+}
+function demoShow(){
+  var D=cur.demo,l=D.l,mv=l.moves.slice(0,D.ply);
+  setBoard(fenOf(mv),D.side==='b',mv[mv.length-1],mv.length?fenOf(mv.slice(0,-1)):null);B.locked=true;
+  $('line').innerHTML=moveLine(mv);
+  var n=D.ply>0?l.notes[String(D.ply-1)]:null,who=D.ply>0?(((D.ply-1)%2===0)===(D.side==='w')?'me':'opp'):'';
+  $('fb').className='feedback';$('fb').innerHTML=D.ply>0?'<span class="mono">'+esc(l.moves[D.ply-1])+'</span>'+(n?' — <span class="'+who+'n">'+esc(tt(n))+'</span>':''):'';
+  $('bDemoPrev').disabled=D.ply===0;$('bDemoNext').disabled=D.ply>=l.moves.length;
+  $('bDemoPlay').classList.toggle('primary',D.ply>=l.moves.length);
+}
+$('bDemoPrev').onclick=function(){if(cur&&cur.demo&&cur.demo.ply>0){cur.demo.ply--;demoShow()}};
+$('bDemoNext').onclick=function(){if(cur&&cur.demo&&cur.demo.ply<cur.demo.l.moves.length){cur.demo.ply++;demoShow()}};
+$('bDemoPlay').onclick=function(){if(!cur||!cur.demo)return;var D=cur.demo;cur.demo=null;$('demoBar').hidden=true;$('fb').innerHTML='';$('note').innerHTML='';loadLine(D.op,D.i,true)};
+
+/* which variation is this? final position of a line, pick its name among lines of the same opening */
+function loadName(op,i){
+  var o=REP[op],l=o.lines[i];cur.name={op:op,i:i};
+  setBoard(fenOf(l.moves),o.side==='b',l.moves[l.moves.length-1],fenOf(l.moves.slice(0,-1)));setBar(null,false);B.locked=true;
+  $('prompt').innerHTML='<div class="op">'+kindPill('name',esc(tt(o.name)))+'</div><b>'+t('nameQ')+'</b>';
+  $('line').innerHTML=moveLine(l.moves);
+  var others=o.lines.map(function(_,j){return j}).filter(function(j){return j!==i}).sort(function(){return Math.random()-.5}).slice(0,3);
+  var opts=others.concat([i]).sort(function(){return Math.random()-.5});
+  var ch=$('choices');ch.hidden=false;
+  ch.innerHTML=opts.map(function(j){return '<button class="btn opt" data-j="'+j+'">'+esc(tt(o.lines[j].name))+'</button>'}).join('');
+  ch.querySelectorAll('button').forEach(function(b){b.onclick=function(){if(cur.answered)return;var j=+b.getAttribute('data-j'),ok=j===i;
+    b.classList.add(ok?'okb':'badb');if(!ok)ch.querySelector('[data-j="'+i+'"]').classList.add('okb');
+    $('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=ok?t('correct',esc(tt(l.name))):t('nameWas',esc(tt(l.name)));
+    var keys=Object.keys(l.notes).map(Number).sort(function(a,b){return b-a});var k=keys.filter(function(x){return (x%2===0)===(o.side==='w')})[0];
+    if(k!=null)showWhy(['<span class="mono">'+esc(l.moves[k])+'</span>: '+esc(tt(l.notes[String(k)]))]);
+    cur.fen=B.chess.fen();itemDone(ok);setBtns({next:true,explore:true})}});
+  setBtns({});
+}
+function seenLines(){return allLines().filter(function(x){return !!x.st})}
+
 function repNote(ply){var R=cur.rep;if(!R.book)return '';var n=R.l.notes[String(ply)];return n?tt(n):''}
 function repRejoin(){var R=cur.rep,k=R.map[posKey(B.chess.fen())];
   if(!R.book&&k){R.book=true;R.l=REP[R.op].lines[k.i];R.ply=k.ply;addNote(t('repBack'),'me')}}
@@ -547,33 +592,23 @@ function renderRep(op){
     return '<button class="lrow" data-i="'+x.i+'"><span class="dotst '+(!st?'new':st.box>=3?'ok':lineDue(x)?'due':'')+'"></span><span class="lname">'+kind+esc(tt(x.l.name))+
       '<span class="mono small">'+esc(moveLine(x.l.moves,Math.min(6,x.l.moves.length)))+'</span></span><span class="small">'+lab+'</span></button>'}).join('');
   $('repList').querySelectorAll('.lrow').forEach(function(b){b.onclick=function(){startSession([{t:'line',op:repTab,i:+b.getAttribute('data-i')}],'rep')}});
-  $('bRepGo').textContent=t('repPractice',tt(REP[repTab].name));
+  $('bRepGo').textContent=t('repPractice',tt(REP[repTab].name));$('bRepQuiz').textContent=t('bNameQuiz');
 }
+$('bRepQuiz').onclick=function(){
+  var ls=repLines(repTab),s=ls.filter(function(x){return !!x.st});if(s.length<2)s=ls;
+  startSession(s.sort(function(){return Math.random()-.5}).slice(0,5).map(function(x){return {t:'name',op:x.op,i:x.i}}),'rep');
+};
 $('bRepGo').onclick=function(){
   var ls=repLines(repTab).sort(function(a,b){var ad=lineDue(a)?0:1,bd=lineDue(b)?0:1;return ad-bd||((a.st&&a.st.box||0)-(b.st&&b.st.box||0))});
   startSession(ls.slice(0,5).map(function(x){return {t:'line',op:x.op,i:x.i}}),'rep');
 };
 
-/* ---------- mistake / punish lists ---------- */
-var onlyRep=true;
-function renderList(kind){
-  var P=kind==='mine'?'m':'p';$('s-'+kind).querySelector('.lintro').textContent=t(kind==='mine'?'mineIntro':'punIntro');
-  var due=dueList(kind,onlyRep);$(P+'Go').textContent=t('trainN',due.length);$(P+'Go').disabled=!due.length;
-  $(P+'Rep').checked=onlyRep;
-  var cs=cardsOf(kind).filter(function(c){return !onlyRep||c.rep}).sort(function(a,b){return prio(b)-prio(a)}).slice(0,60);
-  var head=kind==='mine'?'<tr><th>'+t('colPos')+'</th><th>'+t('colPlayed')+'</th><th>'+t('colBest')+'</th><th class="n">'+t('colSwing')+'</th></tr>'
-    :'<tr><th>'+t('colPos')+'</th><th>'+t('colOpp')+'</th><th>'+t('colBest')+'</th><th class="n">'+t('colGain')+'</th></tr>';
-  $(P+'Tbl').innerHTML=cs.length?'<thead>'+head+'</thead><tbody>'+cs.map(function(c){
-    var st=(c.reps||0)>0?((c.box||0)>=3?' ✓':''):'';
-    return '<tr class="click" data-id="'+esc(c.id)+'"><td><div class="small">'+esc(c.opening)+' · '+(c.side==='w'?t('White'):t('Black'))+st+'</div><span class="mono">'+moveLine(c.line.slice(-6).length===c.line.length?c.line:c.line,c.line.length).slice(-60)+'</span></td>'+
-      (kind==='mine'?'<td class="mono">'+esc(c.played)+'</td><td class="mono">'+esc(c.best)+'</td><td class="n">−'+c.drop+'</td>'
-      :'<td class="mono">'+esc(c.oppMove)+(c.missed?' ✗':'')+'</td><td class="mono">'+esc(c.best)+'</td><td class="n">+'+c.gain+'</td>')+'</tr>'}).join('')+'</tbody>'
-    :'<tr><td class="empty">'+t('noData')+'</td></tr>';
-  $(P+'Tbl').querySelectorAll('tr.click').forEach(function(r){r.onclick=function(){startSession([{t:'card',id:r.getAttribute('data-id')}],kind)}});
+/* ---------- mistakes / punish: straight into 10 exercises, no lists ---------- */
+function quickSession(kind){
+  var due=dueList(kind,true);if(due.length<10)due=due.concat(dueList(kind,false).filter(function(c){return due.indexOf(c)<0}));
+  if(kind==='punish')due.sort(function(a,b){return ((b.mat>=1)-(a.mat>=1))});
+  startSession(due.slice(0,10).map(function(c){return {t:'card',id:c.id}}),kind);X.back='home';
 }
-['m','p'].forEach(function(P){var kind=P==='m'?'mine':'punish';
-  $(P+'Go').onclick=function(){startSession(dueList(kind,onlyRep).slice(0,10).map(function(c){return {t:'card',id:c.id}}),kind)};
-  $(P+'Rep').onchange=function(){onlyRep=this.checked;renderList(kind)}});
 
 /* ---------- ideas ---------- */
 function renderIdeas(){

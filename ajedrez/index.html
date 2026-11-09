@@ -179,6 +179,7 @@ details summary{cursor:pointer;font-weight:600}
         <div class="bwrap"><div class="board" id="board" aria-label="Tablero"></div><svg class="arrows" id="arrows" viewBox="0 0 8 8" preserveAspectRatio="none"></svg></div>
       </div>
       <div class="line" id="line"></div>
+      <div class="row" id="demoBar" hidden><button class="btn" id="bDemoPrev">◀</button><button class="btn" id="bDemoNext">▶</button><button class="btn" id="bDemoPlay" data-t="bDemoPlay"></button></div>
       <div class="exbar" id="exBar" hidden>
         <div id="exInfo"></div><div id="exEval"></div>
         <div class="row"><button class="btn" id="bExUndo" data-t="bUndo"></button><button class="btn primary" id="bExBack" data-t="bBack"></button></div>
@@ -207,26 +208,8 @@ details summary{cursor:pointer;font-weight:600}
     <h2 data-t="repTitle"></h2>
     <p class="small" data-t="repIntro"></p>
     <nav class="tabs" role="tablist" id="repTabs"></nav>
-    <button class="btn primary" id="bRepGo"></button>
+    <div class="row"><button class="btn primary" id="bRepGo"></button><button class="btn" id="bRepQuiz"></button></div>
     <div class="list" id="repList"></div>
-  </section>
-
-  <!-- MY MISTAKES -->
-  <section class="screen" id="s-mine" hidden>
-    <h2 data-t="mineTitle"></h2>
-    <p class="small lintro"></p>
-    <div class="row" style="align-items:center"><button class="btn primary" id="mGo"></button><label class="chk"><input type="checkbox" id="mRep" checked><span data-t="onlyRep"></span></label></div>
-    <p class="small" data-t="tapRow"></p>
-    <div class="tblwrap"><table id="mTbl"></table></div>
-  </section>
-
-  <!-- PUNISH -->
-  <section class="screen" id="s-punish" hidden>
-    <h2 data-t="punTitle"></h2>
-    <p class="small lintro"></p>
-    <div class="row" style="align-items:center"><button class="btn primary" id="pGo"></button><label class="chk"><input type="checkbox" id="pRep" checked><span data-t="onlyRep"></span></label></div>
-    <p class="small" data-t="tapRow"></p>
-    <div class="tblwrap"><table id="pTbl"></table></div>
   </section>
 
   <!-- KEY IDEAS -->
@@ -270,8 +253,8 @@ details summary{cursor:pointer;font-weight:600}
   </section>
 </div>
 <script src="chess.js"></script>
-<script src="textos.js?v=2"></script>
+<script src="textos.js?v=4"></script>
 <script src="repertorio.js?v=1"></script>
-<script src="app.js?v=2"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>
