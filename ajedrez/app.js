@@ -390,63 +390,92 @@ $('bBad').onclick=function(){if(cur&&cur.badLine)animate(cur.fen,cur.badLine,tru
 $('bGood').onclick=function(){if(cur&&cur.goodLine)animate(cur.fen,cur.goodLine,false)};
 $('bReplay').onclick=function(){if(cur&&cur.card){var l=cur.card.line;animate(new Chess().fen(),l,false,function(){B.locked=cur.answered;if(!cur.answered)B.chess=new Chess(cur.fen)})}};
 $('bHint').onclick=function(){if(!cur||cur.answered)return;var a=null;
-  if(cur.card)a=arrowFor(cur.fen,cur.card.best,'#E8730C');else if(cur.rep){var f=B.chess.fen();a=arrowFor(f,cur.rep.l.moves[cur.rep.ply],'#E8730C')}
+  if(cur.card)a=arrowFor(cur.fen,cur.card.best,'#E8730C');else if(cur.rep){repHint('#E8730C');cur.first=false;return}
   else if(cur.idea&&cur.idea.type==='move')a=arrowFor(cur.fen,cur.idea.answer[0],'#E8730C');
   if(a){B.marks[a.from]='hint';drawBoard();cur.first=false}};
 $('bShow').onclick=function(){if(!cur||cur.answered)return;cur.first=false;
   if(cur.card){B.locked=true;cardResult(false,'—',null,null)}
   else if(cur.idea)ideaResult(false);
-  else if(cur.rep){var f=B.chess.fen();var a=arrowFor(f,cur.rep.l.moves[cur.rep.ply],'#0E9488');B.arrows=a?[a]:[];drawBoard()}};
+  else if(cur.rep)repHint('#0E9488')};
 
-/* repertoire line */
+/* repertoire line: follow the book, but any move the engine finds fine is accepted and the game goes on from there */
+var REP_OK=7; /* max win-probability drop that still counts as "fine" */
+function bookMap(op){var m={};REP[op].lines.forEach(function(l,i){var c=new Chess();for(var p=0;p<l.moves.length;p++){var k=posKey(c.fen());if(!m[k])m[k]={i:i,ply:p};c.move(l.moves[p],{sloppy:true})}});return m}
 function loadLine(op,i){
-  var o=REP[op],l=o.lines[i];cur.rep={op:op,i:i,l:l,ply:0,err:0,side:o.side};
+  var o=REP[op],l=o.lines[i];
+  cur.rep={op:op,i:i,l:l,ply:0,err:0,side:o.side,book:true,hist:[],end:Math.max(l.moves.length,16),map:bookMap(op),reply:null,replyFen:null};
   setBoard(new Chess().fen(),o.side==='b');setBar(null,false);
   var k=l.kind==='trap'?'trap':l.kind==='punish'?'punish':'rep';
-  $('prompt').innerHTML='<div class="op">'+kindPill(k,esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div><span id="repMsg">'+(l.kind==='trap'?t('pRepTrap'):l.kind==='punish'?t('pRepPunish'):t('pRep'))+'</span>';
+  $('prompt').innerHTML='<div class="op">'+kindPill(k,esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div>'+(l.kind==='trap'?t('pRepTrap'):l.kind==='punish'?t('pRepPunish'):t('pRep'))+' <span class="small">'+t('pRepFree')+'</span>';
   setBtns({hint:true,show:true});B.onMove=onRepMove;repStep();
 }
-function repNote(ply){var n=cur.rep.l.notes[String(ply)];return n?tt(n):''}
+function repNote(ply){var R=cur.rep;if(!R.book)return '';var n=R.l.notes[String(ply)];return n?tt(n):''}
+function repRejoin(){var R=cur.rep,k=R.map[posKey(B.chess.fen())];
+  if(!R.book&&k){R.book=true;R.l=REP[R.op].lines[k.i];R.ply=k.ply;addNote(t('repBack'),'me')}}
 function repStep(){
-  var R=cur.rep,l=R.l;$('line').innerHTML=moveLine(l.moves,R.ply);
-  if(R.ply>=l.moves.length){repFinish();return}
-  var ours=(R.ply%2===0)===(R.side==='w');
-  if(ours){B.locked=false;drawBoard();return}
+  var R=cur.rep;$('line').innerHTML=moveLine(R.hist);
+  if((R.book&&R.ply>=R.l.moves.length)||(!R.book&&R.hist.length>=R.end)||B.chess.game_over()){repFinish();return}
+  if(B.chess.turn()===R.side){B.locked=false;drawBoard();return}
   B.locked=true;
-  later(function(){
-    var fen=B.chess.fen(),san=l.moves[R.ply];var m=B.chess.move(san,{sloppy:true});
-    B.marks={};if(m){B.marks[m.from]='last';B.marks[m.to]='last'}B.arrows=[];drawBoard();
-    var st=DATA.stats[posKey(fen)],fq='';if(st){var tot=0;Object.keys(st).forEach(function(k){tot+=st[k]});if(st[san]&&tot>=3&&st[san]/tot>=.05)fq=t('freq',Math.round(st[san]/tot*100))}
-    var nt=repNote(R.ply);addNote('<b>'+t('oppPlays',esc(san))+'</b>'+fq+(nt?' '+esc(nt):''),'opp');
-    R.ply++;repStep();
-  },R.ply===0?300:550);
+  later(function(){pickOpp().then(function(san){
+    if(!cur||cur.rep!==R)return;if(!san){repFinish();return}
+    var fen=B.chess.fen(),m=B.chess.move(san,{sloppy:true});if(!m){repFinish();return}
+    B.marks={};B.marks[m.from]='last';B.marks[m.to]='last';B.arrows=[];drawBoard();
+    var st=DATA.stats[posKey(fen)],fq='';if(st){var tot=0;Object.keys(st).forEach(function(k){tot+=st[k]});if(st[m.san]&&tot>=3&&st[m.san]/tot>=.05)fq=t('freq',Math.round(st[m.san]/tot*100))}
+    var nt=repNote(R.ply);addNote('<b>'+t('oppPlays',esc(m.san))+'</b>'+fq+(nt?' '+esc(nt):''),'opp');
+    R.hist.push(m.san);if(R.book)R.ply++;else repRejoin();repStep();
+  })},R.hist.length===0?300:550);
 }
-function addNote(html,cls){var n=$('note');n.hidden=false;n.insertAdjacentHTML('beforeend','<p class="'+(cls||'')+'">'+html+'</p>');
-  var ps=n.querySelectorAll('p');if(ps.length>3)ps[0].remove()}
+/* opponent: book move, else what your real opponents played here, else the engine */
+function pickOpp(){
+  var R=cur.rep,fen=B.chess.fen();
+  if(R.book)return Promise.resolve(R.l.moves[R.ply]);
+  var st=DATA.stats[posKey(fen)],legal=B.chess.moves();
+  if(st){var c=Object.keys(st).filter(function(s){return st[s]>=2&&legal.indexOf(s)>=0});
+    if(c.length){var tot=0;c.forEach(function(s){tot+=st[s]});var x=Math.random()*tot;for(var i=0;i<c.length;i++){x-=st[c[i]];if(x<=0)return Promise.resolve(c[i])}return Promise.resolve(c[0])}}
+  if(R.reply&&R.replyFen===fen)return Promise.resolve(R.reply);
+  return analyse(fen,700).then(function(r){return r&&r.pv[0]});
+}
 function onRepMove(mv){
-  var R=cur.rep,want=R.l.moves[R.ply];B.locked=true;
-  if(mv.san===want){
+  var R=cur.rep;B.locked=true;var want=R.book?R.l.moves[R.ply]:null;
+  if(want&&mv.san===want){
     B.marks[mv.to]='ok';drawBoard();var nt=repNote(R.ply);addNote(t('repOk','<b class="mono">'+esc(mv.san)+'</b>')+(nt?' '+esc(nt):''),'me');
-    R.ply++;$('fb').innerHTML='';repStep();return}
-  R.err++;cur.first=false;B.marks[mv.to]='bad';drawBoard();
-  var fenAfter=B.chess.fen();B.chess.undo();var fen0=B.chess.fen();
-  var nt=repNote(R.ply);
-  $('fb').className='feedback bad';$('fb').innerHTML=t('repNo',esc(want))+(nt?' '+esc(nt):'')+' '+t('repTry');
-  later(function(){B.marks={};var a=arrowFor(fen0,want,'#0E9488');B.arrows=a?[a]:[];drawBoard();B.locked=false},900);
-  /* how bad was it, really? */
-  var c=new Chess(fen0);c.move(want,{sloppy:true});var fenWant=c.fen();
-  analyse(fenAfter,600).then(function(a){return analyse(fenWant,600).then(function(b){
-    if(!a||!b)return;var sMine=-a.s,sWant=-b.s,drop=Math.max(0,wp(sWant)-wp(sMine)),col=R.side;
-    var extra=drop<5?t('repPlayable','<span class="mono">'+esc(mv.san)+'</span>',evalTxt(sMine),esc(want)):
-      chip(mv.san,drop,sMine)+' '+explainBad(fen0,mv.san,a.pv,sMine,col,R.ply).join(' ');
-    if(cur&&cur.rep===R)$('fb').innerHTML=extra+'<br>'+t('repNo',esc(want))+(nt?' '+esc(nt):'')+' '+t('repTry');
+    R.hist.push(mv.san);R.ply++;$('fb').innerHTML='';repStep();return}
+  var fenAfter=B.chess.fen();B.chess.undo();var fen0=B.chess.fen();B.chess.move(mv.san,{sloppy:true});
+  $('fb').className='feedback';$('fb').textContent=t('checking',mv.san);
+  analyse(fen0,700).then(function(b){return analyse(fenAfter,700).then(function(a){
+    if(!cur||cur.rep!==R)return;
+    if(!a||!b){repMistake(mv,fen0,want,null,null,null);return}
+    var sBefore=b.s,sAfter=-a.s,drop=Math.max(0,wp(sBefore)-wp(sAfter));
+    if(drop<REP_OK){
+      B.marks[mv.to]='ok';drawBoard();R.hist.push(mv.san);
+      var nt=repNote(R.ply);
+      $('fb').className='feedback good';
+      $('fb').innerHTML=chip(mv.san,drop,sAfter)+' '+(want?t('repOwn','<span class="mono">'+esc(mv.san)+'</span>','<span class="mono">'+esc(want)+'</span>')+(nt?' <span class="small">'+esc(nt)+'</span>':''):t('repFine','<span class="mono">'+esc(mv.san)+'</span>'));
+      R.book=false;R.reply=a.pv[0]||null;R.replyFen=fenAfter;repRejoin();repStep();
+    }else repMistake(mv,fen0,want||b.pv[0],a,sAfter,drop);
   })});
 }
+function repMistake(mv,fen0,good,a,sAfter,drop){
+  var R=cur.rep;R.err++;cur.first=false;B.marks[mv.to]='bad';drawBoard();
+  var why=a?chip(mv.san,drop,sAfter)+' '+explainBad(fen0,mv.san,a.pv,sAfter,R.side,R.hist.length).join(' '):'';
+  var nt=R.book?repNote(R.ply):'';
+  $('fb').className='feedback bad';
+  $('fb').innerHTML=why+'<br>'+t('repMist','<span class="mono">'+esc(mv.san)+'</span>')+(good?' '+(R.book?t('repNo',esc(good)):t('engineBest','<span class="mono">'+esc(good)+'</span>')):'')+(nt?' '+esc(nt):'');
+  later(function(){B.chess.undo();B.marks={};var ar=good?arrowFor(fen0,good,'#0E9488'):null;B.arrows=ar?[ar]:[];drawBoard();B.locked=false},1000);
+}
+function repHint(color){var R=cur.rep,f=B.chess.fen();
+  if(R.book){var a=arrowFor(f,R.l.moves[R.ply],color);if(a){B.marks[a.from]='hint';B.arrows=color==='#0E9488'?[a]:[];drawBoard()}return}
+  analyse(f,700).then(function(r){if(r&&r.pv[0]&&cur&&cur.rep===R){var a=arrowFor(f,r.pv[0],color);if(a){B.marks[a.from]='hint';B.arrows=color==='#0E9488'?[a]:[];drawBoard()}}})}
 function repFinish(){
   var R=cur.rep,st=repState(lineId(R.op,R.i));gradeObj(st,R.err===0);
-  $('fb').className='feedback good';$('fb').innerHTML=R.err?t('repDone'):t('repDoneClean');
+  $('line').innerHTML=moveLine(R.hist);
+  $('fb').className='feedback good';$('fb').innerHTML=(R.err?t('repDone'):t('repDoneClean'))+' '+t('repErrs',R.err);
   cur.fen=B.chess.fen();itemDone(R.err===0);setBtns({next:true,explore:true});
 }
+
+function addNote(html,cls){var n=$('note');n.hidden=false;n.insertAdjacentHTML('beforeend','<p class="'+(cls||'')+'">'+html+'</p>');
+  var ps=n.querySelectorAll('p');if(ps.length>3)ps[0].remove()}
 
 /* key idea */
 function loadIdea(idea){
