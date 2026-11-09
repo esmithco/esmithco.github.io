@@ -163,6 +163,14 @@ details summary{cursor:pointer;font-weight:600}
 .bigq{font:600 1.35rem var(--f-body);margin:4px 0}.bigq b{font-size:1.6rem;color:var(--accent)}
 .choices.grid{display:grid;grid-template-columns:1fr 1fr}
 .sq.sel{box-shadow:inset 0 0 0 999px rgba(124,58,237,.55)}
+.anbar{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
+.anmoves{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:2px;align-items:center;font:600 .85rem var(--f-mono);scrollbar-width:none;padding-bottom:2px}
+.anmoves .mn{color:var(--faint);margin:0 2px 0 6px;font-weight:400}
+.anmoves .mv{appearance:none;border:0;background:none;font:inherit;color:var(--ink);padding:3px 5px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.anmoves .mv.new{color:var(--accent)} .anmoves .mv.cur{background:var(--accent);color:#fff}
+.annav{display:flex;gap:6px;flex-wrap:wrap} .annav .btn{padding:8px 14px;font-size:1rem}
+.aneval{min-height:1.2em}
+.trhead .small-btn{padding:5px 10px;font-size:.8rem;white-space:nowrap}
 .counter{font:600 .85rem var(--f-mono);color:var(--muted)}
 @media (max-width:420px){.tiles{grid-template-columns:1fr 1fr}.tile{padding:12px}.evalbar{width:16px;flex-basis:16px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -196,7 +204,7 @@ details summary{cursor:pointer;font-weight:600}
 
   <!-- TRAINER (shared by every exercise type) -->
   <section class="screen" id="s-train" hidden>
-    <div class="trhead"><div class="progress"><span id="trProg"></span></div><span class="small" id="trCount"></span></div>
+    <div class="trhead"><button class="btn small-btn" id="bPrevEx" type="button" data-t="bPrevEx"></button><div class="progress"><span id="trProg"></span></div><span class="small" id="trCount"></span></div>
     <div id="trBody" class="screen">
       <div class="prompt" id="prompt"></div>
       <div class="choices" id="choices" hidden></div>
@@ -206,23 +214,23 @@ details summary{cursor:pointer;font-weight:600}
       </div>
       <div class="line" id="line"></div>
       <div class="row" id="demoBar" hidden><button class="btn" id="bDemoPrev">◀</button><button class="btn" id="bDemoNext">▶</button><button class="btn" id="bDemoPlay" data-t="bDemoPlay"></button></div>
-      <div class="exbar" id="exBar" hidden>
-        <div id="exInfo"></div><div id="exEval"></div>
-        <div class="row"><button class="btn" id="bExUndo" data-t="bUndo"></button><button class="btn primary" id="bExBack" data-t="bBack"></button></div>
+      <div class="anbar" id="anBar" hidden>
+        <div class="anmoves" id="anMoves"></div>
+        <div class="annav"><button class="btn" id="anFirst" aria-label="Inicio">⏮</button><button class="btn" id="anPrev" aria-label="Atrás">◀</button><button class="btn" id="anNext" aria-label="Adelante">▶</button><button class="btn" id="anLast" aria-label="Final">⏭</button><button class="btn" id="anBase" data-t="bBasePos"></button></div>
+        <div class="small" id="anTip" hidden data-t="anTip"></div>
+        <div class="aneval small" id="anEval"></div>
       </div>
       <div class="feedback" id="fb" aria-live="polite"></div>
-      <div class="note" id="note" hidden></div>
-      <div class="why" id="why" hidden></div>
       <div class="row">
         <button class="btn" id="bHint" data-t="bHint"></button>
         <button class="btn" id="bShow" data-t="bShow"></button>
         <button class="btn" id="bBad"></button>
         <button class="btn" id="bGood" data-t="bGoodLine"></button>
-        <button class="btn" id="bReplay" data-t="bReplay"></button>
-        <button class="btn" id="bExplore" data-t="bExplore"></button>
         <button class="btn" id="bRetry" data-t="bRetry"></button>
         <button class="btn primary" id="bNext" data-t="bNext"></button>
       </div>
+      <div class="note" id="note" hidden></div>
+      <div class="why" id="why" hidden></div>
     </div>
     <div class="end" id="trEnd" hidden>
       <h2 id="trEndT"></h2><p id="trEndS" class="small"></p>
@@ -304,10 +312,10 @@ details summary{cursor:pointer;font-weight:600}
   <button data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg><span data-t="navProg"></span></button>
 </nav>
 <script src="chess.js"></script>
-<script src="textos.js?v=7"></script>
+<script src="textos.js?v=8"></script>
 <script src="repertorio.js?v=1"></script>
 <script src="curso.js?v=1"></script>
 <script src="fundamentos.js?v=1"></script>
-<script src="app.js?v=7"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>

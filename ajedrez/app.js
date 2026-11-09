@@ -268,7 +268,7 @@ function route(){
 }
 function go(s){if(location.hash==='#'+s)route();else location.hash=s}
 window.addEventListener('hashchange',route);
-$('bClose').onclick=function(){if(EX.on){exitExplore();return}if(location.hash==='#data'){go('progress');return}stopTimers();go(X.back||'home')};
+$('bClose').onclick=function(){if(location.hash==='#data'){go('progress');return}stopTimers();go(X.back||'home')};
 document.querySelectorAll('#tabbar button').forEach(function(b){b.onclick=function(){go(b.getAttribute('data-tab'))}});
 function rerender(){route()}
 
@@ -297,9 +297,9 @@ function later(f,ms){var id=setTimeout(f,ms);timers.push(id);return id}
 function stopTimers(){timers.forEach(clearTimeout);timers=[]}
 function startSession(items,src,from){X.items=items.slice();X.i=from||0;X.src=src;X.ok=0;X.back=src==='today'?'home':src==='ideas'?'learn':src.split(':')[0];cur=null;go('train')}
 function renderItem(){
-  stopTimers();EX.on=false;$('exBar').hidden=true;$('demoBar').hidden=true;
+  stopTimers();anOff();$('demoBar').hidden=true;
   if(X.i>=X.items.length){endSession();return}
-  var it=X.items[X.i];cur={it:it,answered:false,first:true};
+  var it=X.items[X.i];cur={it:it,answered:false,first:true};$('bPrevEx').disabled=X.i===0;
   $('trCount').textContent=(X.i+1)+'/'+X.items.length;$('trProg').style.width=(X.i/X.items.length*100)+'%';
   ['fb','why','choices','note'].forEach(function(id){$(id).innerHTML='';$(id).className=id==='fb'?'feedback':id;$(id).hidden=id!=='fb'});
   $('line').textContent='';$('trEnd').hidden=true;$('trBody').hidden=false;$('boardwrap').hidden=false;$('choices').classList.remove('grid');boardEl.classList.remove('nocoords');B.onMove=null;
@@ -321,8 +321,11 @@ function itemDone(ok){
   cur.answered=true;B.locked=true;B.onTap=null;if(ok&&cur.first)X.ok++;
   if(cur.it.t!=='theory'){S.log=S.log||[];S.log.push([now(),cur.it.t,ok&&cur.first?1:0]);if(S.log.length>4000)S.log=S.log.slice(-4000);save()}
   if(X.src==='today'&&ok&&cur.first&&S.daily)S.daily.ok=(S.daily.ok||0)+1;
-  setBtns({next:true,explore:true});$('bNext').focus({preventScroll:true});
+  setBtns({next:true});
+  if(cur.anPath){var p=cur.anPath();if(p){var arr=B.arrows;anSet(p.start,p.moves,p.i==null?p.moves.length:p.i,p.base);if(p.keepArrows){B.arrows=arr;drawBoard()}B.onMove=anMove}}
+  $('bNext').focus({preventScroll:true});
 }
+$('bPrevEx').onclick=function(){if(X.i>0){X.i--;saveDaily();renderItem()}};
 $('bNext').onclick=function(){X.i++;saveDaily();renderItem()};
 function endSession(){
   $('trBody').hidden=true;$('trEnd').hidden=false;$('trProg').style.width='100%';
@@ -332,7 +335,7 @@ function endSession(){
 }
 $('bEndHome').onclick=function(){go(X.back||'home')};
 function setBtns(o){
-  var map={hint:'bHint',show:'bShow',explore:'bExplore',bad:'bBad',good:'bGood',replay:'bReplay',next:'bNext',retry:'bRetry'};
+  var map={hint:'bHint',show:'bShow',bad:'bBad',good:'bGood',next:'bNext',retry:'bRetry'};
   Object.keys(map).forEach(function(k){$(map[k]).hidden=!o[k]});
 }
 function kindPill(k,extra){var m={mine:['kMine','mist'],punish:['kPun','good'],rep:['kRep','rep'],name:['kName','rep'],puz:['kPuz','idea'],trap:['kTrap','blun'],idea:['kIdea','idea']}[k];
@@ -349,9 +352,9 @@ function loadCard(c){
   var p=c.kind==='mine'?t('pMine',esc(c.played),evalTxt(c.s0),evalTxt(c.s1))
     :t('pPun',esc(c.oppMove),evalTxt(c.s0),evalTxt(c.s1));
   $('prompt').innerHTML='<div class="op">'+head+'</div>'+p;
-  $('line').innerHTML=moveLine(c.line);
-  B.locked=false;B.onMove=onCardMove;drawBoard();
-  setBtns({hint:true,show:true,replay:c.line.length>0});Engine.init();
+  cur.anPath=function(){return {start:INIT,moves:c.line.concat(cur.okMove?[cur.okMove]:[]),i:c.line.length+(cur.okMove?1:0),base:c.line.length,keepArrows:true}};
+  anSet(INIT,c.line,c.line.length);B.onMove=onCardMove;
+  setBtns({hint:true,show:true});Engine.init();
 }
 function moveLine(line,n){var o='';n=n==null?line.length:n;for(var i=0;i<n;i++){if(i%2===0)o+=(i/2+1)+'. ';o+=esc(line[i])+' '}return o+(n%2===0?'':'…')}
 function onCardMove(mv){
@@ -374,8 +377,8 @@ function cardResult(ok,san,sAfter,pvAfter){
   var msg=san==='—'?t('bestWas',esc(best)):ok?(san===best?t('correct','<span class="mono">'+esc(san)+'</span>'):t('alsoGood','<span class="mono">'+esc(san)+'</span>','<span class="mono">'+esc(best)+'</span>'))
     :(c.kind==='mine'&&san===c.played?t('wrongPlayed','<span class="mono">'+esc(san)+'</span>'):t('wrong','<span class="mono">'+esc(san)+'</span>'))+' '+t('bestWas',esc(best))+' '+t('again');
   $('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=(san==='—'?'':chip(san,drop,sAfter)+' ')+msg;
-  if(!ok){later(function(){B.chess=new Chess(fen0);B.marks={};var a=arrowFor(fen0,best,'#0E9488');B.arrows=a?[a]:[];drawBoard();setBar(toW(cur.ref,col))},1100)}
-  else{var a=arrowFor(fen0,best,'#0E9488');if(san!==best&&a){B.arrows=[a];drawBoard()}}
+  if(ok&&san!=='—')cur.okMove=san;
+  var ba=arrowFor(fen0,best,'#0E9488');B.arrows=ba&&(!ok||san!==best)?[ba]:[];
   /* why */
   var w=[],ply=c.line.length;
   if(c.kind==='mine'){
@@ -392,18 +395,61 @@ function cardResult(ok,san,sAfter,pvAfter){
   cur.badLine=c.kind==='mine'&&c.pvBad?[c.played].concat(c.pvBad.slice(0,6)):(!ok&&pvAfter?[san].concat(pvAfter.slice(0,6)):null);
   cur.goodLine=c.pvBest?c.pvBest.slice(0,7):[best];
   itemDone(ok);
-  setBtns({next:true,explore:true,bad:!!cur.badLine,good:true,replay:c.line.length>0});
+  setBtns({next:true,bad:!!cur.badLine,good:true});
   $('bBad').textContent=t('bBadLine',cur.badLine?cur.badLine[0]:'');
 }
 function showWhy(list){if(!list.length)return;$('why').hidden=false;$('why').innerHTML='<h3>'+t('why')+'</h3><ul>'+list.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>'}
-function animate(fen,moves,first,cb){
-  stopTimers();var c=new Chess(fen),i=0;B.chess=c;B.marks={};B.arrows=[];B.sel=null;B.targets=[];B.locked=true;drawBoard();
-  (function step(){if(i>=moves.length){if(cb)cb();return}
-    var m=c.move(moves[i],{sloppy:true});B.marks={};if(m){var cls=first&&i===0?'bad':'last';B.marks[m.from]=cls;B.marks[m.to]=cls}drawBoard();i++;later(step,first&&i===1?1000:650)})();
+/* ---------- analysis board: step through any line yourself (◀ ▶), and after answering move freely with live engine ---------- */
+var INIT=new Chess().fen();
+var AN={on:false,start:INIT,moves:[],i:0,base:0,tok:0,ev:{}};
+function anSet(start,moves,i,base){AN.on=true;AN.start=start;AN.moves=moves.slice();AN.i=Math.max(0,Math.min(i,AN.moves.length));AN.base=base==null?AN.i:base;$('anBar').hidden=false;$('line').hidden=true;anRender()}
+function anOff(){AN.on=false;AN.tok++;$('anBar').hidden=true;$('line').hidden=false;$('anEval').innerHTML=''}
+function anChess(n){var c=new Chess(AN.start);for(var k=0;k<n&&k<AN.moves.length;k++){if(!c.move(AN.moves[k],{sloppy:true}))break}return c}
+function anRender(keepArrows){
+  var c=anChess(AN.i),arr=keepArrows?B.arrows:[];B.chess=c;B.sel=null;B.targets=[];B.marks={};B.arrows=arr;B.drag=null;
+  var h=c.history({verbose:true}),last=h[h.length-1];if(last){B.marks[last.from]='last';B.marks[last.to]='last'}
+  B.locked=cur&&!cur.answered?AN.i!==AN.base:false;
+  drawBoard();anList();
+  $('anFirst').disabled=$('anPrev').disabled=AN.i===0;$('anNext').disabled=$('anLast').disabled=AN.i>=AN.moves.length;
+  $('anBase').hidden=AN.i===AN.base||AN.base>AN.moves.length;
+  if(cur&&cur.answered)anEval();else $('anEval').innerHTML=AN.i!==AN.base?t('anBack'):'';
 }
-$('bBad').onclick=function(){if(cur&&cur.badLine)animate(cur.fen,cur.badLine,true)};
-$('bGood').onclick=function(){if(cur&&cur.goodLine)animate(cur.fen0||cur.fen,cur.goodLine,false)};
-$('bReplay').onclick=function(){if(cur&&cur.card){var l=cur.card.line;animate(new Chess().fen(),l,false,function(){B.locked=cur.answered;if(!cur.answered)B.chess=new Chess(cur.fen)})}};
+function anList(){
+  var c=new Chess(AN.start),p=AN.start.split(' '),num=+p[5],o='';
+  for(var k=0;k<AN.moves.length;k++){var w=c.turn()==='w';if(w)o+='<span class="mn">'+num+'.</span>';else if(k===0)o+='<span class="mn">'+num+'…</span>';
+    var m=c.move(AN.moves[k],{sloppy:true});if(!m)break;
+    o+='<button type="button" class="mv'+(k+1===AN.i?' cur':'')+(k>=AN.base&&AN.base>0?' new':'')+'" data-k="'+(k+1)+'">'+esc(m.san)+'</button>';if(!w)num++}
+  $('anMoves').innerHTML=o||'<span class="small">'+t('anStart')+'</span>';
+  var cu=$('anMoves').querySelector('.cur');if(cu&&cu.scrollIntoView)cu.scrollIntoView({block:'nearest',inline:'nearest'});
+}
+$('anMoves').onclick=function(e){var b=e.target.closest('[data-k]');if(!b)return;AN.i=+b.getAttribute('data-k');anRender()};
+$('anFirst').onclick=function(){AN.i=0;anRender()};
+$('anPrev').onclick=function(){if(AN.i>0){AN.i--;anRender()}};
+$('anNext').onclick=function(){if(AN.i<AN.moves.length){AN.i++;anRender()}};
+$('anLast').onclick=function(){AN.i=AN.moves.length;anRender()};
+$('anBase').onclick=function(){AN.i=AN.base;anRender()};
+/* a move on the board while analysing (after the exercise is answered) */
+function anMove(mv){AN.moves=AN.moves.slice(0,AN.i).concat([mv.san]);AN.i++;anRender()}
+function anEval(){
+  var c=anChess(AN.i),fen=c.fen(),tok=++AN.tok,side=c.turn();
+  var prevFen=AN.i>0?anChess(AN.i-1).fen():null,lastSan=AN.i>0?AN.moves[AN.i-1]:null;
+  $('anEval').innerHTML=t('thinking');
+  var get=function(f){return AN.ev[f]?Promise.resolve(AN.ev[f]):analyse(f,700).then(function(r){if(r){var cc=new Chess(f);AN.ev[f]={w:toW(r.s,cc.turn()),pv:r.pv}}return AN.ev[f]})};
+  get(fen).then(function(e){
+    if(tok!==AN.tok||!e)return;setBar(e.w);
+    var h='';
+    if(e.pv&&e.pv.length){var a=arrowFor(fen,e.pv[0],'#2563EB');B.arrows=a?[a]:[];drawBoard();h+=t('engineBest',pvText(fen,e.pv,4))}
+    if(!prevFen||AN.i<=AN.base){$('anEval').innerHTML=h;return}
+    get(prevFen).then(function(p){if(tok!==AN.tok||!p)return;var mover=side==='w'?'b':'w',d=mover==='w'?wp(p.w)-wp(e.w):wp(-p.w)-wp(-e.w);
+      $('anEval').innerHTML=chip(lastSan,Math.max(0,d),mover==='w'?e.w:-e.w)+' '+h});
+  });
+}
+/* show a line from the exercise position, then let the user step with ▶ */
+function anLine(moves){var p=cur.anPath?cur.anPath():null;if(!p)return;anSet(p.start,p.moves.slice(0,p.base).concat(moves),p.base,p.base);$('anEval').innerHTML=cur.answered?$('anEval').innerHTML:'';flashTip()}
+function flashTip(){var el=$('anTip');el.hidden=false;clearTimeout(el._t);el._t=setTimeout(function(){el.hidden=true},3500)}
+
+$('bBad').onclick=function(){if(cur&&cur.badLine)anLine(cur.badLine)};
+$('bGood').onclick=function(){if(cur&&cur.goodLine)anLine(cur.goodLine)};
 $('bHint').onclick=function(){if(!cur||cur.answered)return;var a=null;
   if(cur.card)a=arrowFor(cur.fen,cur.card.best,'#E8730C');else if(cur.rep){repHint('#E8730C');cur.first=false;return}
   else if(cur.idea&&cur.idea.type==='move')a=arrowFor(cur.fen,cur.idea.answer[0],'#E8730C');
@@ -464,7 +510,7 @@ function loadName(op,i){
     $('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=ok?t('correct',esc(tt(l.name))):t('nameWas',esc(tt(l.name)));
     var keys=Object.keys(l.notes).map(Number).sort(function(a,b){return b-a});var k=keys.filter(function(x){return (x%2===0)===(o.side==='w')})[0];
     if(k!=null)showWhy(['<span class="mono">'+esc(l.moves[k])+'</span>: '+esc(tt(l.notes[String(k)]))]);
-    cur.fen=B.chess.fen();itemDone(ok);setBtns({next:true,explore:true})}});
+    cur.anPath=function(){return {start:INIT,moves:l.moves,base:l.moves.length}};itemDone(ok);setBtns({next:true})}});
   setBtns({});
 }
 function seenLines(){return allLines().filter(function(x){return !!x.st})}
@@ -531,7 +577,7 @@ function repFinish(){
   var R=cur.rep,st=repState(lineId(R.op,R.i));gradeObj(st,R.err===0);
   $('line').innerHTML=moveLine(R.hist);
   $('fb').className='feedback good';$('fb').innerHTML=(R.err?t('repDone'):t('repDoneClean'))+' '+t('repErrs',R.err);
-  cur.fen=B.chess.fen();itemDone(R.err===0);setBtns({next:true,explore:true});
+  cur.fen=B.chess.fen();cur.anPath=function(){return {start:INIT,moves:R.hist,base:R.hist.length}};itemDone(R.err===0);
 }
 
 function addNote(html,cls){var n=$('note');n.hidden=false;n.insertAdjacentHTML('beforeend','<p class="'+(cls||'')+'">'+html+'</p>');
@@ -568,32 +614,9 @@ function ideaResult(ok,san){
   if(idea.type==='square'&&!ok){idea.answer.forEach(function(q){B.marks[q]='ok'});drawBoard()}
   showWhy([esc(tt(idea.why))]);
   if(idea.type==='move'){cur.goodLine=[idea.answer[0]]}
-  itemDone(ok);setBtns({next:true,explore:idea.type!=='choice',good:false});
+  if(idea.type!=='choice'){var im=idea.moves?idea.moves.split(' '):[];cur.anPath=function(){return {start:idea.fen||INIT,moves:im.concat(ok&&idea.type==='move'?[idea.answer[0]]:[]),base:im.length,i:im.length+(ok&&idea.type==='move'?1:0)}}}
+  itemDone(ok);setBtns({next:true});
 }
-
-/* ---------- explore ---------- */
-var EX={on:false,hist:[],evalW:null,saved:null};
-$('bExplore').onclick=function(){enterExplore()};
-function enterExplore(){
-  stopTimers();EX.on=true;EX.saved={fen:B.chess.fen(),marks:B.marks,arrows:B.arrows};EX.hist=[];
-  $('exBar').hidden=false;$('trBody').classList.add('exploring');$('exInfo').innerHTML=t('explore');
-  B.locked=false;B.onTap=null;B.onMove=onExploreMove;B.arrows=[];drawBoard();setBar(null);exEval();
-}
-function exitExplore(){EX.on=false;$('exBar').hidden=true;$('trBody').classList.remove('exploring');
-  B.chess=new Chess(EX.saved.fen);B.marks=EX.saved.marks;B.arrows=EX.saved.arrows;B.locked=true;drawBoard();if(cur&&cur.card)setBar(barCp);}
-$('bExBack').onclick=exitExplore;
-$('bExUndo').onclick=function(){if(!EX.hist.length)return;B.chess.undo();var h=EX.hist.pop();EX.evalW=h;B.marks={};B.arrows=[];drawBoard();exEval()};
-function exEval(lastSan,mover,beforeW){
-  var fen=B.chess.fen(),tok=EX.tok=(EX.tok||0)+1;$('exEval').innerHTML=t('thinking');
-  analyse(fen,900).then(function(r){
-    if(!r||tok!==EX.tok||!EX.on)return;var side=B.chess.turn(),w=toW(r.s,side);setBar(w);
-    var h='';
-    if(lastSan&&beforeW!=null){var d=mover==='w'?wp(beforeW)-wp(w):wp(-beforeW)-wp(-w);h+=chip(lastSan,Math.max(0,d),mover==='w'?w:-w)+' '}
-    if(r.pv.length){var a=arrowFor(fen,r.pv[0],'#2563EB');B.arrows=a?[a]:[];drawBoard();h+=t('engineBest',pvText(fen,r.pv,5))}
-    EX.evalW=w;$('exEval').innerHTML=h;
-  });
-}
-function onExploreMove(mv){EX.hist.push(EX.evalW);exEval(mv.san,mv.color,EX.evalW)}
 
 /* ---------- repertoire screen ---------- */
 var repTab='london';
@@ -774,7 +797,7 @@ function puzSolved(){
   var c=new Chess(P.p.fen);c.move(P.p.m[0],{sloppy:true});var f1=c.fen(),sol=P.p.m.slice(1);
   var r=outcome(f1,sol,P.me,sol.length);
   var w=['<b>'+esc(tt(P.l.t))+':</b> '+esc(tt(P.l.body)[0]),(c.in_checkmate()?'':'')+t('puzSol',pvText(f1,sol,8))+(r.mate?' — '+t('matePat'):r.delta>=1?' — '+t('puzWins',matTxt(r.delta)):'')];
-  showWhy(w);cur.fen=B.chess.fen();cur.goodLine=sol;cur.fen0=f1;itemDone(cur.first);setBtns({next:true,explore:true});
+  showWhy(w);cur.goodLine=sol;cur.anPath=function(){return {start:P.p.fen,moves:P.p.m,i:P.p.m.length,base:1}};itemDone(cur.first);setBtns({next:true,good:true});
 }
 /* endgame technique: play it out against Stockfish */
 function loadPlay(x){
@@ -785,7 +808,7 @@ function loadPlay(x){
 }
 function playCount(){var P=cur.play;var el=$('playN');if(el)el.textContent=t('movesLeft',Math.max(0,P.x.limit-P.n))}
 function playEnd(ok,msg){var P=cur.play;P.over=true;B.locked=true;var s=S.tech[P.x.id]||(S.tech[P.x.id]={box:0,due:0});gradeObj(s,ok);
-  $('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=msg;cur.fen=B.chess.fen();itemDone(ok);setBtns({next:true,explore:true,retry:true})}
+  $('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=msg;var hs=B.chess.history();cur.anPath=function(){return {start:P.x.fen,moves:hs,base:0}};itemDone(ok);setBtns({next:true,retry:true})}
 function onPlayMove(mv){
   var P=cur.play;if(P.over)return;B.locked=true;P.n++;playCount();var c=B.chess,g=P.x.goal;
   if(c.in_checkmate()){playEnd(g==='mate',g==='mate'?t('playMate'):t('playLost'));return}
@@ -804,7 +827,7 @@ function onPlayMove(mv){
     B.locked=false;
   });
 }
-$('bRetry').onclick=function(){if(cur&&cur.play){cur.answered=false;cur.first=false;$('fb').innerHTML='';$('why').hidden=true;loadPlay(cur.play.x)}};
+$('bRetry').onclick=function(){if(cur&&cur.play){anOff();cur.answered=false;cur.first=false;$('fb').innerHTML='';$('why').hidden=true;loadPlay(cur.play.x)}};
 
 /* ---------- sync new games from Chess.com (the ↻ button) ---------- */
 function lastGameDate(){var d=0;Object.keys(S.games).forEach(function(k){var g=S.games[k];if((g.date||0)>d)d=g.date});return d}
