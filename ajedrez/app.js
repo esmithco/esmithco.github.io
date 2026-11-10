@@ -118,7 +118,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=22;
+var APP_VER=23;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1302,10 +1302,10 @@ function renderProgress(){
   var em={};gs.forEach(function(g){if(!g.op)return;var d=new Date(g.date*1000),k=d.getFullYear()*12+d.getMonth();var o=em[k]||(em[k]={n:0,e:0});o.n++;o.e+=g.errors||0});
   var ek=Object.keys(em).map(Number).filter(function(k){return em[k].n>=5}).sort(function(a,b){return a-b}).slice(-8);
   $('chErr').innerHTML=barChart(ek.map(function(k){return [MON[LANG][k%12]+" '"+String(Math.floor(k/12)).slice(2),em[k].e/em[k].n]}),function(v){return v.toFixed(1)},'#E8730C');
-  /* training per week */
-  var wk={},L=S.log||[];L.forEach(function(e){var w=Math.floor((e[0]/864e5+3)/7);var o=wk[w]||(wk[w]={n:0,ok:0});o.n++;o.ok+=e[2]});
-  var wks=Object.keys(wk).map(Number).sort(function(a,b){return a-b}).slice(-8);
-  $('chTrain').innerHTML=barChart(wks.map(function(w){var d=new Date((w*7-3)*864e5);return [d.getDate()+'/'+(d.getMonth()+1),Math.round(wk[w].ok/wk[w].n*100)]}),function(v){return v+'%'},'#0E9488');
+  /* training per day (last 14 days he practised), local dates */
+  var dy={},L=S.log||[];L.forEach(function(e){var k=dkey(new Date(e[0]));var o=dy[k]||(dy[k]={n:0,ok:0});o.n++;o.ok+=e[2]});
+  var dks=Object.keys(dy).sort().slice(-14);
+  $('chTrain').innerHTML=barChart(dks.map(function(k){var p=k.split('-');return [(+p[2])+'/'+(+p[1]),Math.round(dy[k].ok/dy[k].n*100)]}),function(v){return v+'%'},'#0E9488');
   /* kpis */
   var tot=L.length,okN=L.reduce(function(s,e){return s+e[2]},0);
   $('kpis').innerHTML='<div class="kpi"><b>'+(cur_||'—')+'</b><span>'+t('kRating')+'</span></div><div class="kpi"><b>'+streakN()+'</b><span>'+t('kStreak')+'</span></div><div class="kpi"><b>'+tot+'</b><span>'+t('kDone',tot?Math.round(okN/tot*100):0)+'</span></div>';
