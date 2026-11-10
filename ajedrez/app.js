@@ -281,10 +281,10 @@ function rerender(){route()}
 
 function renderHome(){
   var d=dailyNow(),n=d.items.length;
-  var sn=d.n||1;$('hToday').textContent=t('today')+(sn>1?' · '+sn:'');
-  $('hTodaySub').textContent=d.done?t(sn>1?'todayDone2':'todayDone'):t('todaySub',n,Math.max(5,Math.round(n*1.2)));
+  var sn=d.n||1;$('hToday').textContent=sn>1?t('todayExtra'):t('today');
+  $('hTodaySub').textContent=d.done?t(sn>1?'todayDone2':'todayDone'):(sn>1?t('todayExtraSub')+' ':'')+t('todaySub',n,Math.max(5,Math.round(n*1.2)));
   $('hTodayBar').style.width=(d.idx/n*100)+'%';
-  $('bToday').textContent=d.done?t(sn>1?'todayAgain':'todaySecond'):d.idx>0?t('todayCont',d.idx,n):t('todayStart');
+  $('bToday').textContent=d.done?t('todaySecond'):d.idx>0?t('todayCont',d.idx,n):t('todayStart');
   $('hStreak').textContent=S.streak.n>0?'🔥 '+t('streak',S.streak.n):'';
   var cm=counts('mine'),cp=counts('punish');
   $('tMineN').textContent=fmtCount(cm);$('tPunN').textContent=fmtCount(cp);
