@@ -96,6 +96,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
+var APP_VER=18;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1224,7 +1225,7 @@ function renderProgress(){
 }
 
 /* ---------- data screen: analysis, stats, backup ---------- */
-function renderData(){hintsUI();
+function renderData(){hintsUI();if($('appVer'))$('appVer').textContent=t('appVer',APP_VER);
   if(S.user)$('iUser').value=S.user;
   var by={};Object.keys(S.games).forEach(function(k){var g=S.games[k];var key=g.side+'|'+g.opening;var o=by[key]||(by[key]={side:g.side,name:g.opening,n:0,W:0,D:0,L:0,err:0});o.n++;o[g.r||'D']++;o.err+=g.errors||0});
   var rows=Object.keys(by).map(function(k){return by[k]}).sort(function(a,b){return b.n-a.n}).slice(0,20);
@@ -1383,5 +1384,12 @@ document.addEventListener('visibilitychange',function(){if(!cloudOn())return;
 
 /* ---------- start ---------- */
 applyStatic();B.chess=new Chess();drawBoard();boot();
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(function(){});
+/* updates: check for a new version on start and whenever the app comes back; when the new one takes over, reload once (unless mid-exercise) */
+if('serviceWorker' in navigator&&location.protocol==='https:'){
+  var hadSW=!!navigator.serviceWorker.controller,reloaded=false;
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(function(reg){
+    reg.update();document.addEventListener('visibilitychange',function(){if(!document.hidden)reg.update()})}).catch(function(){});
+  navigator.serviceWorker.addEventListener('controllerchange',function(){if(!hadSW||reloaded)return;reloaded=true;
+    if(location.hash==='#train')$('syncStatus').textContent=t('newVer');else location.reload()});
+}
 })();
