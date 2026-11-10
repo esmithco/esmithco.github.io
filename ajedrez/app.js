@@ -40,6 +40,18 @@ function upgrade(){
   syncStreak();
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof cloudSoon==='function')cloudSoon()}
+/* what counts as a mistake (his view, before -> after his move): not "a better move existed", but a move that leaves him clearly worse
+   (≤ −1.5) or throws away a clear advantage (from ≥ +2 to ≤ 0), with a drop of ≥ 15 win-probability points. Same rule offline (tools/build.py). */
+function isMistake(s0,s1){if(s0<-500)return false;var d=wp(s0)-wp(s1);return d>=15&&(s1<=-150||(s0>=200&&s1<=0))}
+function isPunish(s0,s1){if(s0>400)return false;var g=wp(s1)-wp(s0);return g>=15&&(s1>=150||(s0<=-200&&s1>=0))}
+function applyRule(){ /* one-time: drop old app-analysed cards that are only small slips, recount errors of app games */
+  if(S.rule===2)return;var per={};
+  Object.keys(S.cards).forEach(function(k){var c=S.cards[k];if(c.src!=='app')return;
+    if(c.kind==='mine'?!isMistake(c.s0,c.s1):!isPunish(c.s0,c.s1)){delete S.cards[k];return}
+    if(c.kind==='mine')(c.games||[]).forEach(function(g){per[g]=(per[g]||0)+1})});
+  Object.keys(S.games).forEach(function(k){var g=S.games[k];if(g.src==='app'&&g.op)g.errors=per[k]||0});
+  S.rule=2;
+}
 function mergeBase(D){
   var nc={};
   Object.keys(D.cards||{}).forEach(function(k){var c=D.cards[k],o=S.cards[k];if(o){c.box=o.box||0;c.due=o.due||0;c.reps=o.reps||0;c.lapses=o.lapses||0}nc[k]=c});
@@ -51,8 +63,8 @@ function mergeBase(D){
 function boot(){
   var raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
   if(raw){try{S=JSON.parse(raw)}catch(e){S=blank()}}
-  upgrade();
-  fetch('datos.json?v=4',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
+  upgrade();applyRule();
+  fetch('datos.json?v=5',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
     DATA.stats=D.stats||{};
     if(!S.base||S.base<(D.base||0)){mergeBase(D);save()}
   }).catch(function(){}).then(function(){route();clStatus();cloudPull();
@@ -106,7 +118,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=21;
+var APP_VER=22;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1341,12 +1353,12 @@ function analyseGame(info,sans,ms){
     ev(p).then(function(){return ev(p+1)}).then(function(){
       var s0=R[p].s,s1=-R[p+1].s,drop=wp(s0)-wp(s1),best=R[p].pv[0],rep=isRep(info.side,sans);
       if(p%2===us){
-        if(Math.abs(s0)<=500&&drop>=10&&best&&best!==sans[p]){errs++;var k=posKey(fens[p])+'|'+sans[p];
+        if(isMistake(s0,s1)&&best&&best!==sans[p]){errs++;var k=posKey(fens[p])+'|'+sans[p];
           if(S.cards[k]){var e=S.cards[k];if((e.games||[]).indexOf(info.id)<0){e.games=(e.games||[]).concat(info.id);e.count=(e.count||1)+1}}
           else{S.cards[k]={id:k,kind:'mine',src:'app',side:info.side,opening:info.opening,line:sans.slice(0,p),played:sans[p],best:best,s0:s0,s1:s1,drop:Math.round(drop),
-            sev:drop>=20?'blunder':'mistake',trap:s0>=-200&&s1<=-300,pvBest:R[p].pv,pvBad:R[p+1].pv,threat:null,games:[info.id],count:1,date:info.date,rep:rep,
+            sev:(s1<=-300||drop>=25)?'blunder':'mistake',trap:s0>=-200&&s1<=-300,pvBest:R[p].pv,pvBad:R[p+1].pv,threat:null,games:[info.id],count:1,date:info.date,rep:rep,
             mat:outcome(fens[p+1],R[p+1].pv,info.side,6).delta,box:0,due:0};found++}}
-      }else if(Math.abs(s0)<=400&&drop>=15&&p+1<=n&&R[p+1].pv.length){
+      }else if(p+1<=n&&R[p+1].pv.length&&isPunish(-s0,R[p+1].s)){
         var kp='P|'+posKey(fens[p+1]);
         if(!S.cards[kp]){S.cards[kp]={id:kp,kind:'punish',src:'app',side:info.side,opening:info.opening,line:sans.slice(0,p+1),oppMove:sans[p],oppBest:best,best:R[p+1].pv[0],
           s0:-s0,s1:R[p+1].s,gain:Math.round(wp(R[p+1].s)-wp(-s0)),pvBest:R[p+1].pv,gameMove:sans[p+1]||null,missed:sans[p+1]!==R[p+1].pv[0],games:[info.id],count:1,date:info.date,rep:rep,
@@ -1391,7 +1403,7 @@ $('bPgn').onclick=function(){
 $('bBackup').onclick=function(){var tx=JSON.stringify(S);$('iBackup').value=tx;
   try{navigator.clipboard.writeText(tx).then(function(){$('bkStatus').textContent=t('bkCopied')},function(){$('iBackup').select();$('bkStatus').textContent=t('bkSelect')})}catch(e){$('iBackup').select()}};
 $('bRestore').onclick=function(){try{var o=JSON.parse($('iBackup').value);if(!o.cards||!o.games)throw 0;S=o;upgrade();save();$('bkStatus').textContent=t('bkRestored')}catch(e){$('bkStatus').textContent=t('bkBad')}};
-$('bBase').onclick=function(){fetch('datos.json?v=4',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(D){DATA.stats=D.stats||{};mergeBase(D);save();$('bkStatus').textContent=t('bkLoaded')}).catch(function(){$('bkStatus').textContent=t('bkNone')})};
+$('bBase').onclick=function(){fetch('datos.json?v=5',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(D){DATA.stats=D.stats||{};mergeBase(D);save();$('bkStatus').textContent=t('bkLoaded')}).catch(function(){$('bkStatus').textContent=t('bkNone')})};
 var armed=false;
 $('bReset').onclick=function(){if(!armed){armed=true;$('bReset').textContent=t('bkResetSure');setTimeout(function(){armed=false;$('bReset').textContent=t('bkReset')},4000);return}
   S=blank();save();armed=false;$('bReset').textContent=t('bkReset');$('bkStatus').textContent=t('bkWiped')};
@@ -1414,7 +1426,7 @@ function payload(){
 function newer(a,b){return (a.reps||0)>(b.reps||0)||((a.reps||0)===(b.reps||0)&&(a.due||0)>(b.due||0))}
 function mergeProgress(R){
   if(!R||!R.v)return;
-  Object.keys(R.appCards||{}).forEach(function(k){if(!S.cards[k])S.cards[k]=R.appCards[k]});
+  Object.keys(R.appCards||{}).forEach(function(k){var c=R.appCards[k];if(!S.cards[k]&&(c.kind==='mine'?isMistake(c.s0,c.s1):isPunish(c.s0,c.s1)))S.cards[k]=c});
   Object.keys(R.games||{}).forEach(function(k){if(!S.games[k])S.games[k]=R.games[k]});
   Object.keys(R.cards||{}).forEach(function(k){var c=S.cards[k],r=R.cards[k];if(c&&newer(r,c)){c.box=r.box;c.due=r.due;c.reps=r.reps;c.lapses=r.lapses}});
   Object.keys(R.drill||{}).forEach(function(k){var a=S.drill[k],r=R.drill[k];if(!a||r.best>a.best||(r.best===a.best&&r.bestT&&r.bestT<a.bestT))S.drill[k]=r});

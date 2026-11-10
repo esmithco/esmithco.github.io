@@ -3,6 +3,14 @@ from analyse import wp,pk
 selM,selP,res=pickle.load(open('deep.pkl','rb'))
 G=json.load(open('parsed.json'))
 BASE=int(time.strftime('%Y%m%d'))
+def is_mistake(s0,s1):
+    # a real mistake, not just a less precise move: it leaves you clearly worse, or throws away a clear advantage
+    if s0<-500: return False
+    d=wp(s0)-wp(s1); return d>=15 and (s1<=-150 or (s0>=200 and s1<=0))
+def is_punish(s0,s1):
+    # the opponent's move hands you a clear advantage (your view, before/after it)
+    if s0>400: return False
+    g=wp(s1)-wp(s0); return g>=15 and (s1>=150 or (s0<=-200 and s1>=0))
 def rep(g):
     s=g['sans'];return (g['side']=='w' and s[:1]==['d4']) or (g['side']=='b' and (s[:2]==['e4','c6'] or s[:1]==['d4']))
 cards={}
@@ -10,17 +18,17 @@ for k,c in selM:
     g=c['game'];p=c['p'];r=res[k];b=r['before'];a=r['after']
     s0=b['s'];s1=-a['s'];drop=wp(s0)-wp(s1)
     best=b['pv'][0] if b['pv'] else None
-    if not best or best==g['sans'][p] or drop<8: continue
+    if not best or best==g['sans'][p] or not is_mistake(s0,s1): continue
     th=r.get('threat')
     cards[k]={'id':k,'kind':'mine','side':g['side'],'opening':g['opening'],'line':g['sans'][:p],'played':g['sans'][p],'best':best,
-      's0':s0,'s1':s1,'drop':round(drop),'sev':'blunder' if drop>=20 else 'mistake','trap':s0>=-200 and s1<=-300,
+      's0':s0,'s1':s1,'drop':round(drop),'sev':'blunder' if (s1<=-300 or drop>=25) else 'mistake','trap':s0>=-200 and s1<=-300,
       'pvBest':b['pv'],'pvBad':a['pv'],'threat':({'s':th['s'],'pv':th['pv'][:6]} if th and th['pv'] else None),
       'games':[x[0] for x in c['g']],'count':len(c['g']),'date':max(x[1] for x in c['g']),'rep':rep(g),'box':0,'due':0}
 for k,c in selP:
     g=c['game'];p=c['p'];r=res[k];nw=r['now'];pr=r['prev']
     if not nw['pv']: continue
     s1=nw['s'];s0=-pr['s']  # our perspective before opp move
-    if wp(s1)-wp(s0)<12: continue
+    if not is_punish(s0,s1): continue
     gm=g['sans'][p+1] if p+1<len(g['sans']) else None
     cards[k]={'id':k,'kind':'punish','side':g['side'],'opening':g['opening'],'line':g['sans'][:p+1],'oppMove':g['sans'][p],
       'oppBest':pr['pv'][0] if pr['pv'] else None,'best':nw['pv'][0],'s0':s0,'s1':s1,'gain':round(wp(s1)-wp(s0)),'pvBest':nw['pv'],
@@ -35,7 +43,7 @@ for g in G:
     f=g['fens'];s=g['sans'];us=0 if g['side']=='w' else 1
     for p in range(us,min(len(s),30),2):
         a=C.get(pk(f[p]));b=C.get(pk(f[p+1]))
-        if a and b and abs(a['s'])<=500 and wp(a['s'])-wp(-b['s'])>=10 and a['pv'] and a['pv'][0]!=s[p]: cnt[g['id']]+=1
+        if a and b and a['pv'] and a['pv'][0]!=s[p] and is_mistake(a['s'],-b['s']): cnt[g['id']]+=1
 for g in G:
     games[g['id']]={'white':g['white'],'black':g['black'],'date':g['date'],'opening':g['opening'],'side':g['side'],'r':g['r'],'how':g['how'],'op':1,'tr':1,'errors':cnt[g['id']],'rt':RT.get(g['id'],(None,None))[0],'tc':RT.get(g['id'],(None,None))[1]}
 # opponent/own move frequencies in repertoire games, first 16 plies
