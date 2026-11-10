@@ -811,10 +811,14 @@ function flashNext(){
   function ask(){
     boardEl.classList.add('nopieces');B.marks={};drawBoard();
     $('prompt').innerHTML=head+'<div class="bigq">'+q+'</div><p class="small">'+sideTxt(me)+'</p>';
-    B.locked=false;B.onTap=function(sq){B.locked=true;B.onTap=null;boardEl.classList.remove('nopieces');var ok=sq===ans;B.marks={};B.marks[ans]='ok';if(!ok)B.marks[sq]='bad';
-      var ar=arrowFor(c.fen(),it.p.m[1],'#0E9488');B.arrows=ar?[ar]:[];drawBoard();
-      $('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=(ok?'✓ ':'✗ ')+'<span class="mono">'+esc(it.p.m[1])+'</span>';
-      F.n++;if(ok)F.ok++;later(flashNext,ok?900:2200)};
+    B.locked=false;B.onTap=function(sq){B.locked=true;B.onTap=null;boardEl.classList.remove('nopieces');
+      var good=flashAnswers(c,kind,ans),ok=good.indexOf(sq)>=0;F.n++;if(ok)F.ok++;
+      /* pause: review the position (pieces back, every valid answer marked), explore with ◀ ▶ or by moving pieces */
+      cur.answered=true;anSet(c.fen(),it.p.m.slice(1),0,0);B.onMove=anMove;
+      good.forEach(function(g){B.marks[g]='ok'});if(!ok)B.marks[sq]='bad';var ar=arrowFor(c.fen(),it.p.m[1],'#0E9488');B.arrows=ar?[ar]:[];drawBoard();
+      $('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=(ok?'✓ ':'✗ ')+flashExplain(c,kind,good,sq,ok)+' <span class="small">'+t('flashReview')+'</span>';
+      var ch=$('choices');ch.hidden=false;ch.classList.remove('grid');ch.innerHTML='<button class="btn primary" id="bFlashNext">'+t('flashNextR')+'</button>';
+      $('bFlashNext').onclick=function(){anOff();cur.answered=false;B.onMove=null;flashNext()}};
   }
   if(lvl<3){ /* question first, board hidden until "I'm ready" */
     boardEl.classList.add('nopieces');drawBoard();
@@ -823,12 +827,28 @@ function flashNext(){
     $('bReady').onclick=look;
   }else look();
 }
+/* every square that answers the question, not only the puzzle's: any free piece / any mating move */
+function flashAnswers(c,kind,ans){
+  var out=[ans],ms=c.moves({verbose:true});
+  ms.forEach(function(m){
+    if(kind==='mate'){c.move(m.san);var x=c.in_checkmate();c.undo();if(x&&out.indexOf(m.to)<0)out.push(m.to)}
+    else if(m.captured){c.move(m.san);var re=c.moves({verbose:true}).some(function(r){return r.to===m.to});c.undo();
+      if((!re||VAL[m.captured]>VAL[m.piece])&&VAL[m.captured]>=1&&out.indexOf(m.to)<0)out.push(m.to)}
+  });return out;
+}
+function flashExplain(c,kind,good,sq,ok){
+  var ms=c.moves({verbose:true}),lst=good.map(function(g){var m=ms.filter(function(x){return x.to===g&&(kind!=='mate'||(function(){c.move(x.san);var y=c.in_checkmate();c.undo();return y})())})[0];
+    return m?(kind==='mate'?'<b class="mono">'+esc(m.san)+'</b>':pcName(m.captured)+' '+g+' (<span class="mono">'+esc(m.san)+'</span>)'):g}).join(', ');
+  var h=kind==='mate'?t('flashMates',lst):t('flashFree',lst);
+  if(!ok){var p=c.get(sq);h+=' · '+(!p?t('flashEmpty',sq):p.color===c.turn()?t('flashOwn',sq):t('flashDefended',pcName(p.type),sq))}
+  return h;
+}
 function timerBar(ms,cb){var el=$('tmr');if(!el){later(cb,ms);return}var t0=now();
   (function tick(){var left=Math.max(0,1-(now()-t0)/ms);el.style.width=(left*100)+'%';el.classList.toggle('low',left<.3);if(left<=0){cb();return}later(tick,100)})()}
 /* Rush */
 function loadRush(){
   var pool=puzPool(['hanging','mate1','fork','backrank','pin'],1350).concat(puzPool(['mate2'],1300)).sort(function(){return Math.random()-.5});
-  cur.rush={pool:pool,n:0,ok:0,lives:3,sec:30};setBar(null,false);setBtns({});rushNext();
+  cur.rush={pool:pool,n:0,ok:0,lives:3,sec:30,missed:[]};setBar(null,false);setBtns({});rushNext();
 }
 function rushHead(){var R=cur.rush;return '<div class="op">'+kindPill('idea',t('rushT'))+' <span class="counter">'+'❤️'.repeat(R.lives)+'🤍'.repeat(3-R.lives)+' · ✓ '+R.ok+'</span></div>'}
 function rushNext(){
@@ -840,17 +860,23 @@ function rushNext(){
   timerBar(R.sec*1000,function(){if(R.tok===tok&&!R.cur.done)rushFail(t('rushTime'))});
   B.onMove=function(mv){var P=R.cur;if(P.done)return;var want=P.p.m[P.ply];
     var ok=mv.san===want||(P.ply===P.p.m.length-1&&B.chess.in_checkmate());
-    if(!ok){B.marks[mv.to]='bad';drawBoard();rushFail('');return}
+    if(!ok){B.marks[mv.to]='bad';drawBoard();rushFail('',mv.san);return}
     P.ply++;B.marks[mv.to]='ok';drawBoard();
     if(P.ply>=P.p.m.length){P.done=true;R.ok++;B.locked=true;$('fb').className='feedback good';$('fb').textContent='✓';later(rushNext,500);return}
     B.locked=true;later(function(){var m=B.chess.move(P.p.m[P.ply],{sloppy:true});P.ply++;B.marks={};if(m){B.marks[m.from]='last';B.marks[m.to]='last'}drawBoard();B.locked=false},300)};
 }
-function rushFail(msg){var R=cur.rush,P=R.cur;P.done=true;R.lives--;B.locked=true;R.tok++;
+function rushFail(msg,wrong){var R=cur.rush,P=R.cur;P.done=true;R.lives--;B.locked=true;R.tok++;R.missed.push({p:P.p,ply:P.ply,wrong:wrong||null,t:R.n});
   var f=B.chess.fen();try{B.chess.undo()}catch(e){}var ar=arrowFor(B.chess.fen(),P.p.m[P.ply],'#0E9488');if(!ar){B.chess=new Chess(f)}B.arrows=ar?[ar]:[];drawBoard();
   $('fb').className='feedback bad';$('fb').innerHTML=(msg?msg+' ':'')+'✗ '+t('bestWas',esc(P.p.m[P.ply]));$('prompt').querySelector('.counter').textContent='❤️'.repeat(Math.max(0,R.lives))+'🤍'.repeat(3-Math.max(0,R.lives))+' · ✓ '+R.ok;
   later(rushNext,1800)}
 function rushEnd(){var R=cur.rush,s=S.drill.rush||(S.drill.rush={best:0,bestT:0,runs:0});s.runs++;var better=R.ok>s.best;if(better)s.best=R.ok;save();
-  $('fb').className='feedback good';$('fb').innerHTML=t('rushRes',R.ok)+(better&&R.ok?' 🏆 '+t('newBest'):' · '+t('rushBest',s.best));itemDone(R.ok>=5);setBtns({next:true})}
+  $('fb').className='feedback good';$('fb').innerHTML=t('rushRes',R.ok)+(better&&R.ok?' 🏆 '+t('newBest'):' · '+t('rushBest',s.best));itemDone(R.ok>=5);setBtns({next:true});
+  if(R.missed.length){var ch=$('choices');ch.hidden=false;ch.classList.remove('grid');
+    ch.innerHTML='<p class="small">'+t('rushMissed')+'</p>'+R.missed.map(function(x,k){return '<button class="btn opt" data-k="'+k+'">'+t('rushRevBtn',k+1,x.wrong?esc(x.wrong):t('rushTime'),esc(x.p.m[x.ply]))+'</button>'}).join('');
+    ch.querySelectorAll('[data-k]').forEach(function(b){b.onclick=function(){var x=R.missed[+b.getAttribute('data-k')];
+      anSet(x.p.fen,x.p.m,x.ply,x.ply);B.onMove=anMove;var a=arrowFor(anChess(x.ply).fen(),x.p.m[x.ply],'#0E9488');if(a){B.arrows=[a];drawBoard()}
+      $('fb').className='feedback';$('fb').innerHTML=t('rushRev',x.wrong?'<span class="mono">'+esc(x.wrong)+'</span>':t('rushTime'),'<span class="mono">'+esc(x.p.m[x.ply])+'</span>')+' <span class="small">'+t('flashReview')+'</span>';window.scrollTo(0,0)}})}
+}
 /* Scan: the thinking routine, one layer per tap */
 function scanLayers(c){
   var me=c.turn(),opp=me==='w'?'b':'w',h=c.history({verbose:true}),L=[];
