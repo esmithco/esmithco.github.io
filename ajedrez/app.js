@@ -23,11 +23,20 @@ function applyStatic(){
 $('bLang').onclick=function(){LANG=LANG==='es'?'en':'es';try{localStorage.setItem(LKEY,LANG)}catch(e){}applyStatic();rerender()};
 
 /* ---------- state ---------- */
-function blank(){return {pend:{},rating:null,v:3,user:'Esmithco',games:{},cards:{},gambits:{},rep:{},ideas:{},puz:{},tech:{},drill:{},quiz:{},plan:{},seenLesson:{},log:[],daily:null,streak:{n:0,last:''},base:0,lastSync:0}}
+function blank(){return {days:{},pend:{},rating:null,v:3,user:'Esmithco',games:{},cards:{},gambits:{},rep:{},ideas:{},puz:{},tech:{},drill:{},quiz:{},plan:{},seenLesson:{},log:[],daily:null,streak:{n:0,last:''},base:0,lastSync:0}}
 var S=blank(),DATA={stats:{}};
 function upgrade(){
-  var b=blank();Object.keys(b).forEach(function(k){if(S[k]==null)S[k]=b[k]});
+  var noDays=!S.days;var b=blank();Object.keys(b).forEach(function(k){if(S[k]==null)S[k]=b[k]});
   Object.keys(S.cards).forEach(function(k){if(!S.cards[k].kind)S.cards[k].kind='mine'});S.v=3;
+  if(S.daily)S.daily.date=padKey(S.daily.date);
+  if(noDays){S.days={};
+    /* rebuild finished days: from the old streak record and from days with a real session in the log */
+    var st=S.streak||{};if(st.last&&st.n){var p=padKey(st.last).split('-'),d=new Date(+p[0],+p[1]-1,+p[2]);for(var i=0;i<st.n;i++){S.days[dkey(d)]=1;d.setDate(d.getDate()-1)}}
+    var per={};(S.log||[]).forEach(function(e){if(e[1]==='theory')return;var k=dkey(new Date(e[0]));per[k]=(per[k]||0)+1});
+    Object.keys(per).forEach(function(k){if(per[k]>=6)S.days[k]=1});
+    if(S.daily&&S.daily.done&&S.daily.date)S.days[S.daily.date]=1;
+  }
+  syncStreak();
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof cloudSoon==='function')cloudSoon()}
 function mergeBase(D){
@@ -96,7 +105,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=18;
+var APP_VER=19;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -233,8 +242,14 @@ function allLines(){var o=[];Object.keys(REP).forEach(function(k){o=o.concat(rep
 function lineDue(x){return !x.st||(x.st.due||0)<=now()}
 
 /* ---------- daily ---------- */
-function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
-function yesterday(){var d=new Date(now()-864e5);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+/* dates are local 'YYYY-MM-DD' (zero-padded, so they sort as text). Old builds wrote '2026-11-9', which compared as later than '2026-11-10'. */
+function dkey(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function padKey(s){if(!s)return '';var p=String(s).split('-');return p.length===3?p[0]+'-'+('0'+p[1]).slice(-2)+'-'+('0'+p[2]).slice(-2):s}
+function today(){return dkey(new Date())}
+function yesterday(){var d=new Date();d.setDate(d.getDate()-1);return dkey(d)}
+/* streak = consecutive days with the daily session finished, counted back from today (or yesterday if today is not done yet) */
+function streakN(){var D=S.days||{},d=new Date();if(!D[dkey(d)])d.setDate(d.getDate()-1);var n=0;while(D[dkey(d)]){n++;d.setDate(d.getDate()-1)}return n}
+function syncStreak(){S.streak={n:streakN(),last:Object.keys(S.days||{}).sort().pop()||''}}
 function buildToday(n){
   n=n||1;
   var lines=allLines().filter(lineDue).sort(function(a,b){
@@ -253,12 +268,24 @@ function buildToday(n){
   var weak=coachStats().weak,wk=weak?weak.k:'',extra=wk==='aMine'?C(mine[3]):wk==='aPuz'?(reviewPuz(2)[1]?reviewPuz(2)[1]:null):wk==='aLine'?L(pickL[1]):wk==='aDrill'?{t:'drill',f:vis[(dd+n+1)%4]}:null;
   var qz=QUIZ.filter(function(q){var s=S.quiz[q.id];return !s||(s.due||0)<=now()})[0];
   var cs=curStrat(),pl=cs?stratItems(cs.id,1):[];var vq=VOCAB.filter(function(q){var s=S.quiz[q.id];return !s||(s.due||0)<=now()})[0];
-  var it=[{t:'drill',f:dr},L(pickL[0]),P(0),C(mine[0]),P(1),C(pun[0]),nq?{t:'name',op:nq.op,i:nq.i}:C(mine[1]),P(2),pl[0]||C(mine[2]),pl[1]||null,P(3),vq?{t:'quiz',id:vq.id}:null,qz?{t:'quiz',id:qz.id}:null,idea?{t:'idea',id:idea.id}:null,extra].filter(Boolean);
-  /* second (optional) session of the day: shorter, speed + basics + more of his own positions */
-  if(n>1)it=[{t:'drill',f:dr},{t:'drill',f:basics[(dd+n)%3]},L(pickL[1]||pickL[0]),C(mine[0]),P(0),C(pun[0]),C(mine[1]),P(1),pl[0]||null,C(mine[2]),extra].filter(Boolean);
-  S.daily={v:5,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
+  /* a bit of everything, never more than ~10 minutes: mini-drills of 2-5 positions + openings + his mistakes + punish + one concept.
+     Trimmed from the end (least important last) using his own timings. */
+  var o=(n-1)*2,rot=[qz?{t:'quiz',id:qz.id}:null,pl[0],vq?{t:'quiz',id:vq.id}:null,nq?{t:'name',op:nq.op,i:nq.i}:null,idea?{t:'idea',id:idea.id}:null].filter(Boolean),r1=rot[(dd+n)%Math.max(1,rot.length)]||null;
+  var speed=(dd+n)%2?{t:'drill',f:'flash',n:3}:{t:'drill',f:'rush',n:3};
+  var it=[{t:'drill',f:basics[(dd+n)%3],n:basics[(dd+n)%3]==='nota'?3:5},L(pickL[n>1?1:0]||pickL[0]),{t:'drill',f:'defend',n:2},P(0),C(mine[o]),speed,C(pun[n>1?1:0]||pun[0]),r1,
+    {t:'drill',f:'game',n:3},C(mine[o+1]),extra||P(1)].filter(Boolean);
+  while(it.length>6&&estSec(it)>600)it.splice(it.length-1,1);
+  S.daily={v:6,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
 }
-function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<4&&!S.daily.idx))buildToday();return S.daily}
+/* how long things take him: median of his last logged times per type, defaults otherwise */
+var EST={drill:75,line:70,puz:45,card:50,plan:40,quiz:15,idea:45,name:20,theory:30,ftheory:30,stheory:30,play:120};
+function estOne(it){
+  if(it.t==='drill'){var per={game:20,defend:18,flash:12,rush:12,coord:5,sqname:5,nota:9}[it.f]||8;return 6+per*(it.n||8)}
+  var a=(S.log||[]).filter(function(e){return e[1]===it.t&&e[3]!=null}).slice(-15).map(function(e){return e[3]}).sort(function(x,y){return x-y});
+  return a.length>=5?Math.min(150,a[Math.floor(a.length/2)]):(EST[it.t]||45);
+}
+function estSec(items){return items.reduce(function(a,x){return a+estOne(x)},0)}
+function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<6&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
 
 /* ---------- routing / screens ---------- */
 var SCREENS=['home','train','rep','learn','progress','data'],LISTS={mine:1,punish:1},TABS={home:'navToday',rep:'navRep',learn:'navLearn',progress:'navProg',data:'tData'};
@@ -284,10 +311,10 @@ function rerender(){route()}
 function renderHome(){
   var d=dailyNow(),n=d.items.length;
   var sn=d.n||1;$('hToday').textContent=sn>1?t('todayExtra'):t('today');
-  $('hTodaySub').textContent=d.done?t(sn>1?'todayDone2':'todayDone'):(sn>1?t('todayExtraSub')+' ':'')+t('todaySub',n,Math.max(5,Math.round(n*1.2)));
+  $('hTodaySub').textContent=d.done?t(sn>1?'todayDone2':'todayDone'):(sn>1?t('todayExtraSub')+' ':'')+t('todaySub',n,Math.max(3,Math.round(estSec(d.items.slice(d.idx||0))/60)));
   $('hTodayBar').style.width=(d.idx/n*100)+'%';
   $('bToday').textContent=d.done?t('todaySecond'):d.idx>0?t('todayCont',d.idx,n):t('todayStart');
-  $('hStreak').textContent=S.streak.n>0?'🔥 '+t('streak',S.streak.n):'';
+  syncStreak();$('hStreak').textContent=S.streak.n>0?'🔥 '+t('streak',S.streak.n):'';
   var cm=counts('mine'),cp=counts('punish');
   $('tMineN').textContent=fmtCount(cm);$('tPunN').textContent=fmtCount(cp);
   renderCoach();
@@ -357,7 +384,7 @@ function renderItem(){
 }
 function skip(){X.i++;saveDaily();renderItem()}
 function saveDaily(){if(X.src==='today'&&S.daily){S.daily.idx=X.i;if(X.i>=S.daily.items.length&&!S.daily.done){S.daily.done=true;
-  if(S.streak.last!==today()){S.streak.n=S.streak.last===yesterday()?S.streak.n+1:1;S.streak.last=today()}}save()}}
+  S.days=S.days||{};S.days[S.daily.date||today()]=1;syncStreak()}save()}}
 function itemDone(ok){
   cur.answered=true;B.locked=true;B.onTap=null;if(ok&&cur.first)X.ok++;
   if(cur.it.t!=='theory'){S.log=S.log||[];S.log.push([now(),cur.it.t,ok&&cur.first?1:0,Math.min(600,Math.round((now()-(cur.t0||now()))/1000))]);if(S.log.length>4000)S.log=S.log.slice(-4000);save()}
@@ -719,7 +746,7 @@ function loadQuiz(q){
 }
 /* a drill = one timed round */
 function loadDrill(id){
-  var D=cur.drill={id:id,n:0,ok:0,total:id==='nota'?6:id==='sqname'?8:10,t0:now()};
+  var D=cur.drill={id:id,n:0,ok:0,total:(cur.it&&cur.it.n)||(id==='nota'?6:id==='sqname'?8:10),t0:now()};
   setBar(null,false);boardEl.classList.toggle('nocoords',id!=='nota');
   D.flip=Math.random()<.5;setBtns({});drillNext();
 }
@@ -828,7 +855,7 @@ function puzPool(ids,maxR){var o=[];CURSO.lessons.forEach(function(l){if(ids.ind
 function afterFirst(p){var c=new Chess(p.fen);var m=c.move(p.m[0],{sloppy:true});return {c:c,m:m}}
 /* Flash */
 function loadFlash(){
-  var pool=puzPool(['hanging','mate1'],1400);var F=cur.flash={pool:pool,n:0,ok:0,total:8,t0:now()};setBar(null,false);setBtns({});flashNext();
+  var pool=puzPool(['hanging','mate1'],1400);var F=cur.flash={pool:pool,n:0,ok:0,total:(cur.it&&cur.it.n)||8,t0:now()};setBar(null,false);setBtns({});flashNext();
 }
 /* levels: 1-3 = read the question first, "I'm ready", look 5 / 3 / 2 s; 4-5 = game mode (no question beforehand), 3 / 2 s */
 var FL=[null,{q:1,s:5},{q:1,s:3},{q:1,s:2},{q:0,s:3},{q:0,s:2}];
@@ -836,8 +863,8 @@ function flashLvl(){return Math.min(5,(S.drill.flash&&S.drill.flash.lvl)||1)}
 function flashNext(){
   var F=cur.flash,lvl=flashLvl();
   if(F.n>=F.total){var sec=Math.round((now()-F.t0)/1000),s=S.drill.flash||(S.drill.flash={best:0,bestT:0,runs:0,lvl:1});s.runs++;var better=F.ok>s.best;if(better){s.best=F.ok;s.bestT=sec}
-    var msg='';if(F.stopped){}else if(F.ok>=6&&lvl<5){s.lvl=lvl+1;msg=' ⬆ '+t('flashUp',s.lvl)}else if(F.ok<=3&&lvl>1){s.lvl=lvl-1;msg=' ⬇ '+t('flashDown',s.lvl)}save();
-    boardEl.classList.remove('nopieces');$('choices').hidden=true;$('fb').className='feedback '+(F.ok>=6?'good':'bad');$('fb').innerHTML=t('drillRes',F.ok,F.total,sec)+(better&&F.ok?' 🏆 '+t('newBest'):'')+msg;itemDone(F.ok>=6);setBtns({next:true});return}
+    var msg='';if(F.stopped){}else if(F.ok>=F.total*.75&&lvl<5){s.lvl=lvl+1;msg=' ⬆ '+t('flashUp',s.lvl)}else if(F.ok<=F.total*.375&&lvl>1){s.lvl=lvl-1;msg=' ⬇ '+t('flashDown',s.lvl)}save();
+    boardEl.classList.remove('nopieces');$('choices').hidden=true;$('fb').className='feedback '+(F.ok>=F.total*.75?'good':'bad');$('fb').innerHTML=t('drillRes',F.ok,F.total,sec)+(better&&F.ok?' 🏆 '+t('newBest'):'')+msg;itemDone(F.ok>=F.total*.75);setBtns({next:true});return}
   var it=F.pool[F.n%F.pool.length],a=afterFirst(it.p),c=a.c,me=c.turn(),sol=c.move(it.p.m[1],{sloppy:true});c.undo();
   var kind=it.l.id==='mate1'?'mate':'hang',ans=sol.to,secs=FL[lvl].s,q=t(kind==='mate'?'flashQM':'flashQH');
   setBoard(c.fen(),me==='b',a.m.san,it.p.fen);B.locked=true;$('fb').innerHTML='';
@@ -888,12 +915,13 @@ function timerBar(ms,cb){var el=$('tmr');if(!el){later(cb,ms);return}var t0=now(
 /* Rush */
 function loadRush(){
   var pool=puzPool(['hanging','mate1','fork','backrank','pin'],1350).concat(puzPool(['mate2'],1300)).sort(function(){return Math.random()-.5});
-  cur.rush={pool:pool,n:0,ok:0,lives:3,sec:rushSec(),missed:[],times:[]};setBar(null,false);setBtns({});rushNext();
+  if(cur.it&&cur.it.n)pool=pool.slice(0,cur.it.n+3);
+  cur.rush={max:(cur.it&&cur.it.n)||99,pool:pool,n:0,ok:0,lives:3,sec:rushSec(),missed:[],times:[]};setBar(null,false);setBtns({});rushNext();
 }
 function rushSec(){var s=S.drill.rush;return Math.max(8,Math.min(30,(s&&s.sec)||20))}
 function rushHead(){var R=cur.rush;return '<div class="op">'+kindPill('idea',t('rushT'))+' <span class="counter">'+'❤️'.repeat(R.lives)+'🤍'.repeat(3-R.lives)+' · ✓ '+R.ok+'</span></div>'}
 function rushNext(){
-  var R=cur.rush;if(R.lives<=0||R.n>=R.pool.length){rushEnd();return}
+  var R=cur.rush;if(R.lives<=0||R.n>=R.pool.length||R.ok>=R.max){rushEnd();return}
   var it=R.pool[R.n++],a=afterFirst(it.p),c=a.c,me=c.turn();R.cur={p:it.p,ply:1,me:me,done:false};
   setBoard(c.fen(),me==='b',a.m.san,it.p.fen);B.locked=false;$('fb').innerHTML='';
   $('prompt').innerHTML=rushHead()+'<div class="bigq">'+t('rushQ')+'</div><div class="clockrow"><span class="clock" id="clk"></span><div class="timer"><span id="tmr"></span></div></div>';
@@ -913,8 +941,8 @@ function rushFail(msg,wrong){var R=cur.rush,P=R.cur;P.done=true;R.lives--;B.lock
 function rushEnd(){var R=cur.rush;R.ended=true;var s=S.drill.rush||(S.drill.rush={best:0,bestT:0,runs:0});s.runs++;var better=R.ok>s.best;if(better)s.best=R.ok;
   /* the clock adapts: solving comfortably -> less time next run; struggling -> a bit more */
   var avg=R.times.length?R.times.reduce(function(a,b){return a+b},0)/R.times.length:0,sec=R.sec,msg='';s.sec=sec;
-  if(R.ok>=8&&avg<sec*.5&&sec>8){s.sec=Math.max(8,sec-(avg<sec*.3?5:3));msg='<br>⬆ '+t('rushFaster',s.sec)}
-  else if(!R.stopped&&R.ok<4&&sec<30){s.sec=Math.min(30,sec+3);msg='<br>⬇ '+t('rushSlower',s.sec)}
+  if(R.ok>=Math.min(8,R.max)&&avg<sec*.5&&sec>8){s.sec=Math.max(8,sec-(avg<sec*.3?5:3));msg='<br>⬆ '+t('rushFaster',s.sec)}
+  else if(!R.stopped&&R.ok<Math.min(4,R.max*.6)&&sec<30){s.sec=Math.min(30,sec+3);msg='<br>⬇ '+t('rushSlower',s.sec)}
   save();B.locked=true;B.onMove=null;
   $('fb').className='feedback good';$('fb').innerHTML=t('rushRes',R.ok)+(avg?' · '+t('rushAvg',avg.toFixed(1)):'')+(better&&R.ok?' 🏆 '+t('newBest'):' · '+t('rushBest',s.best))+msg;itemDone(R.ok>=5);setBtns({next:true});
   if(R.missed.length){var ch=$('choices');ch.hidden=false;ch.classList.remove('grid');
@@ -940,7 +968,7 @@ function defMake(it){
 }
 function loadDefend(){
   var pool=puzPool(['mate1','hanging','backrank','fork'],1500),list=[],cnt={mate:0,hang:0};
-  for(var i=0;i<pool.length&&list.length<8;i++){var x=defMake(pool[i]);if(x&&cnt[x.kind]<5){cnt[x.kind]++;list.push(x)}}
+  var N=(cur.it&&cur.it.n)||8,cap=Math.ceil(N*.6);for(var i=0;i<pool.length&&list.length<N;i++){var x=defMake(pool[i]);if(x&&cnt[x.kind]<cap){cnt[x.kind]++;list.push(x)}}
   cur.def={list:list,n:0,ok:0,total:list.length,t0:now()};setBar(null,false);setBtns({});defNext();
 }
 function defHead(){var D=cur.def;return '<div class="op">'+kindPill('idea',t('defT'))+' <span class="counter">'+Math.min(D.n+1,D.total)+'/'+D.total+' · ✓ '+D.ok+'</span></div>'}
@@ -970,9 +998,10 @@ function pauseReview(fen,moves,ok,html,arrows,next){
    He is told nothing; he has to find out what is going on, like in a real game. */
 function loadGame(){
   var L=[],shuf=function(a){return a.sort(function(){return Math.random()-.5})};
-  var dp=puzPool(['mate1','hanging','backrank','fork'],1500),nd=0;for(var i=0;i<dp.length&&nd<3;i++){var x=defMake(dp[i]);if(x){x.type='def';L.push(x);nd++}}
-  puzPool(['hanging','fork','pin','skewer','discovered','backrank','mate1','mate2','trapped','defender','smothered'],1450).slice(0,4).forEach(function(it){L.push({type:'tac',it:it})});
-  var qs=[];Object.keys(PLANS).forEach(function(k){PLANS[k].forEach(function(p){qs.push({type:'quiet',p:p,tag:k})})});shuf(qs).slice(0,3).forEach(function(q){L.push(q)});
+  var N=(cur.it&&cur.it.n)||10,ND=Math.round(N*.3),NT=Math.round(N*.4),NQ=Math.max(1,N-ND-NT);
+  var dp=puzPool(['mate1','hanging','backrank','fork'],1500),nd=0;for(var i=0;i<dp.length&&nd<ND;i++){var x=defMake(dp[i]);if(x){x.type='def';L.push(x);nd++}}
+  puzPool(['hanging','fork','pin','skewer','discovered','backrank','mate1','mate2','trapped','defender','smothered'],1450).slice(0,NT).forEach(function(it){L.push({type:'tac',it:it})});
+  var qs=[];Object.keys(PLANS).forEach(function(k){PLANS[k].forEach(function(p){qs.push({type:'quiet',p:p,tag:k})})});shuf(qs).slice(0,NQ).forEach(function(q){L.push(q)});
   cur.game={list:shuf(L),n:0,ok:0,total:L.length,t0:now()};setBar(null,false);setBtns({});gameNext();
 }
 function gameHead(){var G=cur.game;return '<div class="op">'+kindPill('idea',t('gameT'))+' <span class="counter">'+Math.min(G.n+1,G.total)+'/'+G.total+' · ✓ '+G.ok+'</span></div>'}
@@ -1214,7 +1243,7 @@ function renderProgress(){
   $('chTrain').innerHTML=barChart(wks.map(function(w){var d=new Date((w*7-3)*864e5);return [d.getDate()+'/'+(d.getMonth()+1),Math.round(wk[w].ok/wk[w].n*100)]}),function(v){return v+'%'},'#0E9488');
   /* kpis */
   var tot=L.length,okN=L.reduce(function(s,e){return s+e[2]},0);
-  $('kpis').innerHTML='<div class="kpi"><b>'+(cur_||'—')+'</b><span>'+t('kRating')+'</span></div><div class="kpi"><b>'+(S.streak.n||0)+'</b><span>'+t('kStreak')+'</span></div><div class="kpi"><b>'+tot+'</b><span>'+t('kDone',tot?Math.round(okN/tot*100):0)+'</span></div>';
+  $('kpis').innerHTML='<div class="kpi"><b>'+(cur_||'—')+'</b><span>'+t('kRating')+'</span></div><div class="kpi"><b>'+streakN()+'</b><span>'+t('kStreak')+'</span></div><div class="kpi"><b>'+tot+'</b><span>'+t('kDone',tot?Math.round(okN/tot*100):0)+'</span></div>';
   /* course */
   var rows=CURSO.units.map(function(u){var ls=CURSO.lessons.filter(function(l){return l.unit===u.id}),ok=0,n=0;ls.forEach(function(l){var p=lessonProg(l);ok+=p.ok;n+=p.n});return [tt(u.t),ok,n]});
   var rl=allLines(),rok=rl.filter(function(x){return x.st&&x.st.box>=3}).length;rows.push([t('tRep'),rok,rl.length]);
@@ -1327,7 +1356,7 @@ function payload(){
   Object.keys(S.games).forEach(function(k){if(S.games[k].src==='app')games[k]=S.games[k]});
   var m=function(o){var r={};Object.keys(o||{}).forEach(function(k){r[k]=prog(o[k])});return r};
   return {v:1,at:now(),user:S.user,cards:cards,appCards:app,games:games,rep:m(S.rep),ideas:m(S.ideas),puz:m(S.puz),tech:m(S.tech),quiz:m(S.quiz),plan:m(S.plan),drill:S.drill,
-    seenLesson:S.seenLesson,log:S.log,daily:S.daily,streak:S.streak,lastSync:S.lastSync};
+    seenLesson:S.seenLesson,log:S.log,daily:S.daily,streak:S.streak,days:S.days,lastSync:S.lastSync};
 }
 function newer(a,b){return (a.reps||0)>(b.reps||0)||((a.reps||0)===(b.reps||0)&&(a.due||0)>(b.due||0))}
 function mergeProgress(R){
@@ -1339,8 +1368,11 @@ function mergeProgress(R){
   ['rep','ideas','puz','tech','quiz','plan'].forEach(function(f){S[f]=S[f]||{};Object.keys(R[f]||{}).forEach(function(k){var a=S[f][k],r=R[f][k];if(!a||newer(r,a))S[f][k]=r})});
   Object.keys(R.seenLesson||{}).forEach(function(k){S.seenLesson[k]=1});
   var seen={};S.log=(S.log||[]).concat(R.log||[]).filter(function(e){var k=e[0]+e[1];if(seen[k])return false;seen[k]=1;return true}).sort(function(a,b){return a[0]-b[0]}).slice(-4000);
-  if(R.streak&&(R.streak.last>(S.streak.last||'')||R.streak.last===S.streak.last&&R.streak.n>S.streak.n))S.streak=R.streak;
-  if(R.daily&&(!S.daily||R.daily.date>S.daily.date||(R.daily.date===S.daily.date&&(R.daily.idx||0)>(S.daily.idx||0))))S.daily=R.daily;
+  S.days=S.days||{};Object.keys(R.days||{}).forEach(function(k){S.days[padKey(k)]=1});
+  if(R.streak&&R.streak.last&&R.streak.n&&!R.days){var p=padKey(R.streak.last).split('-'),d=new Date(+p[0],+p[1]-1,+p[2]);for(var i=0;i<R.streak.n;i++){S.days[dkey(d)]=1;d.setDate(d.getDate()-1)}}
+  syncStreak();
+  if(R.daily){var rd=padKey(R.daily.date),sd=S.daily?padKey(S.daily.date):'';
+    if(!S.daily||rd>sd||(rd===sd&&(R.daily.n||1)===(S.daily.n||1)&&(R.daily.idx||0)>(S.daily.idx||0))){S.daily=R.daily;S.daily.date=rd}}
   if((R.lastSync||0)>(S.lastSync||0))S.lastSync=R.lastSync;
   try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
 }
