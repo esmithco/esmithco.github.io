@@ -23,7 +23,7 @@ function applyStatic(){
 $('bLang').onclick=function(){LANG=LANG==='es'?'en':'es';try{localStorage.setItem(LKEY,LANG)}catch(e){}applyStatic();rerender()};
 
 /* ---------- state ---------- */
-function blank(){return {v:3,user:'Esmithco',games:{},cards:{},gambits:{},rep:{},ideas:{},puz:{},tech:{},drill:{},quiz:{},plan:{},seenLesson:{},log:[],daily:null,streak:{n:0,last:''},base:0,lastSync:0}}
+function blank(){return {pend:{},rating:null,v:3,user:'Esmithco',games:{},cards:{},gambits:{},rep:{},ideas:{},puz:{},tech:{},drill:{},quiz:{},plan:{},seenLesson:{},log:[],daily:null,streak:{n:0,last:''},base:0,lastSync:0}}
 var S=blank(),DATA={stats:{}};
 function upgrade(){
   var b=blank();Object.keys(b).forEach(function(k){if(S[k]==null)S[k]=b[k]});
@@ -45,7 +45,8 @@ function boot(){
   fetch('datos.json?v=4',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
     DATA.stats=D.stats||{};
     if(!S.base||S.base<(D.base||0)){mergeBase(D);save()}
-  }).catch(function(){}).then(function(){route();clStatus();cloudPull()});
+  }).catch(function(){}).then(function(){route();clStatus();cloudPull();
+    setTimeout(function(){if(now()-(S.lastSync||0)>3*36e5)syncGames();else analyzePending()},2500)});
 }
 
 /* ---------- chess helpers ---------- */
@@ -282,7 +283,32 @@ function renderHome(){
   $('hStreak').textContent=S.streak.n>0?'🔥 '+t('streak',S.streak.n):'';
   var cm=counts('mine'),cp=counts('punish');
   $('tMineN').textContent=fmtCount(cm);$('tPunN').textContent=fmtCount(cp);
+  renderCoach();
   if(!running&&!$('syncStatus').textContent)$('syncStatus').textContent=S.lastSync?t('lastSync',new Date(S.lastSync).toLocaleDateString(LANG)):t('syncHint');
+}
+/* coach: last-game review, weekly rhythm, weakest area */
+function lastGameCards(){
+  var gs=Object.keys(S.games).map(function(k){return S.games[k]}).sort(function(a,b){return (b.date||0)-(a.date||0)}).slice(0,8),by={};
+  Object.keys(S.cards).forEach(function(k){var c=S.cards[k];(c.games||[]).forEach(function(g){(by[g]=by[g]||[]).push(c)})});
+  for(var i=0;i<gs.length;i++){var cs=by[gs[i].id];if(cs&&cs.length)return {g:gs[i],cards:cs.sort(function(a,b){return (a.kind==='mine'?0:1)-(b.kind==='mine'?0:1)||a.line.length-b.line.length})}}
+  return null;
+}
+var AREA={card:['mine','aMine'],line:['rep','aLine'],puz:['learn','aPuz'],plan:['learn','aPlan'],quiz:['learn','aQuiz'],idea:['learn','aIdea'],drill:['learn','aDrill'],name:['rep','aLine'],play:['learn','aPlay']};
+function coachStats(){
+  var lg=S.log||[],t0=now()-14*864e5,days={},by={},wk=now()-7*864e5;
+  lg.forEach(function(e){if(e[0]>=wk)days[new Date(e[0]).toDateString()]=1;if(e[0]<t0||!AREA[e[1]])return;var k=AREA[e[1]][1];by[k]=by[k]||{n:0,ok:0,go:AREA[e[1]][0]};by[k].n++;by[k].ok+=e[2]});
+  var weak=null;Object.keys(by).forEach(function(k){var x=by[k];if(x.n<6)return;x.p=Math.round(x.ok/x.n*100);x.k=k;if(!weak||x.p<weak.p)weak=x});
+  return {days:Object.keys(days).length,weak:weak&&weak.p<75?weak:null};
+}
+function renderCoach(){
+  var el=$('coach');if(!el)return;var cs=coachStats(),lg=lastGameCards(),h='<h3>'+t('coachT')+'</h3>';
+  h+='<p>'+t('coachDays',cs.days)+' '+(cs.days>=5?t('coachDaysOk'):t('coachDaysGo'))+'</p>';
+  if(cs.weak)h+='<p>'+t('coachWeak',t(cs.weak.k),cs.weak.p)+' <button class="btn small-btn" id="bCoachWeak" type="button">'+t('coachPractice')+'</button></p>';
+  if(lg){var g=lg.g,opp=g.side==='w'?g.black:g.white,res=t(g.r==='W'?'resW':g.r==='L'?'resL':'resD');
+    h+='<p>'+t('coachLast',opp,res,lg.cards.length)+' <button class="btn small-btn" id="bCoachLast" type="button">'+t('coachReview')+'</button></p>'}
+  el.innerHTML=h;
+  if($('bCoachWeak'))$('bCoachWeak').onclick=function(){var g=cs.weak.go;if(LISTS[g])quickSession(g);else go(g)};
+  if($('bCoachLast'))$('bCoachLast').onclick=function(){startSession(lg.cards.slice(0,10).map(function(c){return {t:'card',id:c.id}}),'mine');X.back='home'};
 }
 function fmtCount(c){return LANG==='es'?(c.due?c.due+' para repasar · ':'')+c.nw+' nuevas':(c.due?c.due+' to review · ':'')+c.nw+' new'}
 $('bToday').onclick=function(){
@@ -1002,21 +1028,33 @@ $('bRetry').onclick=function(){if(cur&&cur.play){anOff();cur.answered=false;cur.
 
 /* ---------- sync new games from Chess.com (the ↻ button) ---------- */
 function lastGameDate(){var d=0;Object.keys(S.games).forEach(function(k){var g=S.games[k];if((g.date||0)>d)d=g.date});return d}
+/* 1) save every new game (rating, result) immediately, 2) official rating from /stats, 3) analyse pending games in the background (resumable) */
 function syncGames(){
-  if(running)return;var user=(S.user||'Esmithco').toLowerCase();setRunning(true);stopFlag=false;
+  if(running)return;var user=(S.user||'Esmithco').toLowerCase();setRunning(true);stopFlag=false;S.pend=S.pend||{};
+  fetch('https://api.chess.com/pub/player/'+encodeURIComponent(user)+'/stats').then(function(r){return r.json()}).then(function(st){var r=st.chess_rapid;
+    if(r&&r.last){S.rating={rapid:r.last.rating,best:r.best?r.best.rating:null,at:now()};save();if(!$('s-progress').hidden)renderProgress()}}).catch(function(){});
   var since=lastGameDate(),sd=new Date((since||0)*1000),key=sd.getUTCFullYear()*100+sd.getUTCMonth()+1;
   status('fetch',1,1);
   fetch('https://api.chess.com/pub/player/'+encodeURIComponent(user)+'/games/archives').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(a){
     var urls=(a.archives||[]).filter(function(u){var m=u.match(/(\d{4})\/(\d{2})$/);return m&&(+m[1]*100+ +m[2])>=key});if(!since)urls=urls.slice(-3);
     var out=[],i=0;return new Promise(function(res,rej){(function next(){if(i>=urls.length){res(out);return}status('fetch',i+1,urls.length);
       fetch(urls[i++]).then(function(r){return r.json()}).then(function(j){(j.games||[]).forEach(function(g){if(g.rules==='chess'&&g.pgn)out.push(g)});next()}).catch(rej)})()})
-  }).then(function(games){var jobs=[];
+  }).then(function(games){var added=0;
     games.forEach(function(g){var side=g.white.username.toLowerCase()===user?'w':'b',me=side==='w'?g.white:g.black;
-      var info={id:g.url,white:g.white.username,black:g.black.username,date:g.end_time,opening:openingName(g.eco),side:side,r:resultCode(me.result),how:me.result,rt:me.rating,tc:g.time_class};
-      if(S.games[info.id])return;var sans=movesOf(g.pgn);if(sans)jobs.push({info:info,sans:sans})});
-    jobs.sort(function(a,b){return (b.info.date||0)-(a.info.date||0)});jobs=jobs.slice(0,40);
-    S.lastSync=now();save();runJobs(jobs);
+      if(S.games[g.url])return;var sans=movesOf(g.pgn);
+      S.games[g.url]={id:g.url,white:g.white.username,black:g.black.username,date:g.end_time,opening:openingName(g.eco),side:side,r:resultCode(me.result),how:me.result,rt:me.rating,tc:g.time_class,src:'app',op:0};
+      if(sans)S.pend[g.url]=sans;added++});
+    S.lastSync=now();save();
+    if(!$('s-home').hidden)renderHome();if(!$('s-progress').hidden)renderProgress();
+    status(added?'added':'upToDate',added);setRunning(false);
+    if(added)later2(analyzePending,1500);
   }).catch(function(){setRunning(false);status('fail')});
+}
+function later2(f,ms){setTimeout(f,ms)}
+function analyzePending(){
+  if(running)return;var ids=Object.keys(S.pend||{}).filter(function(k){return S.games[k]}).sort(function(a,b){return (S.games[b].date||0)-(S.games[a].date||0)}).slice(0,15);
+  if(!ids.length)return;setRunning(true);stopFlag=false;
+  runJobs(ids.map(function(id){return {info:S.games[id],sans:S.pend[id]}}));
 }
 $('bSync').onclick=syncGames;
 
@@ -1048,7 +1086,7 @@ function renderProgress(){
   var ks=Object.keys(bym).map(Number).sort(function(a,b){return a-b}).slice(-18),pts=ks.map(function(k){return [k,bym[k]]});
   var xl=ks.filter(function(k,i){return i%3===0||i===ks.length-1}).map(function(k){return [k,MON[LANG][k%12]]});
   $('chRating').innerHTML=lineChart(pts,{xl:xl});
-  var cur_=gs.length?gs[gs.length-1].rt:0,ago=gs.filter(function(g){return g.date<now()/1000-30*86400}).pop(),best=gs.reduce(function(m,g){return Math.max(m,g.rt)},0);
+  var cur_=S.rating&&S.rating.rapid?S.rating.rapid:gs.length?gs[gs.length-1].rt:0,ago=gs.filter(function(g){return g.date<now()/1000-30*86400}).pop(),best=Math.max(gs.reduce(function(m,g){return Math.max(m,g.rt)},0),S.rating&&S.rating.best||0);
   $('capRating').textContent=gs.length?t('ratingCap',cur_,ago?(cur_-ago.rt>=0?'+':'')+(cur_-ago.rt):'—',best):'';
   /* mistakes per game */
   var em={};gs.forEach(function(g){if(!g.op)return;var d=new Date(g.date*1000),k=d.getFullYear()*12+d.getMonth();var o=em[k]||(em[k]={n:0,e:0});o.n++;o.e+=g.errors||0});
@@ -1125,10 +1163,10 @@ function runJobs(jobs){
   status('loading');
   Engine.init().then(function(ok){if(!ok){$('impStatus').textContent=t('noEngine');setRunning(false);return}
     (function next(){
-      if(stopFlag||!jobs.length){status(stopFlag?'stopped':'done',done,total,found);setRunning(false);save();if(!$('s-home').hidden){var m=counts('mine'),q=counts('punish');$('tMineN').textContent=fmtCount(m);$('tPunN').textContent=fmtCount(q)}return}
+      if(stopFlag||!jobs.length){status(stopFlag?'stopped':'done',done,total,found);setRunning(false);save();if(!$('s-home').hidden)renderHome();if(!$('s-progress').hidden)renderProgress();return}
       var j=jobs.shift();status('game',done+1,total,j.info.white,j.info.black);
       analyseGame(j.info,j.sans,ms).then(function(r){if(r.stopped){next();return}
-        var g=S.games[j.info.id]||j.info;if(!S.games[j.info.id])g.src='app';g.op=1;g.tr=1;g.errors=r.errs;S.games[j.info.id]=g;found+=r.found;done++;save();
+        var g=S.games[j.info.id]||j.info;if(!S.games[j.info.id])g.src='app';if(S.pend)delete S.pend[j.info.id];g.op=1;g.tr=1;g.errors=r.errs;S.games[j.info.id]=g;found+=r.found;done++;save();
         $('prog').style.width=(done/total*100)+'%';next()})})()});
 }
 $('bRecent').onclick=function(){

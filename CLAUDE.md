@@ -69,6 +69,8 @@ App shell (Nov 9 evening): bottom **tab bar** (Hoy / Repertorio / Aprender / Pro
 
 **Cloud save** (by request; free): progress syncs to a **private GitHub gist** (description `taller-aperturas-progress`, file `progress.json`) using a classic token with only the `gist` scope that the user pastes once per device (pre-filled link `github.com/settings/tokens/new?scopes=gist`). Token + gist id live in `localStorage['taller-aperturas.cloud']`, never in `S`/backups/the gist. Only *progress* is synced (`payload()`: SR state of practiced cards, rep/ideas/puz/tech, seenLesson, log, daily, streak, app-analysed games/cards — ~5 KB), not the base analysis. `save()` → push after 4 s; pull+merge on start and when the app returns to foreground (>60 s); push on hide (`keepalive`). Merge rule: per item keep the one with more `reps` (tie → later `due`); log = union.
 
+**Chess.com sync** (`syncGames`, the ↻ button; also runs by itself on start when the last sync is >3 h old): fetches `/pub/player/<user>/stats` into `S.rating={rapid,best,at}` (Progreso shows this official number) and stores every new game **immediately** (`rt`, `tc`, result, `op:0`) so rating/progress update at once; the moves wait in `S.pend[url]` and `analyzePending()` analyses up to 15 per run in the background (resumes on next start). Before this, games were only stored after their slow analysis finished, so Progreso looked frozen. **Coach card** on home (`renderCoach`): days trained in the last 7, weakest area in the last 14 days from `S.log` (<75% first-try, ≥6 attempts) with a Practice button, and "review your last game" (cards whose `games` include the newest game).
+
 Daily practice (`buildToday`): ~10 items — 1 repertoire line (trap/punish lines first; never-seen lines start as a demo), 3 puzzles from the current course lesson (+ its theory the first time) and 1 failed-puzzle review, 3 own mistakes, 1 punish (or a "which variation?" quiz), 1 key idea. Resumes mid-session; streak counter.
 
 Criteria (same offline and in-app): **own move** flagged if win-probability (Lichess `wp(cp)`) drops ≥ 10 in one move within the first 30 plies and |eval before| ≤ 500; **punish** if the opponent's move drops ≥ 15 (|eval| ≤ 400). `trap` = good (≥ −200) → lost (≤ −300) in one move. No "lost game" requirement any more.
@@ -77,7 +79,7 @@ Regenerating `datos.json` offline (needs `brew install stockfish` + a venv with 
 
 Findings (Nov 2026; 2,478 games): quick losses mostly from openings he dropped (1…e5, Scotch Gambit). Repertoire traps he fell for are encoded as trap lines (Caro Advance Bg5/…e6??, London …Nh5/g4?, Englund, Fantasy …Bg4?). Vs Queen's Gambit as Black he scored badly → Slav lines.
 
-Ideas not done yet: a refresh button that re-downloads only new months; more key ideas drawn from his own middlegame blunders.
+Ideas not done yet: more key ideas drawn from his own middlegame blunders.
 
 ## Gotchas that have bitten before
 

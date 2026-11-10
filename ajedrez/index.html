@@ -50,6 +50,7 @@ h3{margin:0;font-size:1rem}
 .hero .btn{background:#fff;color:var(--accent);border-color:#fff;font-size:1rem;padding:12px 18px;align-self:flex-start}
 .hero .streak{font-size:.88rem;opacity:.95;min-height:1.2em}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.coach{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:14px;padding:12px 14px;margin:12px 0}.coach h3{margin:0 0 6px;font-size:1rem}.coach p{margin:6px 0;font-size:.92rem;line-height:1.4}.coach .btn{margin-left:4px}
 .tile{appearance:none;text-align:left;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--tc,var(--accent));border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px;cursor:pointer;font:inherit;color:inherit}
 .tile b{font-family:var(--f-display);font-size:1.1rem}
 .tile span{font-size:.84rem;color:var(--muted)}
@@ -199,6 +200,7 @@ details summary{cursor:pointer;font-weight:600}
       <div class="streak" id="hStreak"></div>
     </div>
     <div class="sync"><button class="btn" id="bSync" data-t="bSync"></button><span class="small" id="syncStatus"></span><button class="cloudline" id="clHome" type="button"></button></div>
+    <div class="coach" id="coach"></div>
     <div class="tiles">
       <button class="tile" data-go="mine" style="--tc:var(--c-mist)"><b data-t="tMine"></b><span data-t="tMineD"></span><em id="tMineN"></em></button>
       <button class="tile" data-go="punish" style="--tc:var(--good)"><b data-t="tPun"></b><span data-t="tPunD"></span><em id="tPunN"></em></button>
@@ -316,11 +318,11 @@ details summary{cursor:pointer;font-weight:600}
   <button data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg><span data-t="navProg"></span></button>
 </nav>
 <script src="chess.js"></script>
-<script src="textos.js?v=13"></script>
+<script src="textos.js?v=14"></script>
 <script src="repertorio.js?v=1"></script>
 <script src="curso.js?v=1"></script>
 <script src="fundamentos.js?v=5"></script>
 <script src="planes.js?v=1"></script>
-<script src="app.js?v=13"></script>
+<script src="app.js?v=14"></script>
 </body>
 </html>
