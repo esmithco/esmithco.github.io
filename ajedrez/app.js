@@ -792,21 +792,36 @@ function afterFirst(p){var c=new Chess(p.fen);var m=c.move(p.m[0],{sloppy:true})
 function loadFlash(){
   var pool=puzPool(['hanging','mate1'],1400);var F=cur.flash={pool:pool,n:0,ok:0,total:8,t0:now()};setBar(null,false);setBtns({});flashNext();
 }
+/* levels: 1 = read the question first, "I'm ready", look 5 s; 2 = same, 3 s; 3 = game mode: look 3 s without knowing the question */
+function flashLvl(){return (S.drill.flash&&S.drill.flash.lvl)||1}
 function flashNext(){
-  var F=cur.flash;if(F.n>=F.total){var sec=Math.round((now()-F.t0)/1000),s=S.drill.flash||(S.drill.flash={best:0,bestT:0,runs:0});s.runs++;var better=F.ok>s.best;if(better){s.best=F.ok;s.bestT=sec}save();
-    boardEl.classList.remove('nopieces');$('fb').className='feedback '+(F.ok>=6?'good':'bad');$('fb').innerHTML=t('drillRes',F.ok,F.total,sec)+(better&&F.ok?' 🏆 '+t('newBest'):'');itemDone(F.ok>=6);setBtns({next:true});return}
+  var F=cur.flash,lvl=flashLvl();
+  if(F.n>=F.total){var sec=Math.round((now()-F.t0)/1000),s=S.drill.flash||(S.drill.flash={best:0,bestT:0,runs:0,lvl:1});s.runs++;var better=F.ok>s.best;if(better){s.best=F.ok;s.bestT=sec}
+    var msg='';if(F.ok>=6&&lvl<3){s.lvl=lvl+1;msg=' ⬆ '+t('flashUp',s.lvl)}else if(F.ok<=3&&lvl>1){s.lvl=lvl-1;msg=' ⬇ '+t('flashDown',s.lvl)}save();
+    boardEl.classList.remove('nopieces');$('choices').hidden=true;$('fb').className='feedback '+(F.ok>=6?'good':'bad');$('fb').innerHTML=t('drillRes',F.ok,F.total,sec)+(better&&F.ok?' 🏆 '+t('newBest'):'')+msg;itemDone(F.ok>=6);setBtns({next:true});return}
   var it=F.pool[F.n%F.pool.length],a=afterFirst(it.p),c=a.c,me=c.turn(),sol=c.move(it.p.m[1],{sloppy:true});c.undo();
-  var kind=it.l.id==='mate1'?'mate':'hang',ans=sol.to;
-  setBoard(c.fen(),me==='b',a.m.san,it.p.fen);boardEl.classList.remove('nopieces');B.locked=true;$('fb').innerHTML='';
-  var secs=3;$('prompt').innerHTML='<div class="op">'+kindPill('idea',t('flashT'))+' <span class="counter">'+(F.n+1)+'/'+F.total+' · ✓ '+F.ok+'</span></div><div class="bigq">'+t(kind==='mate'?'flashLookM':'flashLookH')+'</div><div class="timer"><span id="tmr"></span></div><p class="small">'+sideTxt(me)+'</p>';
-  timerBar(secs*1000,function(){
+  var kind=it.l.id==='mate1'?'mate':'hang',ans=sol.to,secs=lvl===1?5:3,q=t(kind==='mate'?'flashQM':'flashQH');
+  setBoard(c.fen(),me==='b',a.m.san,it.p.fen);B.locked=true;$('fb').innerHTML='';
+  var head='<div class="op">'+kindPill('idea',t('flashT'))+' <span class="counter">'+t('flashLvlN',lvl)+' · '+(F.n+1)+'/'+F.total+' · ✓ '+F.ok+'</span></div>';
+  function look(){
+    $('choices').hidden=true;boardEl.classList.remove('nopieces');drawBoard();
+    $('prompt').innerHTML=head+'<div class="bigq">'+(lvl<3?t(kind==='mate'?'flashLookM':'flashLookH'):t('flashLookAll'))+'</div><div class="timer"><span id="tmr"></span></div><p class="small">'+sideTxt(me)+'</p>';
+    timerBar(secs*1000,ask);
+  }
+  function ask(){
     boardEl.classList.add('nopieces');B.marks={};drawBoard();
-    $('prompt').querySelector('.bigq').innerHTML=t(kind==='mate'?'flashQM':'flashQH');
+    $('prompt').innerHTML=head+'<div class="bigq">'+q+'</div><p class="small">'+sideTxt(me)+'</p>';
     B.locked=false;B.onTap=function(sq){B.locked=true;B.onTap=null;boardEl.classList.remove('nopieces');var ok=sq===ans;B.marks={};B.marks[ans]='ok';if(!ok)B.marks[sq]='bad';
       var ar=arrowFor(c.fen(),it.p.m[1],'#0E9488');B.arrows=ar?[ar]:[];drawBoard();
       $('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=(ok?'✓ ':'✗ ')+'<span class="mono">'+esc(it.p.m[1])+'</span>';
       F.n++;if(ok)F.ok++;later(flashNext,ok?900:2200)};
-  });
+  }
+  if(lvl<3){ /* question first, board hidden until "I'm ready" */
+    boardEl.classList.add('nopieces');drawBoard();
+    $('prompt').innerHTML=head+'<div class="bigq">'+t(kind==='mate'?'flashLookM':'flashLookH')+'</div><p class="small">'+t('flashReadyHint',secs)+'</p>';
+    var ch=$('choices');ch.hidden=false;ch.classList.remove('grid');ch.innerHTML='<button class="btn primary" id="bReady">'+t('flashReady')+'</button>';
+    $('bReady').onclick=look;
+  }else look();
 }
 function timerBar(ms,cb){var el=$('tmr');if(!el){later(cb,ms);return}var t0=now();
   (function tick(){var left=Math.max(0,1-(now()-t0)/ms);el.style.width=(left*100)+'%';el.classList.toggle('low',left<.3);if(left<=0){cb();return}later(tick,100)})()}
