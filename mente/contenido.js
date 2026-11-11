@@ -294,3 +294,25 @@ window.GM.PAIRS=[
  ['corr','greenhouse','Si CO₂ y temperatura suben juntos, ¿basta eso para hablar de causa?','If CO₂ and temperature rise together, is that enough to claim cause?','No basta la correlación: lo que convence es que la física del efecto invernadero explica el mecanismo.','Correlation isn\'t enough: what convinces is that greenhouse physics explains the mechanism.'],
  ['invariant','energy','¿Qué se mantiene igual cuando todo cambia?','What stays the same when everything changes?','La energía total es un invariante: cambia de forma, pero la suma no cambia.','Total energy is an invariant: it changes form, but the sum stays the same.']
 ];
+/* Recall: words that mean the same thing, so "atracción" counts for "fuerza". Each group = interchangeable words (ES and EN, no accents needed). */
+window.GM.SYN=[
+ ['fuerza','atraccion','atrae','jala','force','pull','attract'],['distancia','lejos','separacion','distance','far','apart'],['duplica','dobla','doble','double','doubles','twice'],
+ ['crece','aumenta','sube','incrementa','grows','increases','rises','goes'],['disminuye','baja','reduce','cae','decrece','decreases','drops','falls','lower'],
+ ['proporcion','relacion','razon','ratio','proportion','relative'],['tamano','tamaño','grande','volumen','size','bigger','volume'],['tiempo','periodo','años','anos','time','years','period'],
+ ['probabilidad','posibilidad','chance','probable','probability','likely','odds'],['evidencia','prueba','datos','evidence','proof','data'],['causa','provoca','genera','produce','cause','causes','leads'],
+ ['creencia','opinion','creer','piensa','belief','believe','think'],['decision','elegir','escoger','choice','choose','decide'],['costo','precio','pagar','gasto','cost','price','pay'],
+ ['ganar','beneficio','ventaja','gain','benefit','advantage','win'],['perder','perdida','pierdes','lose','loss'],['riesgo','peligro','risk','danger'],
+ ['promedio','media','tipico','average','mean','typical'],['muestra','grupo','sample','group'],['sobrevivir','sobreviven','sobrevivientes','survive','survivors','alive'],
+ ['reproducirse','hijos','descendientes','reproduce','offspring','children'],['heredar','herencia','genes','inherit','inherited','genetic'],['adaptarse','adaptacion','adapt','adaptation','fit'],
+ ['energia','calor','trabajo','energy','heat'],['luz','radiacion','ondas','light','radiation','waves'],['masa','peso','materia','mass','weight','matter'],
+ ['espacio','universo','cosmos','space','universe'],['curva','curvatura','deforma','dobla','curve','bends','warps','curvature'],['velocidad','rapido','rapidez','speed','fast','velocity'],
+ ['estrella','estrellas','sol','star','stars','sun'],['planeta','tierra','mundo','planet','earth','world'],['placas','corteza','plates','crust'],['montaña','montanas','cordillera','mountain','mountains'],
+ ['volcan','volcanes','erupcion','volcano','eruption'],['lluvia','llueve','precipitacion','rain','rainfall'],['sequia','seco','drought','dry'],['clima','temperatura','calentamiento','climate','temperature','warming'],
+ ['celula','celulas','cell','cells'],['cuerpo','organismo','body','organism'],['cerebro','mente','neuronas','brain','mind','neurons'],['memoria','recuerdo','recordar','memory','remember'],
+ ['bacteria','bacterias','microbios','germenes','bacteria','microbes','germs'],['virus','infeccion','enfermedad','virus','infection','disease'],['vacuna','inmunidad','defensas','vaccine','immunity','defenses'],
+ ['estable','equilibrio','constante','stable','balance','constant'],['umbral','limite','punto','threshold','limit','tipping'],['sistema','red','conjunto','system','network','whole'],
+ ['repetir','practica','habito','repeat','practice','habit'],['incentivo','premio','recompensa','castigo','incentive','reward','punishment'],['medida','metrica','indicador','measure','metric','target'],
+ ['sesgo','error','tendencia','bias','mistake','tendency'],['ignorar','olvidar','descartar','ignore','forget','dismiss'],['confirmar','apoyar','coincide','confirm','support','agree'],
+ ['explicacion','hipotesis','teoria','explanation','hypothesis','theory'],['simple','sencillo','menos','simple','fewer','simplest'],['refutar','falsa','falso','equivocada','refute','false','wrong'],
+ ['modelo','mapa','representacion','model','map','representation'],['extremo','limite','raro','extreme','edge','rare'],['normal','comun','frecuente','usual','common','frequent']
+];

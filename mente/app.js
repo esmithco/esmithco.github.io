@@ -171,7 +171,10 @@ function renderRecall(st){
 var STOP=('porque cuando aunque entonces donde mientras siempre ninguna ninguno nuestro nuestra puede pueden tiene tienen hacer hacen sobre entre desde hasta otros otras todos todas mucho muchos menos parte forma manera cosas because without through another between their there these those which while where would could should about other every always never often being makes things something').split(' ');
 function norm(x){return String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 function keyWords(ref){var seen={},out=[],min=ref.length<80?4:6;norm(ref).split(/[^a-z0-9ñ]+/).forEach(function(w){if((w.length<min&&!/^[0-9]{2,}$/.test(w))||STOP.indexOf(w)>=0)return;var k=w.slice(0,5);if(seen[k])return;seen[k]=1;out.push(w)});return out.sort(function(a,b){return b.length-a.length}).slice(0,6)}
-function keyHits(ref,text,exclude){var ex=exclude?norm(exclude):'',ks=keyWords(ref).filter(function(w){return ex.indexOf(w.slice(0,5))<0});if(!ks.length)return '';var tx=norm(text),hit=ks.filter(function(w){return tx.indexOf(w.slice(0,5))>=0});
+/* synonyms: stem (first 5 letters) -> stems of every word in its group */
+var SYNMAP=(function(){var m={};(GM.SYN||[]).forEach(function(g){var st=g.map(function(w){return norm(w).slice(0,5)});st.forEach(function(s){m[s]=(m[s]||[]).concat(st)})});return m})();
+function said(tx,w){var s=w.slice(0,5);if(tx.indexOf(s)>=0)return true;return (SYNMAP[s]||[]).some(function(x){return x.length>=3&&new RegExp('(^|[^a-z])'+x).test(tx)})}
+function keyHits(ref,text,exclude){var ex=exclude?norm(exclude):'',ks=keyWords(ref).filter(function(w){return ex.indexOf(w.slice(0,5))<0});if(!ks.length)return '';var tx=norm(text),hit=ks.filter(function(w){return said(tx,w)});
   var sug=!text.trim()||hit.length===0?0:hit.length>=Math.ceil(ks.length/2)?2:1;cur.sug=sug;cur.hits=hit.length+'/'+ks.length;
   return '<div class="keys"><p class="small">'+t('keysL',{h:hit.length,n:ks.length})+' '+t('sug'+sug)+'</p><div class="kw">'+ks.map(function(w){return '<span class="'+(hit.indexOf(w)>=0?'on':'')+'">'+esc(w)+'</span>'}).join('')+'</div></div>'}
 function renderFact(st,it){
