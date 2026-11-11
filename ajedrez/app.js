@@ -118,7 +118,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=25;
+var APP_VER=26;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -139,8 +139,8 @@ function sqXY(n){var f='abcdefgh'.indexOf(n[0]),r=+n[1]-1;return B.flip?[7-f+.5,
 function drawArrows(){
   arrowEl.innerHTML=B.arrows.map(function(a){var p=sqXY(a.from),q=sqXY(a.to),dx=q[0]-p[0],dy=q[1]-p[1],L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L;
     var ex=q[0]-ux*.3,ey=q[1]-uy*.3;
-    return '<line x1="'+p[0]+'" y1="'+p[1]+'" x2="'+ex+'" y2="'+ey+'" stroke="'+a.c+'" stroke-width=".17" stroke-linecap="round" opacity=".85"/>'+
-      '<polygon points="'+(q[0]+ux*.05)+','+(q[1]+uy*.05)+' '+(ex-uy*.28)+','+(ey+ux*.28)+' '+(ex+uy*.28)+','+(ey-ux*.28)+'" fill="'+a.c+'" opacity=".85"/>'}).join('');
+    return '<line x1="'+p[0]+'" y1="'+p[1]+'" x2="'+ex+'" y2="'+ey+'" stroke="'+a.c+'" stroke-width=".14" stroke-linecap="round" opacity=".62"/>'+
+      '<polygon points="'+(q[0]+ux*.05)+','+(q[1]+uy*.05)+' '+(ex-uy*.28)+','+(ey+ux*.28)+' '+(ex+uy*.26)+','+(ey-ux*.26)+'" fill="'+a.c+'" opacity=".62"/>'}).join('');
 }
 function arrowFor(fen,san,c){var x=new Chess(fen);var m=x.move(san,{sloppy:true});return m?{from:m.from,to:m.to,c:c}:null}
 function sqAt(x,y){var r=boardEl.getBoundingClientRect();if(x<r.left||y<r.top||x>=r.right||y>=r.bottom)return null;
@@ -325,8 +325,9 @@ function teachWin(fen0,pv,col){
   var o=outcome(fen0,pv,col,5);if(o.delta>=2)return {k:'material',txt:t('tWinMat',sanH(m.san),matTxt(o.delta),pvText(fen0,pv,5))};
   return null;
 }
+function esFix(x){return LANG==='es'?x.replace(/\bde el /g,'del ').replace(/\ba el /g,'al '):x}
 function teachBox(o,lead){
-  if(!o||!CONCEPT[o.k])return '';var C=CONCEPT[o.k],x=o.txt.charAt(0).toUpperCase()+o.txt.slice(1);
+  if(!o||!CONCEPT[o.k])return '';var C=CONCEPT[o.k],x=esFix(o.txt.charAt(0).toUpperCase()+o.txt.slice(1));
   return '<div class="teach"><div class="teachT">📘 '+esc(tt(C.t))+'</div><p>'+(lead?lead+' ':'')+x+'</p><p class="small"><b>'+t('tRule')+':</b> '+esc(tt(C.rule))+'</p><p class="small"><b>'+t('tHabit')+':</b> '+esc(tt(C.habit))+'</p></div>';
 }
 /* which mistakes can be seen within a move or two (lose: punished in ≤3 plies; win: the best move wins in ≤3 plies); the rest is "deep" and left out of practice */
@@ -1226,6 +1227,8 @@ function lessonProg(l){var n=l.p.length,ok=l.p.filter(function(p){var s=S.puz[p.
 function curLesson(){return CURSO.lessons.filter(function(l){return lessonProg(l).pct<.6})[0]||CURSO.lessons[0]}
 function lessonItems(l,max){
   var due=l.p.filter(function(p){var s=S.puz[p.id];return s&&(s.due||0)<=now()&&s.box<3}),fresh=l.p.filter(function(p){return !S.puz[p.id]});
+  /* too easy lately (>85% first try) -> start a little higher in the lesson; struggling stays on the easiest ones */
+  var lp=(S.log||[]).filter(function(e){return e[1]==='puz'}).slice(-15);if(lp.length>=10&&lp.filter(function(e){return e[2]}).length/lp.length>.85&&fresh.length>4)fresh=fresh.slice(2).concat(fresh.slice(0,2));
   var ps=due.concat(fresh).slice(0,max||8);
   var o=[];if(!S.seenLesson[l.id])o.push({t:'theory',l:l.id});
   return o.concat(ps.map(function(p){return {t:'puz',l:l.id,id:p.id}}));
@@ -1282,8 +1285,12 @@ function onPuzMove(mv){
   var ok=mv.san===want||(P.ply===P.p.m.length-1&&B.chess.in_checkmate());
   if(ok){B.marks[mv.to]='ok';drawBoard();P.ply++;$('fb').className='feedback good';$('fb').innerHTML=t('puzGood');
     if(P.ply>=P.p.m.length){puzSolved();return}later(puzOpp,500);return}
-  cur.first=false;B.marks[mv.to]='bad';drawBoard();$('fb').className='feedback bad';$('fb').innerHTML=t('puzWrong','<span class="mono">'+esc(mv.san)+'</span>');
-  var f0=null;later(function(){B.chess.undo();f0=B.chess.fen();B.marks={};var a=arrowFor(f0,want,'#E8730C');if(a)B.marks[a.from]='hint';drawBoard();B.locked=false},900);
+  cur.first=false;cur.miss=(cur.miss||0)+1;B.marks[mv.to]='bad';drawBoard();$('fb').className='feedback bad';
+  var fBad=B.chess.fen(),me=P.me,miss=cur.miss;$('fb').innerHTML=t(miss>=2?'puzWrong2':'puzWrong1','<span class="mono">'+esc(mv.san)+'</span>');
+  /* teacher: why that move does not work (quick engine look) */
+  analyse(fBad,600).then(function(r){if(!r||!cur.puz||cur.puz!==P||cur.answered)return;B.chess.undo();var f0b=B.chess.fen();B.chess.move(mv.san,{sloppy:true});
+    var tb=teachBad(f0b,mv.san,r.pv,me);if(tb){var x=esFix(tb.txt.charAt(0).toUpperCase()+tb.txt.slice(1));$('fb').innerHTML+=' <span class="small">'+t('puzWhyNot')+' '+x+'</span>'}});
+  later(function(){B.chess.undo();var f0=B.chess.fen();B.marks={};if(miss>=2){var a=arrowFor(f0,want,'#E8730C');if(a)B.marks[a.from]='hint'}drawBoard();B.locked=false},900);
 }
 function puzSolved(){
   var P=cur.puz,s=S.puz[P.p.id]||(S.puz[P.p.id]={box:0,due:0});gradeObj(s,cur.first);
