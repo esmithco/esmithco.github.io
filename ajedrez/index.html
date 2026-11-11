@@ -227,15 +227,17 @@ details summary{cursor:pointer;font-weight:600}
       <div class="row" id="demoBar" hidden><button class="btn" id="bDemoPrev">◀</button><button class="btn" id="bDemoNext">▶</button><button class="btn" id="bDemoPlay" data-t="bDemoPlay"></button></div>
       <div class="anbar" id="anBar" hidden>
         <div class="anmoves" id="anMoves"></div>
-        <div class="annav"><button class="btn" id="anFirst" aria-label="Inicio">⏮</button><button class="btn" id="anPrev" aria-label="Atrás">◀</button><button class="btn" id="anNext" aria-label="Adelante">▶</button><button class="btn" id="anLast" aria-label="Final">⏭</button><button class="btn" id="anBase" data-t="bBasePos"></button></div>
+        <div class="annav"><button class="btn" id="anFirst" aria-label="Inicio">⏮</button><button class="btn" id="anPrev" aria-label="Atrás">◀</button><button class="btn" id="anNext" aria-label="Adelante">▶</button><button class="btn" id="anLast" aria-label="Final">⏭</button><button class="btn" id="anBase" data-t="bBasePos"></button><button class="btn" id="anCont" data-t="bCont" hidden></button></div>
         <div class="small" id="anTip" hidden data-t="anTip"></div>
         <div class="aneval small" id="anEval"></div>
+        <div class="small anstory" id="anStory"></div>
       </div>
       <div class="row">
         <button class="btn" id="bScan" data-t="bScan"></button>
         <button class="btn" id="bHint" data-t="bHint"></button>
         <button class="btn" id="bShow" data-t="bShow"></button>
         <button class="btn" id="bBad"></button>
+        <button class="btn" id="bYours" hidden></button>
         <button class="btn" id="bGood" data-t="bGoodLine"></button>
         <button class="btn" id="bRetry" data-t="bRetry"></button>
         <button class="btn primary" id="bNext" data-t="bNext"></button>
@@ -324,12 +326,12 @@ details summary{cursor:pointer;font-weight:600}
   <button data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg><span data-t="navProg"></span></button>
 </nav>
 <script src="chess.js"></script>
-<script src="textos.js?v=24"></script>
+<script src="textos.js?v=25"></script>
 <script src="conceptos.js?v=1"></script>
 <script src="repertorio.js?v=1"></script>
 <script src="curso.js?v=1"></script>
 <script src="fundamentos.js?v=7"></script>
 <script src="planes.js?v=1"></script>
-<script src="app.js?v=26"></script>
+<script src="app.js?v=27"></script>
 </body>
 </html>

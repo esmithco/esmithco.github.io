@@ -118,7 +118,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=26;
+var APP_VER=27;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -530,7 +530,7 @@ function endSession(){
 }
 $('bEndHome').onclick=function(){go(X.back||'home')};
 function setBtns(o){
-  var map={hint:'bHint',show:'bShow',bad:'bBad',good:'bGood',next:'bNext',retry:'bRetry',scan:'bScan'};
+  var map={hint:'bHint',show:'bShow',bad:'bBad',good:'bGood',next:'bNext',retry:'bRetry',scan:'bScan',yours:'bYours'};
   Object.keys(map).forEach(function(k){$(map[k]).hidden=!o[k]});
 }
 function kindPill(k,extra){var m={mine:['kMine','mist'],punish:['kPun','good'],rep:['kRep','rep'],name:['kName','rep'],puz:['kPuz','idea'],trap:['kTrap','blun'],idea:['kIdea','idea']}[k];
@@ -592,21 +592,23 @@ function cardResult(ok,san,sAfter,pvAfter){
   showWhy(w);
   cur.badLine=c.kind==='mine'&&c.pvBad?[c.played].concat(c.pvBad.slice(0,6)):(!ok&&pvAfter?[san].concat(pvAfter.slice(0,6)):null);
   cur.goodLine=c.pvBest?c.pvBest.slice(0,7):[best];
+  /* your own idea (not the game move, not the best): its line too, so you can see why it is (or isn't) as good */
+  cur.yourLine=san!=='—'&&san!==best&&san!==(cur.badLine&&cur.badLine[0])&&pvAfter&&pvAfter.length?[san].concat(pvAfter.slice(0,6)):null;
   itemDone(ok);
-  setBtns({next:true,bad:!!cur.badLine,good:true});
-  $('bBad').textContent=t('bBadLine',cur.badLine?cur.badLine[0]:'');
+  setBtns({next:true,bad:!!cur.badLine,good:true,yours:!!cur.yourLine});
+  $('bBad').textContent=t('bBadLine',cur.badLine?cur.badLine[0]:'');if(cur.yourLine)$('bYours').textContent=t('bYourLine',san);
 }
 function showWhy(list){if(!list.length)return;$('why').hidden=false;$('why').innerHTML='<h3>'+t('why')+'</h3><ul>'+list.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>'}
 /* ---------- analysis board: step through any line yourself (◀ ▶), and after answering move freely with live engine ---------- */
 var INIT=new Chess().fen();
 var AN={on:false,start:INIT,moves:[],i:0,base:0,tok:0,ev:{}};
 function anSet(start,moves,i,base){AN.known=moves.length;AN.on=true;AN.start=start;AN.moves=moves.slice();AN.i=Math.max(0,Math.min(i,AN.moves.length));AN.base=base==null?AN.i:base;$('anBar').hidden=false;$('line').hidden=true;anRender()}
-function anOff(){AN.on=false;AN.tok++;$('anBar').hidden=true;$('line').hidden=false;$('anEval').innerHTML=''}
+function anOff(){AN.on=false;AN.tok++;$('anBar').hidden=true;$('anStory').innerHTML='';$('line').hidden=false;$('anEval').innerHTML=''}
 function anChess(n){var c=new Chess(AN.start);for(var k=0;k<n&&k<AN.moves.length;k++){if(!c.move(AN.moves[k],{sloppy:true}))break}return c}
 function anRender(keepArrows){
   var c=anChess(AN.i),arr=keepArrows?B.arrows:[];B.chess=c;B.sel=null;B.targets=[];B.marks={};B.arrows=arr;B.drag=null;
   var h=c.history({verbose:true}),last=h[h.length-1];if(last){B.marks[last.from]='last';B.marks[last.to]='last'}
-  B.locked=cur&&!cur.answered?AN.i!==AN.base:false;
+  B.locked=cur&&!cur.answered?AN.i!==AN.base:false;$('anCont').hidden=!!(cur&&!cur.answered);
   drawBoard();anList();
   $('anFirst').disabled=$('anPrev').disabled=AN.i===0;$('anNext').disabled=$('anLast').disabled=AN.i>=AN.moves.length;
   $('anBase').hidden=AN.i===AN.base||AN.base>AN.moves.length;
@@ -627,7 +629,7 @@ $('anNext').onclick=function(){if(AN.i<AN.moves.length){AN.i++;anRender()}};
 $('anLast').onclick=function(){AN.i=AN.moves.length;anRender()};
 $('anBase').onclick=function(){AN.i=AN.base;anRender()};
 /* a move on the board while analysing (after the exercise is answered) */
-function anMove(mv){AN.known=Math.min(AN.known||0,AN.i);AN.moves=AN.moves.slice(0,AN.i).concat([mv.san]);AN.i++;anRender()}
+function anMove(mv){$('anStory').innerHTML='';AN.known=Math.min(AN.known||0,AN.i);AN.moves=AN.moves.slice(0,AN.i).concat([mv.san]);AN.i++;anRender()}
 function anEval(){
   var c=anChess(AN.i),fen=c.fen(),tok=++AN.tok,side=c.turn();
   var prevFen=AN.i>0?anChess(AN.i-1).fen():null,lastSan=AN.i>0?AN.moves[AN.i-1]:null;
@@ -646,8 +648,16 @@ function anEval(){
 function anLine(moves){var p=cur.anPath?cur.anPath():null;if(!p)return;anSet(p.start,p.moves.slice(0,p.base).concat(moves),p.base,p.base);$('anEval').innerHTML=cur.answered?$('anEval').innerHTML:'';flashTip()}
 function flashTip(){var el=$('anTip');el.hidden=false;clearTimeout(el._t);el._t=setTimeout(function(){el.hidden=true},3500)}
 
-$('bBad').onclick=function(){if(cur&&cur.badLine)anLine(cur.badLine)};
-$('bGood').onclick=function(){if(cur&&cur.goodLine)anLine(cur.goodLine)};
+/* show a line on the board and explain it step by step underneath */
+function showLine(moves){anLine(moves);var f=anChess(AN.base).fen();$('anStory').innerHTML=story(f,moves,B.flip?'b':'w',7)}
+$('bBad').onclick=function(){if(cur&&cur.badLine)showLine(cur.badLine)};
+$('bGood').onclick=function(){if(cur&&cur.goodLine)showLine(cur.goodLine)};
+$('bYours').onclick=function(){if(cur&&cur.yourLine)showLine(cur.yourLine)};
+/* "how does it go on?": the engine continues from wherever you are (your own idea included), then you step with ▶ */
+$('anCont').onclick=function(){if(!AN.on||(cur&&!cur.answered))return;var i=AN.i,f=anChess(i).fen(),tok=AN.tok,b=$('anCont');b.disabled=true;$('anStory').innerHTML=t('thinking');
+  analyse(f,1200).then(function(r){b.disabled=false;if(tok!==AN.tok||!r||!r.pv||!r.pv.length){$('anStory').innerHTML='';return}
+    var pv=r.pv.slice(0,6);AN.moves=AN.moves.slice(0,i).concat(pv);AN.i=i;anRender();
+    $('anStory').innerHTML='<b>'+t('contT')+'</b>'+story(f,pv,B.flip?'b':'w',6);flashTip()})};
 $('bHint').onclick=function(){if(!cur||cur.answered)return;var a=null;
   if(cur.card)a=arrowFor(cur.fen,cur.card.best,'#E8730C');else if(cur.rep){repHint('#E8730C');cur.first=false;return}
   else if(cur.idea&&cur.idea.type==='move')a=arrowFor(cur.fen,cur.idea.answer[0],'#E8730C');
