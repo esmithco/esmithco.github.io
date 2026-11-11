@@ -60,7 +60,10 @@ function mergeBase(D){
   Object.keys(D.games||{}).forEach(function(k){var g=S.games[k],d=D.games[k];if(!g)S.games[k]=d;else{g.op=1;g.tr=1;g.errors=d.errors;if(d.rt){g.rt=d.rt;g.tc=d.tc}}});
   if(D.gambits)S.gambits=D.gambits;S.base=D.base||0;
 }
-function boot(){
+function connectFromLink(){var h=location.hash;if(h.indexOf('#connect=')!==0)return;var tok=decodeURIComponent(h.slice(9));
+  try{history.replaceState(null,'',location.pathname+'#home')}catch(e){location.hash='home'}
+  if(tok&&tok!==CL.token)setTimeout(function(){cloudConnect(tok)},300)}
+function boot(){connectFromLink();
   var raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
   if(raw){try{S=JSON.parse(raw)}catch(e){S=blank()}}
   upgrade();applyRule();
@@ -118,7 +121,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=36;
+var APP_VER=37;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1621,7 +1624,12 @@ function cloudConnect(token){
     return gh('/gists','POST',{description:GDESC,public:false,files:files}).then(function(n){CL.gist=n.id;CL.at=now();clSave()});
   }).then(function(){clBusy=false;clStatus()}).catch(function(e){clBusy=false;CL.token='';clSave();clErr='';clStatus();$('clStatus').textContent=t('clBad',e)});
 }
-$('bClConnect').onclick=function(){var v=$('iToken').value;if(!v.trim())return;$('iToken').value='';cloudConnect(v)};
+$('bClConnect').onclick=function(){var v=$('iToken').value.trim();if(!v)return;var m=v.match(/#connect=([^&\s]+)/);if(m)v=decodeURIComponent(m[1]);$('iToken').value='';cloudConnect(v)};
+/* connect another device in one step: a private link that carries the token in the #fragment (never sent to any server) */
+$('bClLink').onclick=function(){if(!CL.token)return;var url=location.origin+location.pathname+'#connect='+encodeURIComponent(CL.token);
+  var done=function(){$('clLinkNote').hidden=false};
+  if(navigator.share){navigator.share({title:t('clLinkT'),url:url}).then(done).catch(function(){})}
+  else if(navigator.clipboard){navigator.clipboard.writeText(url).then(done).catch(function(){prompt('',url);done()})}else{prompt('',url);done()}};
 $('bClOff').onclick=function(){CL={token:'',gist:'',at:0};clSave();clStatus()};
 $('bClNow').onclick=function(){cloudPull()};
 $('clHome').onclick=function(){if(!CL.token)go('data')};

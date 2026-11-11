@@ -1,7 +1,8 @@
 /* UI strings (es/en) and the "key ideas" lessons. {0},{1}… are placeholders. */
 window.TXT = {
 es: {
-  clTitle: 'Guardar mi progreso en la nube', clConnect: 'Conectar', clNow: 'Sincronizar ahora', clDisc: 'Desconectar este dispositivo', clPh: 'Pega aquí tu token (ghp_…)',
+  clLink: '📲 Conectar otro dispositivo', clLinkT: 'Mi progreso de ajedrez', clLinkNote: 'Listo. Abre ese enlace en el otro dispositivo o navegador y se conecta solo. En la app instalada del iPhone, pégalo en el cuadro del token. Es privado: no lo compartas con nadie.',
+  clTitle: 'Guardar mi progreso en la nube', clConnect: 'Conectar', clNow: 'Sincronizar ahora', clDisc: 'Desconectar este dispositivo', clPh: 'Pega aquí tu token o tu enlace',
   clStep1: 'Abre <a href="https://github.com/settings/tokens/new?scopes=gist&description=Taller%20de%20Aperturas" target="_blank" rel="noopener">este enlace de GitHub</a> (ya marca el permiso "gist").',
   clStep2: 'En "Expiration" elige <b>No expiration</b>, baja y toca <b>Generate token</b>. Copia el código que empieza por ghp_.',
   clStep3: 'Pégalo aquí y toca Conectar. Repite solo este paso en cada dispositivo o navegador (el mismo token sirve).',
@@ -163,6 +164,7 @@ es: {
   langBtn: 'EN', langName: 'English'
 },
 en: {
+  clLink: '📲 Connect another device', clLinkT: 'My chess progress', clLinkNote: 'Done. Open that link on the other device or browser and it connects by itself. In the installed iPhone app, paste it into the token box. It is private: do not share it with anyone.',
   clTitle: 'Save my progress to the cloud', clConnect: 'Connect', clNow: 'Sync now', clDisc: 'Disconnect this device', clPh: 'Paste your token here (ghp_…)',
   clStep1: 'Open <a href="https://github.com/settings/tokens/new?scopes=gist&description=Taller%20de%20Aperturas" target="_blank" rel="noopener">this GitHub link</a> (the "gist" permission is already ticked).',
   clStep2: 'Under "Expiration" pick <b>No expiration</b>, scroll down and tap <b>Generate token</b>. Copy the code starting with ghp_.',
