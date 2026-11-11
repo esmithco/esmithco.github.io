@@ -2,7 +2,7 @@
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   color: #172033; background: #F5F7FB;
   --ink: #172033; --muted: #55606F; --faint: #8A94A3;
-  --blue: #2F5FE0; --teal: #0E9488; --amber: #E8730C; --violet: #7C3AED;
+  --blue: #2F5FE0; --teal: #0E9488; --amber: #E8730C; --violet: #7C3AED; --green: #0F7B5F;
   --line: #E3E7EF; --surface: #FFFFFF;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -44,6 +44,8 @@ h1 { max-width: 820px; margin: 0; font-family: Georgia, serif; font-size: clamp(
 .aws .icon, .aws .card-label, .aws .card-link { color: var(--amber); }
 .chess { border-top-color: var(--violet); }
 .chess .icon, .chess .card-label, .chess .card-link { color: var(--violet); }
+.mind { border-top-color: var(--green); grid-column: 1 / -1; min-height: 220px; }
+.mind .icon, .mind .card-label, .mind .card-link { color: var(--green); }
 
 .icon { position: absolute; top: 22px; right: 24px; font-size: 1.35rem; font-weight: 700; }
 .card-label { margin: 0 0 36px; }

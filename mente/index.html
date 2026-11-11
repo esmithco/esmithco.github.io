@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gimnasio Mental</title>
+<meta name="theme-color" content="#0F7B5F">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230F7B5F'/%3E%3Ccircle cx='50' cy='48' r='24' fill='none' stroke='white' stroke-width='9'/%3E%3Ccircle cx='50' cy='48' r='7' fill='white'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230F7B5F'/%3E%3Ccircle cx='50' cy='48' r='24' fill='none' stroke='white' stroke-width='9'/%3E%3Ccircle cx='50' cy='48' r='7' fill='white'/%3E%3C/svg%3E">
+<style>html,body,button{touch-action:manipulation}</style>
+<style>
+/* Layout: one calm column. Header with streak + language switch, tabs, then the session card that walks Recall → Connect → Apply. */
+:root{
+  --bg:#F4F7F5; --surface:#FFFFFF; --ink:#16231E; --muted:#56655E; --faint:#8A9892; --line:#DCE5E0;
+  --accent:#0F7B5F; --accent-soft:#E3F3EC; --accent-ink:#FFFFFF;
+  --good:#0F7B5F; --bad:#C2410C; --warn:#B7791F;
+  --a-m:#2F5FE0; --a-p:#7C3AED; --a-e:#B7791F; --a-s:#C2410C; --a-l:#0E7490; --a-c:#4D7C0F;
+  --f-display:Georgia, "Times New Roman", serif;
+  --f-body:ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1613; --surface:#17211D; --ink:#E4EEE9; --muted:#9AAEA5; --faint:#6E827A; --line:#26332E;
+  --accent:#4FD1A5; --accent-soft:#163128; --accent-ink:#06221A;
+  --good:#4FD1A5; --bad:#F08C6A; --warn:#E6B54A;
+  --a-m:#7EA2FF; --a-p:#B794F6; --a-e:#E6B54A; --a-s:#F08C6A; --a-l:#5FC4DA; --a-c:#9AD35A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1613; --surface:#17211D; --ink:#E4EEE9; --muted:#9AAEA5; --faint:#6E827A; --line:#26332E;
+  --accent:#4FD1A5; --accent-soft:#163128; --accent-ink:#06221A;
+  --good:#4FD1A5; --bad:#F08C6A; --warn:#E6B54A;
+  --a-m:#7EA2FF; --a-p:#B794F6; --a-e:#E6B54A; --a-s:#F08C6A; --a-l:#5FC4DA; --a-c:#9AD35A; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+.wrap{max-width:620px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.eyebrow{font:600 .7rem var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+h1{font-family:var(--f-display);font-weight:700;font-size:2.2rem;letter-spacing:-.04em;line-height:1;margin:0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.35rem;letter-spacing:-.02em;margin:0;text-wrap:balance}
+h3{font-size:1rem;margin:0}
+.sub{color:var(--muted);margin:8px 0 0;max-width:52ch}
+.lang{display:flex;border:1px solid var(--line);border-radius:99px;overflow:hidden;flex:none}
+.lang button{appearance:none;border:0;background:transparent;color:var(--muted);font:600 .8rem var(--f-mono);padding:6px 11px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
+.stat b{display:block;font:700 1.35rem var(--f-display);font-variant-numeric:tabular-nums}
+.stat span{font-size:.75rem;color:var(--muted)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;padding:9px 12px;font:600 .92rem var(--f-body);color:var(--muted);cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.steps{display:flex;gap:6px}
+.steps span{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.steps span.on{background:var(--accent)} .steps span.done{background:var(--accent);opacity:.45}
+.blockhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.kicker{font:600 .72rem var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.area{display:inline-block;font:600 .7rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1px solid currentColor}
+.area.m{color:var(--a-m)} .area.p{color:var(--a-p)} .area.e{color:var(--a-e)} .area.s{color:var(--a-s)} .area.l{color:var(--a-l)} .area.c{color:var(--a-c)}
+.concept{font-family:var(--f-display);font-size:1.6rem;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.def{background:var(--accent-soft);border-radius:12px;padding:12px 14px}
+.def p{margin:0} .def p+p{margin-top:8px}
+.note{background:var(--accent-soft);border-radius:12px;padding:10px 12px}
+.def .ex{color:var(--muted);font-size:.95rem}
+.pair{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.pair .c{background:var(--accent-soft);border-radius:12px;padding:12px;min-width:0}
+.pair .c b{display:block;font-family:var(--f-display);font-size:1.1rem;margin-top:4px}
+.pair .plus{font:700 1.4rem var(--f-display);color:var(--faint)}
+.scenario{font-size:1.05rem}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.choice{appearance:none;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:11px 12px;font:600 .92rem var(--f-body);cursor:pointer}
+.choice:hover:not(:disabled){border-color:var(--accent)}
+.choice.ok{border-color:var(--good);background:var(--accent-soft)}
+.choice.no{border-color:var(--bad);color:var(--bad)}
+.choice:disabled{cursor:default}
+textarea{width:100%;min-height:96px;resize:vertical;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font:400 .98rem/1.45 var(--f-body)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 .9rem var(--f-body);padding:9px 14px;border-radius:10px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.rate-0{border-color:var(--bad);color:var(--bad)} .btn.rate-1{border-color:var(--warn);color:var(--warn)} .btn.rate-2{border-color:var(--good);color:var(--good)}
+.btn:disabled{opacity:.45;cursor:default}
+.fb{border-left:3px solid var(--accent);padding:6px 0 6px 12px;color:var(--ink);white-space:pre-wrap}
+.fb.wait{color:var(--muted)}
+.why{border-left:3px solid var(--line);padding:4px 0 4px 12px;color:var(--muted)}
+.result{font-weight:700} .result.ok{color:var(--good)} .result.no{color:var(--bad)}
+.small{font-size:.85rem;color:var(--muted)}
+.lib{display:flex;flex-direction:column;gap:18px}
+.libgroup{display:flex;flex-direction:column;gap:6px}
+.libitem{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}
+.libitem .nm{font-weight:600}
+.libitem .dd{grid-column:1/-1;color:var(--muted);font-size:.92rem}
+.dots{display:flex;gap:3px}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--accent)}
+.entry{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.entry .meta{font:600 .72rem var(--f-mono);color:var(--muted);letter-spacing:.04em}
+.lesson{font-size:1.02rem;white-space:pre-wrap}
+.persp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.persp div{background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:.93rem}
+.talk{border-left:3px solid var(--accent);padding:4px 0 4px 12px;font-style:italic}
+.topics{display:flex;flex-wrap:wrap;gap:6px}
+.topics .btn{padding:6px 10px;font-size:.82rem}
+.empty{color:var(--muted);text-align:center;padding:22px 8px}
+.done-hero{text-align:center;padding:10px 0}
+.done-hero .big{font:700 3rem var(--f-display);color:var(--accent);line-height:1}
+@media (max-width:480px){.persp{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.choices{grid-template-columns:1fr}.pair{grid-template-columns:1fr}.pair .plus{text-align:center}h1{font-size:1.9rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+/* site integration: soft color background (same family as the home page), key-word chips, suggested rating, house button */
+body{margin:0;background:radial-gradient(600px 420px at 0% -6%,rgba(15,123,95,.16),transparent 62%),radial-gradient(520px 380px at 108% 18%,rgba(47,95,224,.12),transparent 62%),radial-gradient(560px 440px at 40% 108%,rgba(232,115,12,.10),transparent 62%),var(--bg);background-attachment:fixed}
+.card{box-shadow:0 1px 0 rgba(22,35,30,.03),0 8px 22px rgba(22,35,30,.06)}
+.stat:nth-child(1){border-top:4px solid #0F7B5F}.stat:nth-child(2){border-top:4px solid #2F5FE0}.stat:nth-child(3){border-top:4px solid #7C3AED}.stat:nth-child(4){border-top:4px solid #E8730C}
+.homebtn{display:inline-flex;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);align-items:center;justify-content:center;text-decoration:none;margin-bottom:8px;font-size:1.05rem}
+.keys{border-top:1px dashed var(--line);padding-top:8px}.kw{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.kw span{font:600 .78rem var(--f-mono);padding:3px 8px;border-radius:99px;background:var(--line);color:var(--muted)}.kw span.on{background:var(--accent);color:var(--accent-ink)}
+.btn.sugg{box-shadow:0 0 0 3px var(--accent-soft);font-weight:800}
+.area.f{color:#2F5FE0}.area.b{color:#DB2777}.area.g{color:#B45309}
+.tab[aria-selected="true"]{color:var(--accent)}
+@media (min-width:980px){.wrap{max-width:760px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <a class="homebtn" href="../" aria-label="Inicio">⌂</a>
+      <p class="eyebrow" data-t="eyebrow"></p>
+      <h1 data-t="title"></h1>
+      <p class="sub" data-t="subtitle"></p>
+    </div>
+    <div class="lang" role="group" aria-label="Idioma / Language">
+      <button id="lEs" aria-pressed="true">ES</button><button id="lEn" aria-pressed="false">EN</button>
+    </div>
+  </header>
+
+  <section class="stats" aria-live="polite">
+    <div class="stat"><b id="sStreak">0</b><span data-t="sStreak"></span></div>
+    <div class="stat"><b id="sLearned">0</b><span data-t="sLearned"></span></div>
+    <div class="stat"><b id="sMastered">0</b><span data-t="sMastered"></span></div>
+    <div class="stat"><b id="sAcc">–</b><span data-t="sAcc"></span></div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-p="p-today" data-t="tToday"></button>
+    <button class="tab" role="tab" aria-selected="false" data-p="p-lib" data-t="tLib"></button>
+    <button class="tab" role="tab" aria-selected="false" data-p="p-know" data-t="tKnow"></button>
+    <button class="tab" role="tab" aria-selected="false" data-p="p-journal" data-t="tJournal"></button>
+    <button class="tab" role="tab" aria-selected="false" data-p="p-set" data-t="tSet"></button>
+  </nav>
+
+  <section class="panel" id="p-today">
+    <div class="steps" id="steps"><span></span><span></span><span></span><span></span></div>
+    <div class="card" id="stage"></div>
+  </section>
+
+  <section class="panel" id="p-lib" hidden>
+    <p class="small" data-t="libHelp"></p>
+    <div class="lib" id="lib"></div>
+  </section>
+
+  <section class="panel" id="p-know" hidden>
+    <p class="small" data-t="knowHelp"></p>
+    <div id="know" class="panel"></div>
+  </section>
+
+  <section class="panel" id="p-journal" hidden>
+    <p class="small" data-t="journalHelp"></p>
+    <div id="journal" class="panel"></div>
+  </section>
+
+  <section class="panel" id="p-set" hidden>
+    <div class="card">
+      <h3 data-t="newPerDay"></h3>
+      <div class="row" id="npd"></div>
+      <p class="small" data-t="newPerDayHelp"></p>
+    </div>
+    <div class="card">
+      <h3 data-t="backup"></h3>
+      <p class="small" data-t="backupHelp"></p>
+      <div class="row"><button class="btn" id="bCopy" data-t="copy"></button><button class="btn" id="bRestore" data-t="restore"></button><button class="btn" id="bReset" data-t="reset"></button></div>
+      <textarea id="iBackup" aria-label="Backup"></textarea>
+      <div class="small" id="bkMsg"></div>
+    </div>
+    <div class="card">
+      <h3 data-t="howTitle"></h3>
+      <p class="small" data-t="howText"></p>
+    </div>
+  </section>
+</div>
+
+<script src="contenido.js?v=1"></script>
+<script src="app.js?v=3"></script>
+</body>
+</html>
