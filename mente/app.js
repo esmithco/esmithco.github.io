@@ -47,7 +47,7 @@ var $=function(id){return document.getElementById(id)};
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function dayNum(s){var p=s.split('-');return Math.round(new Date(+p[0],p[1]-1,+p[2]).getTime()/864e5)}
-function blank(){return {lang:'es',npd:2,cards:{},cases:{},journal:[],days:[],facts:{},lessons:[],ti:0}}
+function blank(){return {lang:'es',npd:2,cards:{},cases:{},journal:[],days:[],facts:{},lessons:[],ti:0,answers:[]}}
 var S=blank();
 try{var raw=localStorage.getItem(KEY);if(raw){S=Object.assign(blank(),JSON.parse(raw))}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}cloudSoon()}
@@ -60,6 +60,7 @@ function mergeIn(R){if(!R||!R.cards)return;
   (R.days||[]).forEach(function(d){if(S.days.indexOf(d)<0)S.days.push(d)});
   Object.keys(R.facts||{}).forEach(function(k){if(!S.facts[k])S.facts[k]=R.facts[k]});
   var ls={};S.lessons.forEach(function(l){ls[l.id]=1});(R.lessons||[]).forEach(function(l){if(!ls[l.id])S.lessons.push(l)});
+  S.answers=S.answers||[];var as={};S.answers.forEach(function(x){as[x.d+x.k+x.id+x.a]=1});(R.answers||[]).forEach(function(x){if(!as[x.d+x.k+x.id+x.a]){S.answers.push(x);as[x.d+x.k+x.id+x.a]=1}});S.answers.sort(function(x,y){return x.d<y.d?-1:x.d>y.d?1:0});if(S.answers.length>800)S.answers=S.answers.slice(-800);
   S.ti=Math.max(S.ti||0,R.ti||0);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function cloudSync(keep){if(!OPEN_URL||cloudBusy)return;cloudBusy=true;
   var put=function(){return fetch(OPEN_URL,{method:'PUT',body:JSON.stringify(JSON.stringify(S)),keepalive:!!keep,headers:{'Content-Type':'application/json'}})};
@@ -158,14 +159,14 @@ function renderRecall(st){
   st.innerHTML=h;$('rt').oninput=function(e){cur.text=e.target.value};
   var sb=st.querySelector('[data-r="'+(cur.sug==null?1:cur.sug)+'"]');if(sb)sb.classList.add('sugg');
   if($('fb'))$('fb').onclick=function(){askClaude('You are a concise, honest tutor. Concept: "'+c.n.en+'". Reference definition: '+c.d.en+' Example: '+c.x.en+'\nThe learner explained it from memory:\n"""'+cur.text+'"""\nIn 2-4 short sentences: say what they got right, the single most important thing missing or wrong, and whether their own example fits. No praise filler. '+langLine())};
-  st.querySelectorAll('[data-r]').forEach(function(b){b.onclick=function(){grade(it.id,+b.getAttribute('data-r'));nextItem()}});
+  st.querySelectorAll('[data-r]').forEach(function(b){b.onclick=function(){var r=+b.getAttribute('data-r');logAnswer({k:'recall',id:it.id,q:c.n.es,a:cur.text,hits:cur.hits||'',rate:r});grade(it.id,r);nextItem()}});
 }
 /* key words of the answer and which of them his own text mentions (accents and case ignored, first 5 letters) */
 var STOP=('porque cuando aunque entonces donde mientras siempre ninguna ninguno nuestro nuestra puede pueden tiene tienen hacer hacen sobre entre desde hasta otros otras todos todas mucho muchos menos parte forma manera cosas because without through another between their there these those which while where would could should about other every always never often being makes things something').split(' ');
 function norm(x){return String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 function keyWords(ref){var seen={},out=[],min=ref.length<80?4:6;norm(ref).split(/[^a-z0-9ñ]+/).forEach(function(w){if((w.length<min&&!/^[0-9]{2,}$/.test(w))||STOP.indexOf(w)>=0)return;var k=w.slice(0,5);if(seen[k])return;seen[k]=1;out.push(w)});return out.sort(function(a,b){return b.length-a.length}).slice(0,6)}
 function keyHits(ref,text,exclude){var ex=exclude?norm(exclude):'',ks=keyWords(ref).filter(function(w){return ex.indexOf(w.slice(0,5))<0});if(!ks.length)return '';var tx=norm(text),hit=ks.filter(function(w){return tx.indexOf(w.slice(0,5))>=0});
-  var sug=!text.trim()||hit.length===0?0:hit.length>=Math.ceil(ks.length/2)?2:1;cur.sug=sug;
+  var sug=!text.trim()||hit.length===0?0:hit.length>=Math.ceil(ks.length/2)?2:1;cur.sug=sug;cur.hits=hit.length+'/'+ks.length;
   return '<div class="keys"><p class="small">'+t('keysL',{h:hit.length,n:ks.length})+' '+t('sug'+sug)+'</p><div class="kw">'+ks.map(function(w){return '<span class="'+(hit.indexOf(w)>=0?'on':'')+'">'+esc(w)+'</span>'}).join('')+'</div></div>'}
 function renderFact(st,it){
   var f=S.facts[it.id];if(!f){nextItem();return}
@@ -175,7 +176,7 @@ function renderFact(st,it){
     $('rv').onclick=function(){cur.text=$('rt').value;cur.revealed=true;render()};$('dk').onclick=function(){cur.text='';cur.revealed=true;render()};return}
   h+='<div class="def"><p>'+esc(f.a)+'</p></div>'+keyHits(f.a,cur.text,f.q)+'<div class="row"><button class="btn rate-0" data-r="0">'+t('rate0')+'</button><button class="btn rate-1" data-r="1">'+t('rate1')+'</button><button class="btn rate-2" data-r="2">'+t('rate2')+'</button></div>';
   st.innerHTML=h;var sf=st.querySelector('[data-r="'+(cur.sug==null?1:cur.sug)+'"]');if(sf)sf.classList.add('sugg');
-  st.querySelectorAll('[data-r]').forEach(function(b){b.onclick=function(){grade(it.id,+b.getAttribute('data-r'));nextItem()}});
+  st.querySelectorAll('[data-r]').forEach(function(b){b.onclick=function(){var r=+b.getAttribute('data-r');logAnswer({k:'fact',id:it.id,q:f.q,a:cur.text,hits:cur.hits||'',rate:r});grade(it.id,r);nextItem()}});
 }
 function topicName(id){var r=TOPICS.filter(function(x){return x[0]===id})[0];return r?(L()==='en'?r[2]:r[1]):id}
 function makeLesson(){var id=cur.topic,ls=LESSONS[id];if(!ls){cur.lesson={err:true};render();return}var x=ls[L()];
@@ -206,6 +207,8 @@ function renderKnow(){
   if(!S.lessons.length){$('know').innerHTML='<p class="empty">'+t('noKnow')+'</p>';return}
   $('know').innerHTML=S.lessons.map(function(l){return '<details class="entry"><summary><span class="meta">'+esc(l.date)+'</span><br><b>'+esc(l.title)+'</b></summary><div class="lesson">'+esc(l.lesson)+'</div>'+(l.talk?'<p class="talk">'+esc(l.talk)+'</p>':'')+'</details>'}).join('');
 }
+/* remember what he wrote (and how it went) so Claude can review it in chat later */
+function logAnswer(o){S.answers=S.answers||[];o.d=today();o.lang=L();S.answers.push(o);if(S.answers.length>800)S.answers=S.answers.slice(-800)}
 function nextItem(){cur.i++;cur.revealed=false;cur.text='';cur.dk=false;cur.sug=null;cur.fb=null;if(cur.i>=cur.items.length)cur.block=2;render();window.scrollTo(0,0)}
 function renderConnect(st){
   var a=cur.pair[0],b=cur.pair[1];
@@ -215,7 +218,7 @@ function renderConnect(st){
     '<div class="row">'+(sample?'<button class="btn" id="fb"'+(cur.fb?' disabled':'')+'>'+t('feedback')+'</button>':'')+'<button class="btn primary" id="sv">'+t('save')+'</button><button class="btn" id="sk">'+t('skip')+'</button></div>';
   st.innerHTML=h;var ta=$('ct');ta.oninput=function(e){cur.connText=e.target.value};
   if($('fb'))$('fb').onclick=function(){cur.connText=ta.value;if(cur.connText.trim().length<15)return;askClaude('You are a sharp, encouraging thinking coach. The learner was asked to connect two ideas: "'+CONCEPTS[a].n.en+'" ('+CONCEPTS[a].d.en+') and "'+CONCEPTS[b].n.en+'" ('+CONCEPTS[b].d.en+'). Their answer:\n"""'+cur.connText+'"""\nIn 3-5 short sentences: judge whether the link is real and correctly reasoned, point out any misunderstanding, and offer one sharper or more surprising connection they could explore. No filler. '+langLine())};
-  $('sv').onclick=function(){cur.connText=ta.value;if(cur.connText.trim()){S.journal.unshift({date:today(),a:a,b:b,text:cur.connText.trim(),fb:cur.fb&&!cur.fb.wait?cur.fb.text:null});save()}cur.fb=null;cur.block=3;render();window.scrollTo(0,0)};
+  $('sv').onclick=function(){cur.connText=ta.value;if(cur.connText.trim()){logAnswer({k:'connect',id:a+'+'+b,q:CONCEPTS[a].n.es+' + '+CONCEPTS[b].n.es,a:cur.connText.trim()});S.journal.unshift({date:today(),a:a,b:b,text:cur.connText.trim(),fb:cur.fb&&!cur.fb.wait?cur.fb.text:null});save()}cur.fb=null;cur.block=3;render();window.scrollTo(0,0)};
   $('sk').onclick=function(){cur.fb=null;cur.block=3;render()};
 }
 function renderApply(st){
@@ -232,7 +235,7 @@ function renderApply(st){
     h+='<p class="result '+(ok?'ok':'no')+'">'+(ok?t('right'):esc(t('wrong',{c:cn(k.c)})))+'</p><p class="why">'+esc(k.w[L()])+'</p><div class="row"><button class="btn primary" id="nx">'+t('next')+'</button></div>'}
   st.innerHTML=h;
   st.querySelectorAll('[data-c]').forEach(function(b){b.onclick=function(){if(cur.answered)return;cur.answered=b.getAttribute('data-c');var ok=cur.answered===k.c;
-    var s=S.cases[k.id]||(S.cases[k.id]={n:0,okN:0});s.n++;if(ok)s.okN++;s.ok=ok;s.last=dayNum(today());
+    var s=S.cases[k.id]||(S.cases[k.id]={n:0,okN:0});s.n++;if(ok)s.okN++;s.ok=ok;s.last=dayNum(today());logAnswer({k:'apply',id:k.id,q:k.q.es,a:cn(cur.answered),ok:ok});
     if(S.cards[k.c]&&!ok){S.cards[k.c].due=Math.min(S.cards[k.c].due,dayNum(today())+1)}save();render()}});
   if($('nx'))$('nx').onclick=function(){cur.ci++;cur.answered=null;if(cur.ci>=cur.cases.length){cur.block=cur.again?5:4}render();window.scrollTo(0,0)};
 }
