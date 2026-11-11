@@ -23,7 +23,7 @@ var T={
   newPerDay:'Conceptos nuevos por día',newPerDayHelp:'Con 2 por día ves todos en unos 40 días.',backup:'Respaldo',backupHelp:'El progreso se guarda en este navegador. Copia el respaldo para pasarlo a otro dispositivo.',
   copy:'Copiar respaldo',restore:'Restaurar desde el cuadro',reset:'Borrar todo',resetArm:'Toca otra vez para borrar',copied:'Respaldo copiado.',selectIt:'Selecciona y copia el texto del cuadro.',restored:'Respaldo restaurado.',badBackup:'Ese texto no es un respaldo válido.',wiped:'Se borró el progreso.',
   howTitle:'Por qué funciona',howText:'Se basa en tres hallazgos sólidos sobre aprendizaje: recordar sin mirar fija mejor que releer (práctica de recuperación), repasar justo antes de olvidar ahorra tiempo (repetición espaciada) y relacionar ideas de distintas áreas crea los modelos mentales que permiten conectar rápido. No sube el CI; construye conocimiento organizado y la costumbre de usarlo.',
-  langNote:'Escribe en el idioma que quieras practicar.',dontKnow:'No lo sé',writeFirst:'Escribe al menos una frase antes de ver la respuesta: el esfuerzo de recordar es lo que entrena.',keysL:'Mencionaste {h} de {n} ideas clave.',sug0:'Sugerencia: «No lo sabía».',sug1:'Sugerencia: «Más o menos».',sug2:'Sugerencia: «Lo sabía».',backupHelp:'Tu progreso se guarda solo y sigue en cualquier dispositivo. El respaldo es por si acaso.',home:'Inicio'},
+  langNote:'Escribe en el idioma que quieras practicar.',tapDef:'Toca para ver qué es',hintL:'Pista:',showConn:'No sé, muéstrame',yourConn:'Tu conexión',oneConn:'Una conexión posible:',dontKnow:'No lo sé',writeFirst:'Escribe al menos una frase antes de ver la respuesta: el esfuerzo de recordar es lo que entrena.',keysL:'Mencionaste {h} de {n} ideas clave.',sug0:'Sugerencia: «No lo sabía».',sug1:'Sugerencia: «Más o menos».',sug2:'Sugerencia: «Lo sabía».',backupHelp:'Tu progreso se guarda solo y sigue en cualquier dispositivo. El respaldo es por si acaso.',home:'Inicio'},
  en:{eyebrow:'Daily training · 10 minutes',title:'Gimnasio Mental',subtitle:'Recall, connect and apply ideas from science, history, math, economics, psychology and logic.',
   sStreak:'day streak',tKnow:'Knowledge',b4:'Discover',discQ:'A short lesson so you can talk about anything. Tomorrow I\'ll quiz you on the key points.',pick:'Or pick another topic:',gen:'Preparing the lesson…',genErr:'Couldn\'t prepare the lesson right now. Try later or skip this block.',noSample:'This block needs Claude: open the page from the Claude app.',talkL:'To bring it up in conversation:',perspL:'Two views',keyL:'Key points (you\'ll review these)',finish:'Finish session',knowHelp:'Lessons you\'ve discovered. Their key points go into your reviews.',noKnow:'No lessons discovered yet.',factQ:'Answer without looking.',sLearned:'concepts seen',sMastered:'mastered',sAcc:'apply accuracy',tToday:'Today',tLib:'Concepts',tJournal:'Journal',tSet:'Settings',
   b1:'Recall',b2:'Connect',b3:'Apply',min:'≈ 2-3 min',start:'Start session',startSub:'Four blocks of 2 to 3 minutes. Write in your own words: the effort of recalling is what makes ideas stick.',
@@ -38,7 +38,7 @@ var T={
   newPerDay:'New concepts per day',newPerDayHelp:'At 2 a day you\'ll see them all in about 40 days.',backup:'Backup',backupHelp:'Progress is saved in this browser. Copy the backup to move it to another device.',
   copy:'Copy backup',restore:'Restore from the box',reset:'Erase everything',resetArm:'Tap again to erase',copied:'Backup copied.',selectIt:'Select and copy the text in the box.',restored:'Backup restored.',badBackup:'That text isn\'t a valid backup.',wiped:'Progress erased.',
   howTitle:'Why it works',howText:'It\'s built on three solid findings about learning: recalling without looking beats rereading (retrieval practice), reviewing right before you forget saves time (spaced repetition), and linking ideas across fields builds the mental models that let you connect things fast. It won\'t raise your IQ; it builds organized knowledge and the habit of using it.',
-  langNote:'Write in whichever language you want to practice.',dontKnow:'I don\'t know',writeFirst:'Write at least one sentence before seeing the answer: the effort of recalling is what trains you.',keysL:'You mentioned {h} of {n} key ideas.',sug0:'Suggestion: “Didn\'t know”.',sug1:'Suggestion: “Sort of”.',sug2:'Suggestion: “Knew it”.',backupHelp:'Your progress saves itself and follows you on any device. The backup is just in case.',home:'Home'}
+  langNote:'Write in whichever language you want to practice.',tapDef:'Tap to see what it is',hintL:'Hint:',showConn:'I don\'t know, show me',yourConn:'Your connection',oneConn:'One possible connection:',dontKnow:'I don\'t know',writeFirst:'Write at least one sentence before seeing the answer: the effort of recalling is what trains you.',keysL:'You mentioned {h} of {n} key ideas.',sug0:'Suggestion: “Didn\'t know”.',sug1:'Suggestion: “Sort of”.',sug2:'Suggestion: “Knew it”.',backupHelp:'Your progress saves itself and follows you on any device. The backup is just in case.',home:'Home'}
 };
 
 /* ---------------- state ---------------- */
@@ -61,6 +61,7 @@ function mergeIn(R){if(!R||!R.cards)return;
   Object.keys(R.facts||{}).forEach(function(k){if(!S.facts[k])S.facts[k]=R.facts[k]});
   var ls={};S.lessons.forEach(function(l){ls[l.id]=1});(R.lessons||[]).forEach(function(l){if(!ls[l.id])S.lessons.push(l)});
   S.answers=S.answers||[];var as={};S.answers.forEach(function(x){as[x.d+x.k+x.id+x.a]=1});(R.answers||[]).forEach(function(x){if(!as[x.d+x.k+x.id+x.a]){S.answers.push(x);as[x.d+x.k+x.id+x.a]=1}});S.answers.sort(function(x,y){return x.d<y.d?-1:x.d>y.d?1:0});if(S.answers.length>800)S.answers=S.answers.slice(-800);
+  S.pairs=S.pairs||{};Object.keys(R.pairs||{}).forEach(function(k){S.pairs[k]=Math.max(S.pairs[k]||0,R.pairs[k])});
   S.ti=Math.max(S.ti||0,R.ti||0);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function cloudSync(keep){if(!OPEN_URL||cloudBusy)return;cloudBusy=true;
   var put=function(){return fetch(OPEN_URL,{method:'PUT',body:JSON.stringify(JSON.stringify(S)),keepalive:!!keep,headers:{'Content-Type':'application/json'}})};
@@ -96,7 +97,12 @@ function pickCases(n){
   var score=function(id){var s=S.cases[id];if(!s)return 0;return (s.ok&&s.last===now?100:0)+(s.ok?10+Math.min(20,now-(s.last||0))*-1:-5)};
   return shuffle(all).sort(function(a,b){return score(a)-score(b)}).slice(0,n);
 }
+/* Connect uses curated pairs that really relate (random pairs gave things like "spectrum + overconfidence");
+   least-practised first, preferring pairs where he has already seen at least one of the two concepts */
 function pickPair(){
+  var P=GM.PAIRS||[];if(P.length){S.pairs=S.pairs||{};
+    var sc=function(p){var seen=(S.cards[p[0]]?1:0)+(S.cards[p[1]]?1:0);return (S.pairs[p[0]+'+'+p[1]]||0)*10-seen*3+Math.random()};
+    var best=P.slice().sort(function(x,y){return sc(x)-sc(y)})[0];return [best[0],best[1],best]}
   var pool=conceptIds();if(pool.length<4)pool=C.map(function(r){return r[0]});
   var a=pool[Math.floor(Math.random()*pool.length)];var others=pool.filter(function(x){return CONCEPTS[x].area!==CONCEPTS[a].area});
   return [a,others[Math.floor(Math.random()*others.length)]];
@@ -211,16 +217,22 @@ function renderKnow(){
 function logAnswer(o){S.answers=S.answers||[];o.d=today();o.lang=L();S.answers.push(o);if(S.answers.length>800)S.answers=S.answers.slice(-800)}
 function nextItem(){cur.i++;cur.revealed=false;cur.text='';cur.dk=false;cur.sug=null;cur.fb=null;if(cur.i>=cur.items.length)cur.block=2;render();window.scrollTo(0,0)}
 function renderConnect(st){
-  var a=cur.pair[0],b=cur.pair[1];
-  var h=head('b2')+'<div class="pair"><div class="c">'+areaTag(a)+'<b>'+esc(cn(a))+'</b></div><span class="plus">+</span><div class="c">'+areaTag(b)+'<b>'+esc(cn(b))+'</b></div></div>'+
-    '<p>'+t('connQ')+'</p><p class="small">'+t('langNote')+'</p><textarea id="ct" placeholder="'+esc(t('connPh'))+'" aria-label="'+esc(t('connQ'))+'">'+esc(cur.connText)+'</textarea>'+fbHtml()+
-    '<details><summary class="small">'+esc(cn(a))+' / '+esc(cn(b))+'</summary>'+defBox(a)+defBox(b)+'</details>'+
-    '<div class="row">'+(sample?'<button class="btn" id="fb"'+(cur.fb?' disabled':'')+'>'+t('feedback')+'</button>':'')+'<button class="btn primary" id="sv">'+t('save')+'</button><button class="btn" id="sk">'+t('skip')+'</button></div>';
-  st.innerHTML=h;var ta=$('ct');ta.oninput=function(e){cur.connText=e.target.value};
-  if($('fb'))$('fb').onclick=function(){cur.connText=ta.value;if(cur.connText.trim().length<15)return;askClaude('You are a sharp, encouraging thinking coach. The learner was asked to connect two ideas: "'+CONCEPTS[a].n.en+'" ('+CONCEPTS[a].d.en+') and "'+CONCEPTS[b].n.en+'" ('+CONCEPTS[b].d.en+'). Their answer:\n"""'+cur.connText+'"""\nIn 3-5 short sentences: judge whether the link is real and correctly reasoned, point out any misunderstanding, and offer one sharper or more surprising connection they could explore. No filler. '+langLine())};
-  $('sv').onclick=function(){cur.connText=ta.value;if(cur.connText.trim()){logAnswer({k:'connect',id:a+'+'+b,q:CONCEPTS[a].n.es+' + '+CONCEPTS[b].n.es,a:cur.connText.trim()});S.journal.unshift({date:today(),a:a,b:b,text:cur.connText.trim(),fb:cur.fb&&!cur.fb.wait?cur.fb.text:null});save()}cur.fb=null;cur.block=3;render();window.scrollTo(0,0)};
-  $('sk').onclick=function(){cur.fb=null;cur.block=3;render()};
+  var a=cur.pair[0],b=cur.pair[1],P=cur.pair[2];
+  var box=function(id){return '<button class="c ctap" type="button" data-cid="'+id+'">'+areaTag(id)+'<b>'+esc(cn(id))+'</b><span class="small tapme">'+t('tapDef')+'</span><span class="cdef" hidden>'+esc(CONCEPTS[id].d[L()])+'<br><i>'+esc(CONCEPTS[id].x[L()])+'</i></span></button>'};
+  var h=head('b2')+'<div class="pair">'+box(a)+'<span class="plus">+</span>'+box(b)+'</div>';
+  if(cur.connDone){ /* after he writes (or skips): one possible connection, to compare with his */
+    h+=(cur.connText.trim()?'<div class="entry"><span class="meta">'+t('yourConn')+'</span><div>'+esc(cur.connText.trim())+'</div></div>':'')+
+      (P?'<div class="def"><p><b>'+t('oneConn')+'</b> '+esc(L()==='en'?P[5]:P[4])+'</p></div>':'')+'<div class="row"><button class="btn primary" id="cn">'+t('next')+'</button></div>';
+    st.innerHTML=h;wireDefs(st);$('cn').onclick=function(){cur.fb=null;cur.connDone=false;cur.block=3;render();window.scrollTo(0,0)};return}
+  h+='<p>'+t('connQ')+'</p>'+(P?'<p class="note small"><b>'+t('hintL')+'</b> '+esc(L()==='en'?P[3]:P[2])+'</p>':'')+
+    '<textarea id="ct" placeholder="'+esc(t('connPh'))+'" aria-label="'+esc(t('connQ'))+'">'+esc(cur.connText)+'</textarea>'+
+    '<div class="row"><button class="btn primary" id="sv">'+t('save')+'</button><button class="btn" id="sk">'+t('showConn')+'</button></div>';
+  st.innerHTML=h;wireDefs(st);var ta=$('ct');ta.oninput=function(e){cur.connText=e.target.value};
+  var finish=function(){S.pairs=S.pairs||{};var key=a+'+'+b;S.pairs[key]=(S.pairs[key]||0)+1;save();cur.connDone=true;render()};
+  $('sv').onclick=function(){cur.connText=ta.value;if(cur.connText.trim()){logAnswer({k:'connect',id:a+'+'+b,q:CONCEPTS[a].n.es+' + '+CONCEPTS[b].n.es,a:cur.connText.trim()});S.journal.unshift({date:today(),a:a,b:b,text:cur.connText.trim(),fb:null});save()}finish()};
+  $('sk').onclick=function(){cur.connText='';finish()};
 }
+function wireDefs(st){st.querySelectorAll('.ctap').forEach(function(x){x.onclick=function(){var d=x.querySelector('.cdef'),tp=x.querySelector('.tapme');d.hidden=!d.hidden;tp.hidden=!d.hidden}})}
 function renderApply(st){
   var k=CASES[cur.cases[cur.ci]];
   if(!cur.choices||cur.choices.k!==k.id){
