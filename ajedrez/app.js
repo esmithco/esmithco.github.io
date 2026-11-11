@@ -118,7 +118,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=31;
+var APP_VER=32;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -134,6 +134,11 @@ function drawBoard(){
     h+='<div class="'+cls+'" data-sq="'+n+'">'+inner+'</div>';
   }
   boardEl.innerHTML=h;if(B.drag&&B.drag.ghost)boardEl.appendChild(B.drag.ghost);drawArrows();
+  /* coordinates outside the board (they no longer cover the pieces) and a clear "you play white/black" badge */
+  var fl=B.flip?'hgfedcba':'abcdefgh',rk=B.flip?'12345678':'87654321';
+  $('files').innerHTML=fl.split('').map(function(x){return '<span>'+x+'</span>'}).join('');$('ranks').innerHTML=rk.split('').map(function(x){return '<span>'+x+'</span>'}).join('');
+  var sb=$('sideBadge'),side=B.flip?'b':'w';sb.className='sidebadge '+side;
+  sb.innerHTML=boardEl.classList.contains('nocoords')?t(side==='w'?'whiteBottom':'blackBottom'):t('youPlayBig',t(side==='w'?'White':'Black').toUpperCase());
 }
 function sqXY(n){var f='abcdefgh'.indexOf(n[0]),r=+n[1]-1;return B.flip?[7-f+.5,r+.5]:[f+.5,7-r+.5]}
 function drawArrows(){

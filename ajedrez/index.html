@@ -97,6 +97,16 @@ h3{margin:0;font-size:1rem}
 .sq .ring{position:absolute;inset:4%;border-radius:50%;box-shadow:inset 0 0 0 5px rgba(0,0,0,.18);pointer-events:none}
 .sq .cf,.sq .cr{position:absolute;font:700 10px/1 var(--f-mono);pointer-events:none}
 .sq .cf{right:3px;bottom:3px} .sq .cr{left:3px;top:3px}
+.sq .cf,.sq .cr{display:none}
+.boardwrap{gap:20px!important;margin-bottom:18px}
+.bwrap{position:relative}
+.ranks{position:absolute;right:100%;top:0;bottom:0;width:16px;margin-right:2px;display:flex;flex-direction:column}
+.files{position:absolute;left:0;right:0;top:100%;height:16px;display:flex}
+.ranks span,.files span{flex:1;display:flex;align-items:center;justify-content:center;font:600 11px/1 var(--f-mono);color:var(--muted)}
+.board.nocoords~.ranks,.board.nocoords~.files{visibility:hidden}
+.sidebadge{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font:700 .9rem var(--f-body);padding:6px 14px;border-radius:99px;margin:2px 0 8px;border:1px solid #1e2631}
+.sidebadge.w{background:#fff;color:#1e2631}.sidebadge.b{background:#1e2631;color:#fff}
+.sidebadge:empty,#sideBadge:has(+ #boardwrap[hidden]){display:none}
 .sq.l .cf,.sq.l .cr{color:var(--sq-dark)} .sq.d .cf,.sq.d .cr{color:var(--sq-light)}
 .ghost{position:absolute;pointer-events:none;z-index:5;width:12.5%;height:12.5%;transform:translate(-50%,-50%) scale(1.12);filter:drop-shadow(0 4px 6px rgba(0,0,0,.3))}
 .line{font-family:var(--f-mono);font-size:.82rem;color:var(--muted);overflow-wrap:anywhere}
@@ -230,9 +240,10 @@ details summary{cursor:pointer;font-weight:600}
       <div class="prompt" id="prompt"></div>
       <div class="feedback" id="fb" aria-live="polite"></div>
       <div class="choices" id="choices" hidden></div>
+      <div class="sidebadge" id="sideBadge"></div>
       <div class="boardwrap" id="boardwrap">
         <div class="evalbar" id="evalbar"><div class="fill" id="evfill"></div><span class="txt" id="evtxt"></span></div>
-        <div class="bwrap"><div class="board" id="board" aria-label="Tablero"></div><svg class="arrows" id="arrows" viewBox="0 0 8 8" preserveAspectRatio="none"></svg></div>
+        <div class="bwrap"><div class="board" id="board" aria-label="Tablero"></div><svg class="arrows" id="arrows" viewBox="0 0 8 8" preserveAspectRatio="none"></svg><div class="ranks" id="ranks"></div><div class="files" id="files"></div></div>
       </div>
       <div class="line" id="line"></div>
       <div class="row" id="demoBar" hidden><button class="btn" id="bDemoPrev">◀</button><button class="btn" id="bDemoNext">▶</button><button class="btn" id="bDemoPlay" data-t="bDemoPlay"></button></div>
@@ -337,12 +348,12 @@ details summary{cursor:pointer;font-weight:600}
   <button data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg><span data-t="navProg"></span></button>
 </nav>
 <script src="chess.js"></script>
-<script src="textos.js?v=28"></script>
+<script src="textos.js?v=29"></script>
 <script src="conceptos.js?v=1"></script>
 <script src="repertorio.js?v=1"></script>
 <script src="curso.js?v=1"></script>
 <script src="fundamentos.js?v=7"></script>
 <script src="planes.js?v=1"></script>
-<script src="app.js?v=31"></script>
+<script src="app.js?v=32"></script>
 </body>
 </html>
