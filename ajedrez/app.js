@@ -121,7 +121,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=38;
+var APP_VER=39;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1565,7 +1565,21 @@ var CKEY='taller-aperturas.cloud',GDESC='taller-aperturas-progress',GFILE='progr
 var CL={token:'',gist:'',at:0};try{var cj=JSON.parse(localStorage.getItem(CKEY)||'{}');CL.token=cj.token||'';CL.gist=cj.gist||'';CL.at=cj.at||0}catch(e){}
 var clTimer=null,clBusy=false,clPulled=0,clErr='';
 function clSave(){try{localStorage.setItem(CKEY,JSON.stringify(CL))}catch(e){}}
-function cloudOn(){return !!(CL.token&&CL.gist)}
+/* OPEN progress (by request: "anyone who opens the page continues my progress"): a Firebase Realtime Database whose rules allow
+   read/write only under /progress. Stored as ONE JSON string (Firebase keys can't contain '.', '/', '#'… and card ids/game urls do). */
+var OPEN_URL='https://chess-3ce3f-default-rtdb.firebaseio.com/progress/esmithco.json';
+function cloudOn(){return !!OPEN_URL||!!(CL.token&&CL.gist)}
+function openPayload(){var p=payload();p.log=(p.log||[]).slice(-1200);return p}
+function fbGet(){return fetch(OPEN_URL,{cache:'no-store'}).then(function(r){if(!r.ok)throw r.status;return r.json()}).then(function(x){return typeof x==='string'?JSON.parse(x):null})}
+function fbPut(keep){var body=JSON.stringify(JSON.stringify(openPayload()));
+  return fetch(OPEN_URL,{method:'PUT',body:body,keepalive:!!keep&&body.length<60000,headers:{'Content-Type':'application/json'}}).then(function(r){if(!r.ok)throw r.status})}
+/* every save = read, merge, write, so two devices never erase each other's work */
+function openPush(keep){clearTimeout(clTimer);clBusy=true;clStatus();
+  var p=keep?fbPut(true):fbGet().then(function(R){if(R)mergeProgress(R)}).then(function(){return fbPut(false)});
+  return p.then(function(){CL.at=now();clErr='';clSave()}).catch(function(e){clErr=String(e)}).then(function(){clBusy=false;clStatus()})}
+function openPull(){clBusy=true;clStatus();
+  return fbGet().then(function(R){if(R)mergeProgress(R);clPulled=now();clErr=''}).catch(function(e){clErr=String(e)})
+    .then(function(){clBusy=false;return openPush()}).then(function(){if(!$('s-home').hidden)renderHome()})}
 function prog(o){return {box:o.box||0,due:o.due||0,reps:o.reps||0,lapses:o.lapses||0}}
 function payload(){
   var cards={},app={},games={};
@@ -1598,16 +1612,21 @@ function gh(path,method,body,keep){
     .then(function(r){if(!r.ok)throw r.status;return r.json()});
 }
 function clStatus(){
+  if(OPEN_URL){var ox=clErr?t('clErr',clErr):clBusy?t('clBusy'):CL.at?t('clOpenOk',new Date(CL.at).toLocaleTimeString(LANG,{hour:'2-digit',minute:'2-digit'})):t('clBusy');
+    ['clStatus','clHome'].forEach(function(id){var el=$(id);if(el)el.textContent=ox});
+    $('clSetup').hidden=true;$('clOn').hidden=false;$('bClLink').hidden=true;$('bClOff').hidden=true;$('clHome').classList.remove('warn');return}
   var tx=!CL.token?t('clOff'):clErr?t('clErr',clErr):clBusy?t('clBusy'):CL.at?t('clOk',new Date(CL.at).toLocaleTimeString(LANG,{hour:'2-digit',minute:'2-digit'})):t('clBusy');
   ['clStatus','clHome'].forEach(function(id){var el=$(id);if(el)el.textContent=tx});
   $('clSetup').hidden=!!CL.token;$('clOn').hidden=!CL.token;$('clHome').classList.toggle('warn',!CL.token);
 }
 function cloudPush(keep){
+  if(OPEN_URL)return openPush(keep);
   if(!cloudOn())return Promise.resolve();clearTimeout(clTimer);clBusy=true;clStatus();
   var files={};files[GFILE]={content:JSON.stringify(payload())};
   return gh('/gists/'+CL.gist,'PATCH',{files:files},keep).then(function(){CL.at=now();clErr='';clSave()}).catch(function(e){clErr=String(e)}).then(function(){clBusy=false;clStatus()});
 }
 function cloudPull(){
+  if(OPEN_URL)return openPull();
   if(!cloudOn())return Promise.resolve();clBusy=true;clStatus();
   return gh('/gists/'+CL.gist).then(function(g){var f=g.files&&g.files[GFILE];if(!f)return null;
     return f.truncated?fetch(f.raw_url).then(function(r){return r.text()}):f.content}).then(function(tx){
