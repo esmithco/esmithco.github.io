@@ -228,6 +228,27 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 .rprev{display:flex;flex-direction:column;align-items:center;gap:8px;background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:14px;padding:12px;margin:-4px 0 4px}
 .rprev .mini.big{width:min(300px,100%);height:auto;aspect-ratio:1;border-radius:8px;box-shadow:0 8px 20px rgba(23,32,51,.18)}
 .rprev .small{margin:0;text-align:center;word-break:break-word}
+
+/* ---- layout: phone = one column in a fixed order; desktop = big board left, panel right (like playing on a computer) ---- */
+.tcol{display:contents}
+#prompt{order:1}#fb{order:2}#choices{order:3}#sideBadge{order:4}#boardwrap{order:5}#line{order:6}#demoBar{order:7}#anBar{order:8}.tright>.row{order:9}#note{order:10}#why{order:11}
+@media (min-width:980px){
+  .wrap{max-width:1240px}
+  #trBody{flex-direction:row;align-items:flex-start;gap:32px}
+  .tcol{display:flex;flex-direction:column;gap:12px}
+  .tleft{flex:1 1 auto;min-width:0;align-items:center;position:sticky;top:12px}
+  .tright{flex:0 0 420px;max-height:calc(100vh - 120px);overflow:auto;padding-right:4px}
+  .tcol>*{order:0!important}
+  .tleft .boardwrap{max-width:min(calc(100vh - 170px),760px)}
+  .tleft .sidebadge{align-self:center}
+  #s-home{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;align-items:start}
+  #s-home .hero{order:1}#s-home .tiles{order:2}#s-home .sync{order:3;align-self:stretch}#s-home .coach{order:4}
+  #s-home .coach{margin:0}
+  #learnList{display:block;columns:2;column-gap:18px}#learnList .unit{break-inside:avoid;margin-bottom:18px}
+  #repList{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}#repList .rgroup,#repList>p,#repList .rprev{grid-column:1/-1}
+  #s-progress{display:grid;grid-template-columns:1fr 1fr;gap:18px}#s-progress .kpis,#s-progress .link{grid-column:1/-1}
+  .tabbar{left:50%;right:auto;transform:translateX(-50%);bottom:14px;border:1px solid var(--line);border-radius:20px;box-shadow:0 10px 30px rgba(23,32,51,.15);width:min(560px,92vw)}
+}
 /* ---- color, part 2: every screen gets a color identity ---- */
 .lrow{background:rgba(255,255,255,.82);border-left:5px solid var(--line)}
 .lrow:has(.dotst.new){border-left-color:#A78BFA}.lrow:has(.dotst.due){border-left-color:var(--warn)}.lrow:has(.dotst.ok){border-left-color:var(--good)}
@@ -280,9 +301,7 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
   <section class="screen" id="s-train" hidden>
     <div class="trhead"><button class="btn small-btn" id="bPrevEx" type="button" data-t="bPrevEx"></button><div class="progress"><span id="trProg"></span></div><span class="small" id="trCount"></span><button class="btn small-btn" id="bFinish" type="button" data-t="bFinish"></button></div>
     <div id="trBody" class="screen">
-      <div class="prompt" id="prompt"></div>
-      <div class="feedback" id="fb" aria-live="polite"></div>
-      <div class="choices" id="choices" hidden></div>
+      <div class="tcol tleft">
       <div class="sidebadge" id="sideBadge"></div>
       <div class="boardwrap" id="boardwrap">
         <div class="evalbar" id="evalbar"><div class="fill" id="evfill"></div><span class="txt" id="evtxt"></span></div>
@@ -290,6 +309,11 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
       </div>
       <div class="line" id="line"></div>
       <div class="row" id="demoBar" hidden><button class="btn" id="bDemoPrev">◀</button><button class="btn" id="bDemoNext">▶</button><button class="btn" id="bDemoPlay" data-t="bDemoPlay"></button></div>
+      </div>
+      <div class="tcol tright">
+      <div class="prompt" id="prompt"></div>
+      <div class="feedback" id="fb" aria-live="polite"></div>
+      <div class="choices" id="choices" hidden></div>
       <div class="anbar" id="anBar" hidden>
         <div class="anmoves" id="anMoves"></div>
         <div class="annav"><button class="btn" id="anFirst" aria-label="Inicio">⏮</button><button class="btn" id="anPrev" aria-label="Atrás">◀</button><button class="btn" id="anNext" aria-label="Adelante">▶</button><button class="btn" id="anLast" aria-label="Final">⏭</button><button class="btn" id="anBase" data-t="bBasePos"></button><button class="btn" id="anCont" data-t="bCont" hidden></button></div>
@@ -309,6 +333,7 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
       </div>
       <div class="note" id="note" hidden></div>
       <div class="why" id="why" hidden></div>
+      </div>
     </div>
     <div class="end" id="trEnd" hidden>
       <h2 id="trEndT"></h2><p id="trEndS" class="small"></p><p id="trEndA" class="small"></p>
@@ -397,6 +422,6 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 <script src="curso.js?v=1"></script>
 <script src="fundamentos.js?v=7"></script>
 <script src="planes.js?v=1"></script>
-<script src="app.js?v=37"></script>
+<script src="app.js?v=38"></script>
 </body>
 </html>
