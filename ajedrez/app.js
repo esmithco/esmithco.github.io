@@ -118,10 +118,18 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=34;
+var APP_VER=35;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
+/* small static board picture (thumbnails / previews) */
+function miniBoard(fen,flip,last,cls){var c=new Chess(fen),bd=c.board(),h='<svg class="'+(cls||'mini')+'" viewBox="0 0 8 8" aria-hidden="true">';
+  for(var r=0;r<8;r++)for(var f=0;f<8;f++){var x=flip?7-f:f,y=flip?7-r:r,sq='abcdefgh'[f]+(8-r),p=bd[r][f];
+    var col=last&&(last.from===sq||last.to===sq)?((r+f)%2?'#BBCB2B':'#F5F682'):((r+f)%2?'#739552':'#EBECD0');
+    h+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="'+col+'"/>';
+    if(p)h+='<svg x="'+x+'" y="'+y+'" width="1" height="1" viewBox="0 0 40 40"><use href="#'+p.color+p.type+'"/></svg>'}
+  return h+'</svg>'}
+function lineEnd(l){var c=new Chess();var last=null;l.moves.forEach(function(m){var x=c.move(m,{sloppy:true});if(x)last=x});return {fen:c.fen(),last:last}}
 function piece(p){return '<svg class="pc" viewBox="0 0 40 40"><use href="#'+p.color+p.type+'"/></svg>'}
 function drawBoard(){
   var h='';
@@ -853,11 +861,19 @@ function renderRep(op){
   var row=function(x){var st=x.st,lab=!st?t('repNew'):st.box>=3?t('repOkS'):lineDue(x)?t('repDue'):'';
     var kind=x.l.kind==='trap'?'<span class="pill blun">'+t('kindTrap')+'</span> ':x.l.kind==='punish'?'<span class="pill good">'+t('kindPunish')+'</span> ':x.l.surprise?'<span class="pill mist">'+t('kindSurprise')+'</span> ':'';
     var sub=x.l.kind==='game'&&x.l.stat?t('repStat',x.l.stat.n,Math.round(x.l.stat.score*x.l.stat.n)):'';
-    return '<button class="lrow" data-i="'+x.i+'"><span class="dotst '+(!st?'new':st.box>=3?'ok':lineDue(x)?'due':'')+'"></span><span class="lname">'+kind+esc(tt(x.l.name))+
+    var e=lineEnd(x.l);
+    return '<button class="lrow rrow" data-i="'+x.i+'"><span class="dotst '+(!st?'new':st.box>=3?'ok':lineDue(x)?'due':'')+'"></span><span class="thumb" data-thumb="'+x.i+'">'+miniBoard(e.fen,REP[x.op].side==='b',e.last)+'</span><span class="lname">'+kind+esc(tt(x.l.name))+
       (sub?'<span class="small">'+sub+'</span>':'')+'</span><span class="small">'+lab+'</span></button>'};
   var gm=ls.filter(function(x){return x.l.kind==='game'}),bk=ls.filter(function(x){return x.l.kind!=='game'});
   $('repList').innerHTML=(gm.length?'<h3 class="rgroup">'+t('repFromGames')+'</h3><p class="small">'+t('repFromGamesD')+'</p>'+gm.map(row).join(''):'')+'<h3 class="rgroup">'+t('repBook')+'</h3>'+bk.map(row).join('');
-  $('repList').querySelectorAll('.lrow').forEach(function(b){b.onclick=function(){startSession([{t:'line',op:repTab,i:+b.getAttribute('data-i')}],'rep')}});
+  $('repList').querySelectorAll('.lrow').forEach(function(b){b.onclick=function(ev){var i=+b.getAttribute('data-i');
+    if(ev.target.closest('.thumb')){ /* tap the little board: open a bigger preview right under the row */
+      var nx=b.nextElementSibling;if(nx&&nx.classList.contains('rprev')){nx.remove();return}
+      $('repList').querySelectorAll('.rprev').forEach(function(x){x.remove()});
+      var l=REP[repTab].lines[i],e=lineEnd(l),d=document.createElement('div');d.className='rprev';
+      d.innerHTML=miniBoard(e.fen,REP[repTab].side==='b',e.last,'mini big')+'<p class="small mono">'+esc(l.moves.join(' '))+'</p><button class="btn primary" type="button">'+t('repPlayThis')+'</button>';
+      d.querySelector('button').onclick=function(){startSession([{t:'line',op:repTab,i:i}],'rep')};b.after(d);return}
+    startSession([{t:'line',op:repTab,i:i}],'rep')}});
   $('bRepGo').textContent=t('repPractice',tt(REP[repTab].name));$('bRepQuiz').textContent=t('bNameQuiz');
 }
 $('bRepQuiz').onclick=function(){
