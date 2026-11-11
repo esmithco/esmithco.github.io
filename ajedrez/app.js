@@ -118,7 +118,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=35;
+var APP_VER=36;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -867,13 +867,12 @@ function renderRep(op){
   var gm=ls.filter(function(x){return x.l.kind==='game'}),bk=ls.filter(function(x){return x.l.kind!=='game'});
   $('repList').innerHTML=(gm.length?'<h3 class="rgroup">'+t('repFromGames')+'</h3><p class="small">'+t('repFromGamesD')+'</p>'+gm.map(row).join(''):'')+'<h3 class="rgroup">'+t('repBook')+'</h3>'+bk.map(row).join('');
   $('repList').querySelectorAll('.lrow').forEach(function(b){b.onclick=function(ev){var i=+b.getAttribute('data-i');
-    if(ev.target.closest('.thumb')){ /* tap the little board: open a bigger preview right under the row */
+    { /* tap a line: open a bigger preview right under it, with the moves and a button to practise it */
       var nx=b.nextElementSibling;if(nx&&nx.classList.contains('rprev')){nx.remove();return}
       $('repList').querySelectorAll('.rprev').forEach(function(x){x.remove()});
       var l=REP[repTab].lines[i],e=lineEnd(l),d=document.createElement('div');d.className='rprev';
       d.innerHTML=miniBoard(e.fen,REP[repTab].side==='b',e.last,'mini big')+'<p class="small mono">'+esc(l.moves.join(' '))+'</p><button class="btn primary" type="button">'+t('repPlayThis')+'</button>';
-      d.querySelector('button').onclick=function(){startSession([{t:'line',op:repTab,i:i}],'rep')};b.after(d);return}
-    startSession([{t:'line',op:repTab,i:i}],'rep')}});
+      d.querySelector('button').onclick=function(){startSession([{t:'line',op:repTab,i:i}],'rep')};b.after(d);d.scrollIntoView({block:'nearest',behavior:'smooth'})}}});
   $('bRepGo').textContent=t('repPractice',tt(REP[repTab].name));$('bRepQuiz').textContent=t('bNameQuiz');
 }
 $('bRepQuiz').onclick=function(){
