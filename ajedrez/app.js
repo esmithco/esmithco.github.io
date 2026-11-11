@@ -118,7 +118,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=30;
+var APP_VER=31;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -478,7 +478,7 @@ function renderCoach(){
   var h='<div class="chead"><b>'+t('coachT')+'</b><span class="small">'+t('coachWeek',n)+'</span></div><div class="week">'+dots+'</div>';
   if(lg){var g=lg.g,opp=g.side==='w'?g.black:g.white,res=t(g.r==='W'?'resW':g.r==='L'?'resL':'resD');
     h+='<button class="crow" id="bCoachLast" type="button"><span class="ci">♟</span><span class="ct"><b>'+t('coachLastT')+'</b><small>'+t('coachLastS',esc(opp),res,lg.cards.length)+'</small></span><span class="go">›</span></button>'}
-  if(cs.weak)h+='<button class="crow" id="bCoachWeak" type="button"><span class="ci">🎯</span><span class="ct"><b>'+t('coachWeakT',t(cs.weak.k))+'</b><small>'+t('coachWeakS',cs.weak.p)+'</small></span><span class="go">›</span></button>';
+  if(cs.weak)h+='<button class="crow" id="bCoachWeak" type="button"><span class="ci">🎯</span><span class="ct"><b>'+t('coachWeakT',t(cs.weak.k))+'</b><small>'+t('coachWeakS',cs.weak.ok,cs.weak.n)+'</small></span><span class="go">›</span></button>';
   if(cs.fast)h+='<div class="ctip">⏱ '+t('coachFastS',cs.fast.bad,cs.fast.ok)+'</div>';
   el.innerHTML=h;
   if($('bCoachWeak'))$('bCoachWeak').onclick=function(){var g=cs.weak.go;if(LISTS[g])quickSession(g);else go(g)};
@@ -881,7 +881,7 @@ function fundItems(id){
   return o.concat([{t:'drill',f:id},{t:'drill',f:id},{t:'drill',f:id}]);
 }
 function loadFTheory(f){
-  S.seenLesson['f_'+f.id]=1;save();setBar(null,false);setBoard(new Chess().fen(),false);B.locked=true;
+  S.seenLesson['f_'+f.id]=1;save();setBar(null,false);$('boardwrap').hidden=true;
   $('prompt').innerHTML='<div class="op">'+kindPill('idea',t('unitFund'))+'</div><h3 class="ideaT">'+esc(tt(f.t))+'</h3><ul class="ideaB">'+tt(f.body).map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul><p class="small">'+t('theoryGo')+'</p>';
   setBtns({next:true});cur.answered=true;
 }
@@ -979,7 +979,7 @@ function stratItems(id,max){
   return o.concat(ps.slice(0,max||6).map(function(k){return {t:'plan',s:id,k:k}}));
 }
 function loadSTheory(x){
-  S.seenLesson['s_'+x.id]=1;save();setBar(null,false);var ex=plansOf(x.id)[0];setBoard(ex?ex.fen:INIT,ex?new Chess(ex.fen).turn()==='b':false);B.locked=true;
+  S.seenLesson['s_'+x.id]=1;save();setBar(null,false);var ex=plansOf(x.id)[0];if(ex){var me=new Chess(ex.fen).turn();animExample(ex.fen,(ex.pv||[ex.best]).slice(0,4),me==='b',me)}else $('boardwrap').hidden=true;
   $('prompt').innerHTML='<div class="op">'+kindPill('idea',t('unitStrat'))+'</div><h3 class="ideaT">'+esc(tt(x.t))+'</h3><ul class="ideaB">'+tt(x.body).map(function(y){return '<li>'+esc(y)+'</li>'}).join('')+'</ul><p class="small">'+t('theoryGo')+'</p>';
   setBtns({next:true});cur.answered=true;
 }
@@ -1285,9 +1285,19 @@ function renderLearn(){
   $('learnList').querySelectorAll('[data-tech]').forEach(function(b){b.onclick=function(){startSession([{t:'play',id:b.getAttribute('data-tech')}],'learn')}});
   $('learnList').querySelectorAll('[data-i]').forEach(function(b){b.onclick=function(){startSession([{t:'idea',id:IDEAS[+b.getAttribute('data-i')].id}],'learn')}});
 }
+function exCap(h){$('fb').className='feedback exm';$('fb').innerHTML='<span class="exl">'+t('exLabel')+'</span> '+(h||'')}
+function animExample(start,moves,flip,me){
+  var i=0,c,my=cur;
+  function reset(){if(cur!==my)return;c=new Chess(start);setBoard(start,flip);B.locked=true;i=0;exCap('');later(step,900)}
+  function step(){if(cur!==my)return;if(i>=moves.length){later(reset,2400);return}
+    var before=c.fen(),legal=c.moves().length,mv=c.move(moves[i],{sloppy:true});if(!mv){later(reset,1500);return}
+    B.chess=new Chess(c.fen());B.marks={};B.marks[mv.from]='last';B.marks[mv.to]='last';B.arrows=[{from:mv.from,to:mv.to,c:mv.color===me?'#0E9488':'#C0392B'}];drawBoard();
+    var d=describe(before,mv,c,mv.color===me,legal,null);exCap('<b class="mono">'+esc(mv.san)+'</b>'+(mv.color!==me?' <span class="small">('+t('stOpp')+')</span>':'')+(d?' — '+esFix(d):''));i++;later(step,1800)}
+  reset();
+}
 function loadTheory(l){
   S.seenLesson[l.id]=1;save();setBar(null,false);
-  var p=l.p[0];var c=new Chess(p.fen);c.move(p.m[0],{sloppy:true});setBoard(c.fen(),c.turn()==='b');B.locked=true;
+  var p=l.p[0];var c=new Chess(p.fen);c.move(p.m[0],{sloppy:true});var me=c.turn();animExample(p.fen,p.m,me==='b',me);
   $('prompt').innerHTML='<div class="op">'+kindPill('idea',esc(tt(lessonUnit(l))))+'</div><h3 class="ideaT">'+esc(tt(l.t))+'</h3><ul class="ideaB">'+tt(l.body).map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul><p class="small">'+t('theoryGo')+'</p>';
   setBtns({next:true});cur.answered=true;
 }
