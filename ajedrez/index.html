@@ -203,6 +203,25 @@ details summary{cursor:pointer;font-weight:600}
 .counter{font:600 .85rem var(--f-mono);color:var(--muted)}
 @media (max-width:420px){.tiles{grid-template-columns:1fr 1fr}.tile{padding:12px}.evalbar{width:16px;flex-basis:16px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---- color layer (Nov 10): soft tinted background and colored sections, same violet/teal/amber family as the site ---- */
+body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),transparent 62%),radial-gradient(520px 380px at 108% 18%,rgba(14,148,136,.13),transparent 62%),radial-gradient(560px 440px at 40% 108%,rgba(232,115,12,.11),transparent 62%),var(--bg);background-attachment:fixed}
+.hero{background:linear-gradient(135deg,#7C3AED 0%,#6D28D9 45%,#4338CA 100%)}
+.tile{background:linear-gradient(165deg,color-mix(in srgb,var(--tc) 15%,#fff) 0%,#fff 72%);border-color:color-mix(in srgb,var(--tc) 28%,var(--line))}
+.tile .ti{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--tc) 18%,#fff)}
+.coach{background:linear-gradient(165deg,#F2EBFF 0%,#fff 60%);border-color:#E2D6FC}
+.sync{background:linear-gradient(165deg,#EAF2FF 0%,#fff 70%);border-color:#D8E4FB}
+.unit{--uc:var(--accent);background:linear-gradient(165deg,color-mix(in srgb,var(--uc) 10%,#fff) 0%,rgba(255,255,255,.6) 60%);border:1px solid color-mix(in srgb,var(--uc) 22%,var(--line));border-radius:16px;padding:10px 10px 12px}
+.unit h3{color:var(--uc);display:flex;align-items:center;gap:8px}.unit h3::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--uc)}
+.unit:nth-of-type(6n+1){--uc:#2563EB}.unit:nth-of-type(6n+2){--uc:#0E9488}.unit:nth-of-type(6n+3){--uc:#E8730C}.unit:nth-of-type(6n+4){--uc:#DB2777}.unit:nth-of-type(6n+5){--uc:#7C3AED}.unit:nth-of-type(6n){--uc:#CA8A04}
+.unit .lrow{border-color:color-mix(in srgb,var(--uc) 16%,var(--line))}.unit .bar2 span{background:var(--uc)!important}
+.rgroup{font:600 .78rem var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin:8px 0 0;display:flex;align-items:center;gap:8px}.rgroup::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--accent)}
+.rgroup:first-child{color:#E8730C}.rgroup:first-child::before{background:#E8730C}
+.card,.chart,.kpi{box-shadow:0 1px 0 rgba(23,32,51,.03),0 8px 22px rgba(23,32,51,.05)}
+.kpi:nth-child(1){background:linear-gradient(165deg,#F2EBFF,#fff 70%)}.kpi:nth-child(2){background:linear-gradient(165deg,#FFF1E6,#fff 70%)}.kpi:nth-child(3){background:linear-gradient(165deg,#E6F6F4,#fff 70%)}
+.tabbar button[aria-current="page"] svg{background:var(--accent-soft);border-radius:10px;padding:2px 10px;width:44px;box-sizing:content-box}
+.tab[aria-selected="true"]{color:var(--accent)}
+.bwrap .board{box-shadow:0 10px 26px rgba(23,32,51,.16)}
 </style>
 </head>
 <body>
@@ -348,12 +367,12 @@ details summary{cursor:pointer;font-weight:600}
   <button data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg><span data-t="navProg"></span></button>
 </nav>
 <script src="chess.js"></script>
-<script src="textos.js?v=29"></script>
+<script src="textos.js?v=31"></script>
 <script src="conceptos.js?v=1"></script>
-<script src="repertorio.js?v=1"></script>
+<script src="repertorio.js?v=2"></script>
 <script src="curso.js?v=1"></script>
 <script src="fundamentos.js?v=7"></script>
 <script src="planes.js?v=1"></script>
-<script src="app.js?v=32"></script>
+<script src="app.js?v=33"></script>
 </body>
 </html>

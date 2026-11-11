@@ -118,7 +118,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=32;
+var APP_VER=33;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -696,7 +696,7 @@ function loadLine(op,i,played){
   $('demoBar').hidden=true;
   cur.rep={op:op,i:i,l:l,ply:0,err:0,side:o.side,book:true,hist:[],end:Math.max(l.moves.length,16),map:bookMap(op),reply:null,replyFen:null};
   setBoard(new Chess().fen(),o.side==='b');setBar(null,false);
-  var k=l.kind==='trap'?'trap':l.kind==='punish'?'punish':'rep';
+  var k=l.kind==='trap'?'trap':l.kind==='punish'?'punish':'rep'
   $('prompt').innerHTML='<div class="op">'+kindPill(k,esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div>'+(l.kind==='trap'?t('pRepTrap'):l.kind==='punish'?t('pRepPunish'):t('pRep'))+' <span class="small">'+t('pRepFree')+'</span>';
   setBtns({hint:true,show:true});B.onMove=onRepMove;repStep();
 }
@@ -850,10 +850,13 @@ function renderRep(op){
   $('repTabs').innerHTML=Object.keys(REP).map(function(k){return '<button class="tab" role="tab" aria-selected="'+(k===repTab)+'" data-op="'+k+'">'+esc(tt(REP[k].name))+'</button>'}).join('');
   $('repTabs').querySelectorAll('button').forEach(function(b){b.onclick=function(){repTab=b.getAttribute('data-op');renderRep()}});
   var ls=repLines(repTab);
-  $('repList').innerHTML=ls.map(function(x){var st=x.st,lab=!st?t('repNew'):st.box>=3?t('repOkS'):lineDue(x)?t('repDue'):'';
+  var row=function(x){var st=x.st,lab=!st?t('repNew'):st.box>=3?t('repOkS'):lineDue(x)?t('repDue'):'';
     var kind=x.l.kind==='trap'?'<span class="pill blun">'+t('kindTrap')+'</span> ':x.l.kind==='punish'?'<span class="pill good">'+t('kindPunish')+'</span> ':'';
+    var sub=x.l.kind==='game'&&x.l.stat?t('repStat',x.l.stat.n,Math.round(x.l.stat.score*x.l.stat.n)):'';
     return '<button class="lrow" data-i="'+x.i+'"><span class="dotst '+(!st?'new':st.box>=3?'ok':lineDue(x)?'due':'')+'"></span><span class="lname">'+kind+esc(tt(x.l.name))+
-      '<span class="mono small">'+esc(moveLine(x.l.moves,Math.min(6,x.l.moves.length)))+'</span></span><span class="small">'+lab+'</span></button>'}).join('');
+      (sub?'<span class="small">'+sub+'</span>':'')+'</span><span class="small">'+lab+'</span></button>'};
+  var gm=ls.filter(function(x){return x.l.kind==='game'}),bk=ls.filter(function(x){return x.l.kind!=='game'});
+  $('repList').innerHTML=(gm.length?'<h3 class="rgroup">'+t('repFromGames')+'</h3><p class="small">'+t('repFromGamesD')+'</p>'+gm.map(row).join(''):'')+'<h3 class="rgroup">'+t('repBook')+'</h3>'+bk.map(row).join('');
   $('repList').querySelectorAll('.lrow').forEach(function(b){b.onclick=function(){startSession([{t:'line',op:repTab,i:+b.getAttribute('data-i')}],'rep')}});
   $('bRepGo').textContent=t('repPractice',tt(REP[repTab].name));$('bRepQuiz').textContent=t('bNameQuiz');
 }
