@@ -121,7 +121,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=39;
+var APP_VER=40;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -517,7 +517,7 @@ function startSession(items,src,from){X.snap=progSnap();X.items=items.slice();X.
 /* when he leaves an exercise, store the whole time spent on it (answer + reading), so the daily plan fits his real pace */
 function closeItemTime(){if(cur&&cur.logI!=null&&S.log&&S.log[cur.logI]&&cur.t0){S.log[cur.logI][3]=Math.min(300,Math.round((now()-cur.t0)/1000));S.log[cur.logI][4]=1;cur.logI=null;save()}}
 function renderItem(){
-  closeItemTime();stopTimers();anOff();$('demoBar').hidden=true;boardEl.classList.remove('nopieces');
+  closeItemTime();stopTimers();window.scrollTo(0,0);anOff();$('demoBar').hidden=true;boardEl.classList.remove('nopieces');
   if(X.i>=X.items.length){endSession();return}
   var it=X.items[X.i];cur={it:it,answered:false,first:true,t0:now()};$('bPrevEx').disabled=X.i===0;
   $('trCount').textContent=(X.i+1)+'/'+X.items.length;$('trProg').style.width=(X.i/X.items.length*100)+'%';
@@ -563,7 +563,7 @@ function setBtns(o){
 }
 function kindPill(k,extra){var m={mine:['kMine','mist'],punish:['kPun','good'],rep:['kRep','rep'],name:['kName','rep'],puz:['kPuz','idea'],trap:['kTrap','blun'],idea:['kIdea','idea']}[k];
   return '<span class="pill '+m[1]+'">'+t(m[0])+'</span>'+(extra?' <span class="small">'+extra+'</span>':'')}
-function sideTxt(side){return t('youPlay',side==='w'?t('white'):t('black'))}
+function sideTxt(side){return ''}  /* the big badge above the board already says it */
 
 /* card: own mistake or punish */
 function loadCard(c){
@@ -1136,8 +1136,12 @@ function rushNext(){
 }
 function rushFail(msg,wrong){stopBar();var R=cur.rush,P=R.cur;P.done=true;R.lives--;B.locked=true;R.tok++;R.missed.push({p:P.p,ply:P.ply,wrong:wrong||null,t:R.n});
   var f=B.chess.fen();try{B.chess.undo()}catch(e){}var ar=arrowFor(B.chess.fen(),P.p.m[P.ply],'#0E9488');if(!ar){B.chess=new Chess(f)}B.arrows=ar?[ar]:[];drawBoard();
-  $('fb').className='feedback bad';$('fb').innerHTML=(msg?msg+' ':'')+'✗ '+t('bestWas',esc(P.p.m[P.ply]));$('prompt').querySelector('.counter').textContent='❤️'.repeat(Math.max(0,R.lives))+'🤍'.repeat(3-Math.max(0,R.lives))+' · ✓ '+R.ok;
-  later(rushNext,1800)}
+  $('fb').className='feedback bad';$('fb').innerHTML=(msg?msg+' ':'')+'✗ '+t('bestWas',esc(P.p.m[P.ply]))+' <span class="small">'+t('flashReview')+'</span>';$('prompt').querySelector('.counter').textContent='❤️'.repeat(Math.max(0,R.lives))+'🤍'.repeat(3-Math.max(0,R.lives))+' · ✓ '+R.ok;
+  /* pause: the clock is stopped; see the solution, step it with ▶, explained in words, then continue */
+  cur.answered=true;anSet(P.p.fen,P.p.m,P.ply,P.ply);B.onMove=anMove;var a0=arrowFor(anChess(P.ply).fen(),P.p.m[P.ply],'#0E9488');if(a0){B.arrows=[a0];drawBoard()}
+  var f0=anChess(P.ply).fen();$('why').innerHTML='';showWhy([fold(t('stStep'),story(f0,P.p.m.slice(P.ply),new Chess(f0).turn(),8))]);
+  var ch=$('choices');ch.hidden=false;ch.classList.remove('grid');ch.innerHTML='<button class="btn primary" id="bRushNext">'+t('flashNextR')+'</button>';
+  $('bRushNext').onclick=function(){anOff();cur.answered=false;B.onMove=null;$('why').hidden=true;$('choices').hidden=true;rushNext()}}
 function rushEnd(){stopBar();var R=cur.rush;R.ended=true;var s=S.drill.rush||(S.drill.rush={best:0,bestT:0,runs:0});s.runs++;addTot('rush',R.ok);var better=R.ok>s.best;if(better)s.best=R.ok;
   /* the clock adapts: solving comfortably -> less time next run; struggling -> a bit more */
   var avg=R.times.length?R.times.reduce(function(a,b){return a+b},0)/R.times.length:0,sec=R.sec,msg='';s.sec=sec;
@@ -1567,7 +1571,7 @@ var clTimer=null,clBusy=false,clPulled=0,clErr='';
 function clSave(){try{localStorage.setItem(CKEY,JSON.stringify(CL))}catch(e){}}
 /* OPEN progress (by request: "anyone who opens the page continues my progress"): a Firebase Realtime Database whose rules allow
    read/write only under /progress. Stored as ONE JSON string (Firebase keys can't contain '.', '/', '#'… and card ids/game urls do). */
-var OPEN_URL='https://chess-3ce3f-default-rtdb.firebaseio.com/progress/esmithco.json';
+var OPEN_URL=/^(localhost|127\.|\[::1\])/.test(location.hostname)?'':'https://chess-3ce3f-default-rtdb.firebaseio.com/progress/esmithco.json';  /* local testing never touches his real progress */
 function cloudOn(){return !!OPEN_URL||!!(CL.token&&CL.gist)}
 function openPayload(){var p=payload();p.log=(p.log||[]).slice(-1200);return p}
 function fbGet(){return fetch(OPEN_URL,{cache:'no-store'}).then(function(r){if(!r.ok)throw r.status;return r.json()}).then(function(x){return typeof x==='string'?JSON.parse(x):null})}
