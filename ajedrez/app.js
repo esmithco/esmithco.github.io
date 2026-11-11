@@ -118,7 +118,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=33;
+var APP_VER=34;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -851,7 +851,7 @@ function renderRep(op){
   $('repTabs').querySelectorAll('button').forEach(function(b){b.onclick=function(){repTab=b.getAttribute('data-op');renderRep()}});
   var ls=repLines(repTab);
   var row=function(x){var st=x.st,lab=!st?t('repNew'):st.box>=3?t('repOkS'):lineDue(x)?t('repDue'):'';
-    var kind=x.l.kind==='trap'?'<span class="pill blun">'+t('kindTrap')+'</span> ':x.l.kind==='punish'?'<span class="pill good">'+t('kindPunish')+'</span> ':'';
+    var kind=x.l.kind==='trap'?'<span class="pill blun">'+t('kindTrap')+'</span> ':x.l.kind==='punish'?'<span class="pill good">'+t('kindPunish')+'</span> ':x.l.surprise?'<span class="pill mist">'+t('kindSurprise')+'</span> ':'';
     var sub=x.l.kind==='game'&&x.l.stat?t('repStat',x.l.stat.n,Math.round(x.l.stat.score*x.l.stat.n)):'';
     return '<button class="lrow" data-i="'+x.i+'"><span class="dotst '+(!st?'new':st.box>=3?'ok':lineDue(x)?'due':'')+'"></span><span class="lname">'+kind+esc(tt(x.l.name))+
       (sub?'<span class="small">'+sub+'</span>':'')+'</span><span class="small">'+lab+'</span></button>'};

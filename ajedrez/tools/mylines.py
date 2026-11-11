@@ -12,7 +12,7 @@ def pk(b): return ' '.join(b.fen().split(' ')[:4])
 def mine(op,g):
     s=g['sans']
     if len(s)<8: return False
-    if op=='london': return g['side']=='w' and s[0]=='d4' and 'Bf4' in s[2:5:2]
+    if op=='london': return g['side']=='w' and s[0]=='d4'   # all 1.d4 games: also the replies that stop the London (1…e5 …)
     if op=='caro': return g['side']=='b' and s[0] not in ('d4','c4') and s[1]=='c6'
     if op=='slav': return g['side']=='b' and s[0] in ('d4','c4') and (s[1]=='c6' or (s[1]=='d5' and 'c6' in s[3:6:2]))
 # positions already in the curated lines -> the move he is expected to play there (never contradict them)
@@ -20,6 +20,7 @@ book={};covered={}
 for op,o in REP.items():
     side=chess.WHITE if o['side']=='w' else chess.BLACK
     for l in o['lines']:
+        if l.get('kind')=='game': continue
         b=chess.Board()
         for m in l['moves']:
             if b.turn==side: book.setdefault(op,{})[pk(b)]=m
@@ -71,7 +72,7 @@ for op in ('london','caro','slav'):
         if turn_me: continue
         for mv,c in v['next'].items():
             ch=k+(mv,);cn=node[ch]
-            if cn['n']<4: continue
+            if cn['n']<(3 if len(k)<=4 else 4): continue   # early surprises count even if rarer
             path=list(ch)
             if any(l[:len(path)]==path for l in covered.get(op,[])): continue
             score=cn['sc']/cn['n'];pain=cn['n']*(1-score)
@@ -81,7 +82,14 @@ for op in ('london','caro','slav'):
     for pain,path,n,score in cand:
         if any(path[:len(c[1])]==c[1] or c[1][:len(path)]==path for c in chosen): continue
         chosen.append((pain,path,n,score))
-        if len(chosen)>=6: break
+        if len(chosen)>=7: break
+    # surprises that break his setup (he asked for these): always include the branches he has met, even if rare
+    FORCE={'london':[['d4','e5','dxe5','Bc5'],['d4','e5','dxe5','d6'],['d4','e5','dxe5','f6']],
+           'caro':[['e4','c6','Qh5'],['e4','c6','Qf3'],['e4','c6','Bc4']],'slav':[]}
+    for path in FORCE.get(op,[]):
+        k=tuple(path)
+        if k not in node or any(l[:len(path)]==path for l in covered.get(op,[])) or any(c[1]==path for c in chosen): continue
+        n=node[k]['n'];chosen.append((0,path,n,node[k]['sc']/n))
     lines=[]
     for pain,path,n,score in chosen:
         b=board(path);moves=list(path);notes={}
@@ -111,7 +119,8 @@ for op in ('london','caro','slav'):
         while moves and (len(moves)%2==1)!=(side=='w'): moves.pop()
         opp=[m for i,m in enumerate(path) if (i%2==0)==(side=='b')]
         lab=None
-        for m in opp:
+        if op=='london' and len(path)>1 and path[1]=='e5': lab=('Englund (…e5) · '+' '.join('…'+m for m in opp[1:]) if len(opp)>1 else 'Englund (…e5)',)*2
+        for m in ([] if lab else opp):
             if m.lstrip('…') in LABEL and not (op=='london' and m=='d5') and not (op!='london' and m in ('e4','d4')): lab=LABEL[m];break
         if not lab:
             pre='' if side=='b' else '…';tail=' '.join(pre+m for m in opp[-2:]);lab=(tail,tail)
