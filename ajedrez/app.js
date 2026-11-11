@@ -118,7 +118,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=27;
+var APP_VER=28;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -326,9 +326,11 @@ function teachWin(fen0,pv,col){
   return null;
 }
 function esFix(x){return LANG==='es'?x.replace(/\bde el /g,'del ').replace(/\ba el /g,'al '):x}
+function fold(title,html){return html?'<details class="fold"><summary>'+title+'</summary>'+html+'</details>':''}
 function teachBox(o,lead){
   if(!o||!CONCEPT[o.k])return '';var C=CONCEPT[o.k],x=esFix(o.txt.charAt(0).toUpperCase()+o.txt.slice(1));
-  return '<div class="teach"><div class="teachT">📘 '+esc(tt(C.t))+'</div><p>'+(lead?lead+' ':'')+x+'</p><p class="small"><b>'+t('tRule')+':</b> '+esc(tt(C.rule))+'</p><p class="small"><b>'+t('tHabit')+':</b> '+esc(tt(C.habit))+'</p></div>';
+  S.cseen=S.cseen||{};var n=S.cseen[o.k]=(S.cseen[o.k]||0)+1,rule='<b>'+t('tRule')+':</b> '+esc(tt(C.rule));
+  return '<div class="teach"><div class="teachT">📘 '+esc(tt(C.t))+'</div><p>'+(lead?lead+' ':'')+x+'</p>'+(n<=2?'<p class="small">'+rule+'</p>':'')+'<p class="small"><b>'+t('tHabit')+':</b> '+esc(tt(C.habit))+'</p>'+(n>2?'<details class="fold"><summary>'+t('tRule')+'</summary><p class="small">'+esc(tt(C.rule))+'</p></details>':'')+'</div>';
 }
 /* which mistakes can be seen within a move or two (lose: punished in ≤3 plies; win: the best move wins in ≤3 plies); the rest is "deep" and left out of practice */
 function punishedJS(fen,moves,col,n){var c=new Chess(fen),b0=bal(c,col);for(var i=0;i<Math.min(n,moves.length);i++){var m=c.move(moves[i],{sloppy:true});if(!m)break;if(c.in_checkmate())return c.turn()===col;if(c.turn()===col&&attacked(c,m.to,col).length>=2)return true}return bal(c,col)-b0<=-2}
@@ -400,15 +402,18 @@ function buildToday(n){
   var pzA=pz.slice(),g1=grab(pzA),g2=grab(pz2);
   var it=[{t:'drill',f:basics[(dd+n)%3],n:basics[(dd+n)%3]==='nota'?3:5},L(pickL[n>1?1:0]||pickL[0]),{t:'drill',f:'defend',n:2}].concat(g1,[C(mine[o]),speed,C(pun[n>1?1:0]||pun[0])],g2,[r1,
     {t:'drill',f:'game',n:3},C(mine[o+1]),extra||grab(pzA)[0]]).filter(Boolean);
-  while(it.length>6&&estSec(it)>600)it.splice(it.length-1,1);
+  while(it.length>5&&estSec(it)>600)it.splice(it.length-1,1);
   S.daily={v:6,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
 }
 /* how long things take him: median of his last logged times per type, defaults otherwise */
-var EST={drill:75,line:70,puz:45,card:50,plan:40,quiz:15,idea:45,name:20,theory:30,ftheory:30,stheory:30,play:120};
+var EST={drill:75,line:80,puz:60,card:90,plan:60,quiz:25,idea:60,name:25,theory:40,ftheory:40,stheory:40,play:150};
 function estOne(it){
-  if(it.t==='drill'){var per={game:20,defend:18,flash:12,rush:12,coord:5,sqname:5,nota:9}[it.f]||8;return 6+per*(it.n||8)}
-  var a=(S.log||[]).filter(function(e){return e[1]===it.t&&e[3]!=null}).slice(-15).map(function(e){return e[3]}).sort(function(x,y){return x-y});
-  return a.length>=5?Math.min(150,a[Math.floor(a.length/2)]):(EST[it.t]||45);
+  var med=function(a){a=a.slice(-15).map(function(e){return Math.min(240,e[3])}).sort(function(x,y){return x-y});return a[Math.floor(a.length/2)]};
+  var full=(S.log||[]).filter(function(e){return e[4]===1});
+  if(it.t==='drill'){var key=it.f+':'+(it.n||0),d=full.filter(function(e){return e[5]===key});if(d.length>=2)return med(d);
+    var per={game:25,defend:22,flash:15,rush:12,coord:5,sqname:5,nota:10}[it.f]||8;return 10+per*(it.n||8)}
+  var a=full.filter(function(e){return e[1]===it.t});
+  return a.length>=4?med(a):(EST[it.t]||60);
 }
 function estSec(items){return items.reduce(function(a,x){return a+estOne(x)},0)}
 function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<6&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
@@ -430,7 +435,7 @@ function route(){
 }
 function go(s){if(location.hash==='#'+s)route();else location.hash=s}
 window.addEventListener('hashchange',route);
-$('bClose').onclick=function(){if(location.hash==='#data'){go('progress');return}stopTimers();go(X.back||'home')};
+$('bClose').onclick=function(){if(location.hash==='#data'){go('progress');return}closeItemTime();stopTimers();go(X.back||'home')};
 document.querySelectorAll('#tabbar button').forEach(function(b){b.onclick=function(){go(b.getAttribute('data-tab'))}});
 function rerender(){route()}
 
@@ -488,8 +493,10 @@ var cur=null,timers=[];
 function later(f,ms){var id=setTimeout(f,ms);timers.push(id);return id}
 function stopTimers(){if(typeof stopBar==='function')stopBar();timers.forEach(clearTimeout);timers=[]}
 function startSession(items,src,from){X.snap=progSnap();X.items=items.slice();X.i=from||0;X.src=src;X.ok=0;X.back=src==='today'?'home':src==='ideas'?'learn':src.split(':')[0];cur=null;go('train')}
+/* when he leaves an exercise, store the whole time spent on it (answer + reading), so the daily plan fits his real pace */
+function closeItemTime(){if(cur&&cur.logI!=null&&S.log&&S.log[cur.logI]&&cur.t0){S.log[cur.logI][3]=Math.min(300,Math.round((now()-cur.t0)/1000));S.log[cur.logI][4]=1;cur.logI=null;save()}}
 function renderItem(){
-  stopTimers();anOff();$('demoBar').hidden=true;boardEl.classList.remove('nopieces');
+  closeItemTime();stopTimers();anOff();$('demoBar').hidden=true;boardEl.classList.remove('nopieces');
   if(X.i>=X.items.length){endSession();return}
   var it=X.items[X.i];cur={it:it,answered:false,first:true,t0:now()};$('bPrevEx').disabled=X.i===0;
   $('trCount').textContent=(X.i+1)+'/'+X.items.length;$('trProg').style.width=(X.i/X.items.length*100)+'%';
@@ -513,7 +520,7 @@ function saveDaily(){if(X.src==='today'&&S.daily){S.daily.idx=X.i;if(X.i>=S.dail
   S.days=S.days||{};S.days[S.daily.date||today()]=1;syncStreak()}save()}}
 function itemDone(ok){
   cur.answered=true;B.locked=true;B.onTap=null;if(ok&&cur.first)X.ok++;
-  if(cur.it.t!=='theory'){S.log=S.log||[];S.log.push([now(),cur.it.t,ok&&cur.first?1:0,Math.min(600,Math.round((now()-(cur.t0||now()))/1000))]);if(S.log.length>4000)S.log=S.log.slice(-4000);save()}
+  if(cur.it.t!=='theory'){S.log=S.log||[];S.log.push([now(),cur.it.t,ok&&cur.first?1:0,Math.min(600,Math.round((now()-(cur.t0||now()))/1000)),0,cur.it.t==='drill'?cur.it.f+':'+(cur.it.n||0):'']);if(S.log.length>4000)S.log=S.log.slice(-4000);cur.logI=S.log.length-1;save()}
   if(X.src==='today'&&ok&&cur.first&&S.daily)S.daily.ok=(S.daily.ok||0)+1;
   setBtns({next:true});
   if(cur.anPath){var p=cur.anPath();if(p){var arr=B.arrows;anSet(p.start,p.moves,p.i==null?p.moves.length:p.i,p.base);if(p.keepArrows){B.arrows=arr;drawBoard()}B.onMove=anMove}}
@@ -521,7 +528,7 @@ function itemDone(ok){
 }
 $('bPrevEx').onclick=function(){if(X.i>0){X.i--;saveDaily();renderItem()}};
 $('bNext').onclick=function(){X.i++;saveDaily();renderItem()};
-function endSession(){
+function endSession(){closeItemTime();
   $('trBody').hidden=true;$('trEnd').hidden=false;$('trProg').style.width='100%';
   $('trEndT').textContent=X.items.length?t('sessDone'):t('sessEmpty');
   $('trEndS').textContent=X.items.length?t('sessSum',X.ok,X.items.length):'';
@@ -581,13 +588,13 @@ function cardResult(ok,san,sAfter,pvAfter){
     w.push(box||t('tNoIdea'));
     if(!ok&&san!=='—'&&san!==c.played&&pvAfter){var t2=teachBad(fen0,san,pvAfter,col);if(t2)w.push('<b>'+t('tYours',sanH(san))+'</b>'+teachBox(t2))}
     var th=c.threat&&c.threat.pv&&c.threat.pv.length?explainBest(fen0,best,null,c.s0,col,c.threat,c.s0)[0]:null;if(th&&/threat|amenaza/i.test(th))w.push(th);
-    if(c.pvBad&&visOf(c)!=='win')w.push('<b>'+t('stIf',esc(c.played))+'</b>'+story(fen0,[c.played].concat(c.pvBad),col,4));
-    w.push('<b>'+t('stBest',esc(best))+'</b>'+story(fen0,bestPv,col,5));
+    if(c.pvBad&&visOf(c)!=='win')w.push(fold(t('stIf',esc(c.played)),story(fen0,[c.played].concat(c.pvBad),col,4)));
+    w.push(fold(t('stBest',esc(best)),story(fen0,bestPv,col,5)));
   }else{
     w.push(teachBox(teachWin(fen0,bestPv,col),t('tPunLead',sanH(c.oppMove)))||t('tNoIdea'));
     if(!ok&&san!=='—'&&pvAfter){var t3=teachBad(fen0,san,pvAfter,col);if(t3)w.push('<b>'+t('tYours',sanH(san))+'</b>'+teachBox(t3))}
     if(c.oppBest&&c.oppBest!==c.oppMove)w.push(t('oppShould','<span class="mono">'+esc(c.oppBest)+'</span>'));
-    w.push('<b>'+t('stBest',esc(best))+'</b>'+story(fen0,bestPv,col,5));
+    w.push(fold(t('stBest',esc(best)),story(fen0,bestPv,col,5)));
   }
   showWhy(w);
   cur.badLine=c.kind==='mine'&&c.pvBad?[c.played].concat(c.pvBad.slice(0,6)):(!ok&&pvAfter?[san].concat(pvAfter.slice(0,6)):null);
@@ -1111,7 +1118,7 @@ function rushEnd(){stopBar();var R=cur.rush;R.ended=true;var s=S.drill.rush||(S.
     ch.innerHTML='<p class="small">'+t('rushMissed')+'</p>'+R.missed.map(function(x,k){return '<button class="btn opt" data-k="'+k+'">'+t('rushRevBtn',k+1,x.wrong?esc(x.wrong):t('rushTime'),esc(x.p.m[x.ply]))+'</button>'}).join('');
     ch.querySelectorAll('[data-k]').forEach(function(b){b.onclick=function(){var x=R.missed[+b.getAttribute('data-k')];
       anSet(x.p.fen,x.p.m,x.ply,x.ply);B.onMove=anMove;var a=arrowFor(anChess(x.ply).fen(),x.p.m[x.ply],'#0E9488');if(a){B.arrows=[a];drawBoard()}
-      $('fb').className='feedback';$('fb').innerHTML=t('rushRev',x.wrong?'<span class="mono">'+esc(x.wrong)+'</span>':t('rushTime'),'<span class="mono">'+esc(x.p.m[x.ply])+'</span>')+' <span class="small">'+t('flashReview')+'</span>';var f0=anChess(x.ply).fen();$('why').innerHTML='';showWhy(['<b>'+t('stStep')+'</b>'+story(f0,x.p.m.slice(x.ply),new Chess(f0).turn(),8)]);window.scrollTo(0,0)}})}
+      $('fb').className='feedback';$('fb').innerHTML=t('rushRev',x.wrong?'<span class="mono">'+esc(x.wrong)+'</span>':t('rushTime'),'<span class="mono">'+esc(x.p.m[x.ply])+'</span>')+' <span class="small">'+t('flashReview')+'</span>';var f0=anChess(x.ply).fen();$('why').innerHTML='';showWhy([fold(t('stStep'),story(f0,x.p.m.slice(x.ply),new Chess(f0).turn(),8))]);window.scrollTo(0,0)}})}
 }
 /* Defend: the opponent has a threat (mate in 1 or winning material). 1) name it, 2) play a move that stops it.
    Positions = course puzzles with the move handed to the victim (side to move swapped). */
@@ -1145,7 +1152,7 @@ function defNext(){
     var th=t(x.kind==='mate'?'defIsMate':'defIsHang',sanList(x.th)),h;
     if(ok)h='✓ '+t('defGood')+' '+th;
     else{var t2=oppThreats(B.chess),bad=t2.mates[0]||t2.free[0];h='✗ '+th+' '+(bad?t(t2.mates.length?'defStillMate':'defStillHang','<b class="mono">'+esc(bad.san)+'</b>')+' ':'')+t('defGoodWere',sanList(x.good))}
-    var opp=me==='w'?'b':'w';pauseReview(x.d.fen(),[mv.san],ok,h,x.th.slice(0,2).map(function(m){return {from:m.from,to:m.to,c:'#C0392B'}}),defNext,'<b>'+t('stThreat')+'</b>'+story(flipTurn(x.d.fen(),opp),[x.th[0].san],me,1));
+    var opp=me==='w'?'b':'w';pauseReview(x.d.fen(),[mv.san],ok,h,x.th.slice(0,2).map(function(m){return {from:m.from,to:m.to,c:'#C0392B'}}),defNext,fold(t('stThreat'),story(flipTurn(x.d.fen(),opp),[x.th[0].san],me,1)));
   };
 }
 /* shared pause after an answer: pieces stay, analysis bar on, threat/answer arrows, "Next ▶" */
@@ -1176,16 +1183,16 @@ function gameNext(){
   B.locked=false;B.onMove=function(mv){B.locked=true;B.onMove=null;G.n++;
     var done=function(ok,h,arr,moves,why){if(ok)G.ok++;pauseReview(fen,moves||[mv.san],ok,h,arr,gameNext,why)};
     if(x.type==='def'){var ok=x.good.indexOf(mv.san)>=0,th=t(x.kind==='mate'?'defIsMate':'defIsHang',sanList(x.th));
-      done(ok,(ok?'✓ '+t('gameDefOk')+' ':'✗ '+t('gameWasDef')+' ')+th+(ok?'':' '+t('defGoodWere',sanList(x.good))),x.th.slice(0,2).map(function(m){return {from:m.from,to:m.to,c:'#C0392B'}}),null,'<b>'+t('stThreat')+'</b>'+story(flipTurn(fen,me==='w'?'b':'w'),[x.th[0].san],me,1));return}
+      done(ok,(ok?'✓ '+t('gameDefOk')+' ':'✗ '+t('gameWasDef')+' ')+th+(ok?'':' '+t('defGoodWere',sanList(x.good))),x.th.slice(0,2).map(function(m){return {from:m.from,to:m.to,c:'#C0392B'}}),null,fold(t('stThreat'),story(flipTurn(fen,me==='w'?'b':'w'),[x.th[0].san],me,1)));return}
     if(x.type==='tac'){var p=x.it.p,want=p.m[1],ok2=mv.san===want||(p.m.length===2&&B.chess.in_checkmate()),nm=esc(tt(x.it.l.t));
       var ar=arrowFor(fen,want,'#0E9488');
-      markPuz(p,ok2);done(ok2,ok2?'✓ '+t('gameTacOk',nm):'✗ '+t('gameWasTac',nm,'<b class="mono">'+esc(want)+'</b>'),ok2?[]:(ar?[ar]:[]),ok2?p.m.slice(1):[mv.san],'<b>'+t('stStep')+'</b>'+story(fen,p.m.slice(1),me,8));return}
+      markPuz(p,ok2);done(ok2,ok2?'✓ '+t('gameTacOk',nm):'✗ '+t('gameWasTac',nm,'<b class="mono">'+esc(want)+'</b>'),ok2?[]:(ar?[ar]:[]),ok2?p.m.slice(1):[mv.san],fold(t('stStep'),story(fen,p.m.slice(1),me,8)));return}
     /* quiet: ask the engine whether his move keeps the position */
     var q=x.p,st=stratById(x.tag),bestA=arrowFor(fen,q.best,'#0E9488');
-    if(mv.san===q.best){done(true,'✓ '+t('gameQuietBest',esc(tt(st.t))),[],q.pv,'<b>'+t('stPlan',esc(q.best))+'</b>'+story(fen,q.pv,me,4));return}
+    if(mv.san===q.best){done(true,'✓ '+t('gameQuietBest',esc(tt(st.t))),[],q.pv,fold(t('stPlan',esc(q.best)),story(fen,q.pv,me,4)));return}
     $('fb').className='feedback';$('fb').textContent=t('thinking');
     analyse(B.chess.fen(),1200).then(function(r){var mine=r?-r.s:q.s,ok3=wp(mine)>=wp(q.s)-7,ev=evalTxt(mine);
-      done(ok3,ok3?'✓ '+t('gameQuietOk2',ev,'<b class="mono">'+esc(q.best)+'</b>',esc(tt(st.t))):'✗ '+t('gameQuietBad',ev,evalTxt(q.s),'<b class="mono">'+esc(q.best)+'</b>',esc(tt(st.t))),bestA?[bestA]:[],null,'<b>'+t('stPlan',esc(q.best))+'</b>'+story(fen,q.pv,me,4))});
+      done(ok3,ok3?'✓ '+t('gameQuietOk2',ev,'<b class="mono">'+esc(q.best)+'</b>',esc(tt(st.t))):'✗ '+t('gameQuietBad',ev,evalTxt(q.s),'<b class="mono">'+esc(q.best)+'</b>',esc(tt(st.t))),bestA?[bestA]:[],null,fold(t('stPlan',esc(q.best)),story(fen,q.pv,me,4)))});
   };
 }
 function gameEnd(){
@@ -1199,7 +1206,7 @@ function defEnd(){
   $('fb').className='feedback '+(D.ok>=D.total*.75?'good':'bad');$('fb').innerHTML=t('drillRes',D.ok,D.total,sec)+(better&&D.ok?' 🏆 '+t('newBest'):'');itemDone(D.total>0&&D.ok>=D.total*.75);setBtns({next:true});
 }
 /* "Finish": first tap ends the running drill (shows its result), otherwise it ends the session with a summary */
-$('bFinish').onclick=function(){
+$('bFinish').onclick=function(){closeItemTime();
   if(!cur||!$('trEnd').hidden){go(X.back||'home');return}
   stopTimers();
   if(cur.rush&&!cur.rush.ended){cur.rush.ended=true;cur.rush.stopped=true;cur.rush.tok++;rushEnd();return}
@@ -1307,7 +1314,7 @@ function puzSolved(){
   $('fb').className='feedback '+(cur.first?'good':'bad');$('fb').innerHTML=cur.first?t('puzDone'):t('puzDoneLate');
   var c=new Chess(P.p.fen);c.move(P.p.m[0],{sloppy:true});var f1=c.fen(),sol=P.p.m.slice(1);
   var r=outcome(f1,sol,P.me,sol.length);
-  var w=['<b>'+esc(tt(P.l.t))+':</b> '+esc(tt(P.l.body)[0]),'<b>'+t('stStep')+'</b>'+story(f1,sol,P.me,8)];
+  var w=['<b>'+esc(tt(P.l.t))+':</b> '+esc(tt(P.l.body)[0]),fold(t('stStep'),story(f1,sol,P.me,8))];
   showWhy(w);cur.goodLine=sol;cur.anPath=function(){return {start:P.p.fen,moves:P.p.m,i:P.p.m.length,base:1}};itemDone(cur.first);setBtns({next:true,good:true});
 }
 /* endgame technique: play it out against Stockfish */
