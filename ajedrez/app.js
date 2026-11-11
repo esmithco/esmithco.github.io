@@ -45,12 +45,12 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typ
 function isMistake(s0,s1){if(s0<-500)return false;var d=wp(s0)-wp(s1);return d>=15&&(s1<=-150||(s0>=200&&s1<=0))}
 function isPunish(s0,s1){if(s0>400)return false;var g=wp(s1)-wp(s0);return g>=15&&(s1>=150||(s0<=-200&&s1>=0))}
 function applyRule(){ /* one-time: drop old app-analysed cards that are only small slips, recount errors of app games */
-  if(S.rule===2)return;var per={};
+  if(S.rule>=3)return;var per={};
   Object.keys(S.cards).forEach(function(k){var c=S.cards[k];if(c.src!=='app')return;
     if(c.kind==='mine'?!isMistake(c.s0,c.s1):!isPunish(c.s0,c.s1)){delete S.cards[k];return}
-    if(c.kind==='mine')(c.games||[]).forEach(function(g){per[g]=(per[g]||0)+1})});
+    if(c.kind==='mine'&&visOf(c)!=='deep')(c.games||[]).forEach(function(g){per[g]=(per[g]||0)+1})});
   Object.keys(S.games).forEach(function(k){var g=S.games[k];if(g.src==='app'&&g.op)g.errors=per[k]||0});
-  S.rule=2;
+  S.rule=3;
 }
 function mergeBase(D){
   var nc={};
@@ -64,7 +64,7 @@ function boot(){
   var raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
   if(raw){try{S=JSON.parse(raw)}catch(e){S=blank()}}
   upgrade();applyRule();
-  fetch('datos.json?v=5',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
+  fetch('datos.json?v=6',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
     DATA.stats=D.stats||{};
     if(!S.base||S.base<(D.base||0)){mergeBase(D);save()}
   }).catch(function(){}).then(function(){route();clStatus();cloudPull();
@@ -118,7 +118,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=24;
+var APP_VER=25;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -183,7 +183,7 @@ function setBar(cpW,on){
   barCp=cpW;
 }
 function classOf(drop){return drop<=2?['best','cBest']:drop<=5?['good','cGood']:drop<=10?['inacc','cInacc']:drop<=20?['mist','cMist']:['blun','cBlun']}
-function chip(san,drop,cpW){var c=classOf(drop);return '<span class="chip '+c[0]+'"><b class="mono">'+esc(san)+'</b> '+t(c[1])+(cpW!=null?' · '+evalTxt(cpW):'')+(drop>5?' · −'+Math.round(drop):'')+'</span>'}
+function chip(san,drop,cpW){var c=classOf(drop);return '<span class="chip '+c[0]+'"><b class="mono">'+esc(san)+'</b> '+t(c[1])+'</span>'}
 
 /* ---------- explanations ---------- */
 /* step by step: what each move of a line does, in words (checks, captures, double attacks, only moves, mate threats) */
@@ -262,13 +262,93 @@ function explainBest(fen0,best,pv,sBest,col,threat,s0){
   return o;
 }
 
+
+/* ---------- teacher: name the idea behind a mistake or a good move (fork, pin, undefended piece…), the rule, and the habit ---------- */
+var DIRS={b:[[1,1],[1,-1],[-1,1],[-1,-1]],r:[[1,0],[-1,0],[0,1],[0,-1]]};DIRS.q=DIRS.b.concat(DIRS.r);
+function sqFR(f,r){return f>=0&&f<8&&r>=0&&r<8?'abcdefgh'[f]+(r+1):null}
+function sanH(x){return '<b class="mono">'+esc(x)+'</b>'}
+function defendedBy(c,sq,col){try{var x=new Chess(flipTurn(c.fen(),col));x.remove(sq);x.put({type:'n',color:col==='w'?'b':'w'},sq);return x.moves({verbose:true}).some(function(m){return m.to===sq})}catch(e){return false}}
+function lineTactic(c,sq){
+  var p=c.get(sq);if(!p||!DIRS[p.type])return null;var f0='abcdefgh'.indexOf(sq[0]),r0=+sq[1]-1,V=function(q){return q.type==='k'?100:VAL[q.type]};
+  for(var i=0;i<DIRS[p.type].length;i++){var d=DIRS[p.type][i],a=null,b=null,f=f0,r=r0;
+    while(true){f+=d[0];r+=d[1];var s=sqFR(f,r);if(!s)break;var q=c.get(s);if(!q)continue;
+      if(!a){if(q.color===p.color)break;a={sq:s,p:q};continue}
+      if(q.color===p.color)break;b={sq:s,p:q};break}
+    if(!a||!b)continue;
+    if(V(b.p)>V(a.p)&&V(a.p)>=3&&(b.p.type==='k'||V(b.p)>=5))return {k:'pin',a:a,b:b};
+    if(V(a.p)>V(b.p)&&V(a.p)>=9&&V(b.p)>=3&&!(b.p.type==='p'))return {k:'skewer',a:a,b:b};
+  }
+  return null;
+}
+function capsBy(c,col,exceptSq){var x,o={};try{x=new Chess(flipTurn(c.fen(),col))}catch(e){return o}
+  x.moves({verbose:true}).forEach(function(m){if(m.captured&&m.from!==exceptSq&&VAL[m.captured]>=3)o[m.to]=m.from});return o}
+function discovered(cB,cA,m){var b=capsBy(cB,m.color,m.from),a=capsBy(cA,m.color,m.to);for(var k in a){if(!b[k])return {sq:k,p:cA.get(k)}}return null}
+function joinY(a){return a.length<2?a.join(''):a.slice(0,-1).join(', ')+(LANG==='es'?' y ':' and ')+a[a.length-1]}
+function tgtName(o){return o.type==='k'?pcA('k'):pcA(o.type)+' ('+o.sq+')'}
+function mateIn(fen,pv,n,who){var x=new Chess(fen);for(var i=0;i<Math.min(n,pv.length);i++){var m=x.move(pv[i],{sloppy:true});if(!m)return null;if(x.in_checkmate())return m.color===who?{i:i,m:m,c:x}:null}return null}
+function isBackRank(x,m){var k=null,col=x.turn();x.board().forEach(function(r,ri){r.forEach(function(p,fi){if(p&&p.type==='k'&&p.color===col)k='abcdefgh'[fi]+(8-ri)})});
+  return k&&(k[1]==='1'||k[1]==='8')&&(m.piece==='r'||m.piece==='q')&&m.to[1]===k[1]}
+/* why `san` (by col, from fen0) is bad; pv = the opponent's best answer line */
+function teachBad(fen0,san,pv,col){
+  var c0=new Chess(fen0),opp=col==='w'?'b':'w',mv=c0.move(san,{sloppy:true});if(!mv)return null;var fen1=c0.fen();pv=pv||[];
+  var mt=mateIn(fen1,pv,5,opp);if(mt)return {k:isBackRank(mt.c,mt.m)?'backrank':'mate',txt:t('tMate',sanH(san),pvText(fen1,pv,mt.i+1))};
+  if(!pv.length)return null;
+  var c1=new Chess(fen1),r=c1.move(pv[0],{sloppy:true});if(!r)return null;
+  if(mv.captured&&r.to===mv.to&&VAL[mv.piece]>VAL[mv.captured])return {k:'badtrade',txt:t('tBadTrade',sanH(san),pcA(mv.captured),pcA(mv.piece),sanH(r.san))};
+  if(r.captured&&VAL[r.captured]>=1){var re=canTake(c1,r.to);
+    if(!re){
+      if(r.to!==mv.to&&defendedBy(new Chess(fen0),r.to,col)&&!defendedBy(new Chess(fen1),r.to,col)){
+        var wasDef=false;try{var y=new Chess(flipTurn(fen0,col));y.remove(r.to);y.put({type:'n',color:opp},r.to);wasDef=y.moves({square:mv.from,verbose:true}).some(function(z){return z.to===r.to})}catch(e){}
+        return {k:'leftdef',txt:wasDef?t('tLeftDef',pcA(mv.piece),mv.from,pcA(r.captured),r.to,sanH(r.san)):t('tBlocked',sanH(san),pcA(r.captured),r.to,sanH(r.san))}}
+      if(r.to===mv.to)return {k:'hanging',txt:t('tHangMoved',sanH(san),pcA(mv.piece),mv.to,sanH(r.san))};
+      return {k:'hanging',txt:t('tHang',pcA(r.captured),r.to,sanH(r.san))}}
+    if(VAL[r.captured]-VAL[r.piece]>=2)return {k:'material',txt:t('tTakesBig',sanH(r.san),pcA(r.captured),pcA(r.piece))};
+  }
+  var at=attacked(c1,r.to,col);if(at.length>=2)return {k:'fork',txt:t('tFork',sanH(r.san),joinY(at.map(tgtName)))};
+  var lt=lineTactic(c1,r.to);if(lt&&lt.a.p.color===col)return {k:lt.k,txt:t(lt.k==='pin'?'tPin':'tSkewer',sanH(r.san),pcA(lt.a.p.type),lt.a.sq,pcA(lt.b.p.type))};
+  var dc=discovered(new Chess(fen1),c1,r);if(dc&&dc.p&&dc.p.color===col)return {k:'discovered',txt:t('tDisc',sanH(r.san),pcA(dc.p.type),dc.sq)};
+  if(mv.piece==='p'&&'fgh'.indexOf(mv.from[0])>=0){var kc=new Chess(fen0),ks=null;kc.board().forEach(function(rw,ri){rw.forEach(function(p,fi){if(p&&p.type==='k'&&p.color===col)ks='abcdefgh'[fi]})});
+    if(ks&&'fgh'.indexOf(ks)>=0)return {k:'king',txt:t('tKing',sanH(san),pvText(fen1,pv,4))}}
+  var o=outcome(fen1,pv,col,4);if(o.delta<=-1)return {k:'material',txt:t('tMaterial',sanH(san),matTxt(o.delta),pvText(fen1,pv,4))};
+  return null;
+}
+/* why the line pv (starting with col's move from fen0) is good */
+function teachWin(fen0,pv,col){
+  if(!pv||!pv.length)return null;var opp=col==='w'?'b':'w';
+  var mt=mateIn(fen0,pv,5,col);if(mt)return {k:isBackRank(mt.c,mt.m)?'backrank':'mate',txt:t('tWinMate',pvText(fen0,pv,mt.i+1))};
+  var c0=new Chess(fen0),c1=new Chess(fen0),m=c1.move(pv[0],{sloppy:true});if(!m)return null;
+  if(m.captured&&VAL[m.captured]>=1&&!canTake(c1,m.to))return {k:'free',txt:t('tWinFree',pcA(m.captured),m.to,sanH(m.san))};
+  var at=attacked(c1,m.to,opp);if(at.length>=2)return {k:'fork',txt:t('tWinFork',sanH(m.san),joinY(at.map(tgtName)))};
+  var lt=lineTactic(c1,m.to);if(lt&&lt.a.p.color===opp)return {k:lt.k,txt:t(lt.k==='pin'?'tWinPin':'tWinSkewer',sanH(m.san),pcA(lt.a.p.type),lt.a.sq,pcA(lt.b.p.type))};
+  var dc=discovered(c0,c1,m);if(dc&&dc.p&&dc.p.color===opp)return {k:'discovered',txt:t('tWinDisc',sanH(m.san),pcA(dc.p.type),dc.sq)};
+  if(m.captured&&VAL[m.captured]-VAL[m.piece]>=2)return {k:'free',txt:t('tWinFree',pcA(m.captured),m.to,sanH(m.san))};
+  var o=outcome(fen0,pv,col,5);if(o.delta>=2)return {k:'material',txt:t('tWinMat',sanH(m.san),matTxt(o.delta),pvText(fen0,pv,5))};
+  return null;
+}
+function teachBox(o,lead){
+  if(!o||!CONCEPT[o.k])return '';var C=CONCEPT[o.k],x=o.txt.charAt(0).toUpperCase()+o.txt.slice(1);
+  return '<div class="teach"><div class="teachT">📘 '+esc(tt(C.t))+'</div><p>'+(lead?lead+' ':'')+x+'</p><p class="small"><b>'+t('tRule')+':</b> '+esc(tt(C.rule))+'</p><p class="small"><b>'+t('tHabit')+':</b> '+esc(tt(C.habit))+'</p></div>';
+}
+/* which mistakes can be seen within a move or two (lose: punished in ≤3 plies; win: the best move wins in ≤3 plies); the rest is "deep" and left out of practice */
+function punishedJS(fen,moves,col,n){var c=new Chess(fen),b0=bal(c,col);for(var i=0;i<Math.min(n,moves.length);i++){var m=c.move(moves[i],{sloppy:true});if(!m)break;if(c.in_checkmate())return c.turn()===col;if(c.turn()===col&&attacked(c,m.to,col).length>=2)return true}return bal(c,col)-b0<=-2}
+function winsJS(fen,moves,col,n){var c=new Chess(fen),b0=bal(c,col);for(var i=0;i<Math.min(n,moves.length);i++){var m=c.move(moves[i],{sloppy:true});if(!m)break;if(c.in_checkmate())return c.turn()!==col;if(c.turn()!==col&&attacked(c,m.to,c.turn()).length>=2)return true}return bal(c,col)-b0>=2}
+function visOf(c){
+  if(c.vis)return c.vis;
+  try{var b=new Chess();(c.line||[]).forEach(function(m){b.move(m,{sloppy:true})});var f=b.fen(),col=c.side;
+    if(c.kind==='mine'){var b1=new Chess(f);if(!b1.move(c.played,{sloppy:true}))return c.vis='deep';var f1=b1.fen();
+      if(punishedJS(f1,c.pvBad||[],col,3))return c.vis='lose';
+      var bb=new Chess(f1);(c.pvBad||[]).slice(0,3).forEach(function(m){bb.move(m,{sloppy:true})});if(bal(bb,col)-bal(new Chess(f),col)<=-2)return c.vis='lose';
+      return c.vis=winsJS(f,c.pvBest||[],col,3)?'win':'deep'}
+    return c.vis=winsJS(f,c.pvBest||[],col,3)?'win':'deep'}catch(e){return c.vis='deep'}
+}
+
 /* ---------- spaced repetition ---------- */
 function gradeObj(o,ok){
   if(ok){o.box=Math.min(6,(o.box||0)+1);o.due=now()+DAYS[o.box]*864e5-36e5}
   else{o.lapses=(o.lapses||0)+1;o.box=1;o.due=now()+10*6e4}
   o.reps=(o.reps||0)+1;save();
 }
-function cardsOf(kind){return Object.keys(S.cards).map(function(k){return S.cards[k]}).filter(function(c){return c.kind===kind})}
+function cardsOf(kind){return Object.keys(S.cards).map(function(k){return S.cards[k]}).filter(function(c){return c.kind===kind&&visOf(c)!=='deep'})}
 function prio(c){return (c.rep?1e6:0)+(c.kind==='punish'?(c.mat>=1?2e5:0)+(c.missed?1e5:0):(c.trap?2e5:0)+(c.sev==='blunder'?1e5:0))+(c.count||1)*5e4+(c.date||0)/1e5}
 function dueList(kind,onlyRep){return cardsOf(kind).filter(function(c){return (c.due||0)<=now()&&(!onlyRep||c.rep)}).sort(function(a,b){
   var sa=(a.reps||0)>0,sb=(b.reps||0)>0;if(sa!==sb)return sa?-1:1;return prio(b)-prio(a)})}
@@ -369,7 +449,7 @@ function hintsUI(){var c=$('optHints');if(!c)return;c.checked=HINTS;c.onchange=f
 /* coach: last-game review, weekly rhythm, weakest area */
 function lastGameCards(){
   var gs=Object.keys(S.games).map(function(k){return S.games[k]}).sort(function(a,b){return (b.date||0)-(a.date||0)}).slice(0,8),by={};
-  Object.keys(S.cards).forEach(function(k){var c=S.cards[k];(c.games||[]).forEach(function(g){(by[g]=by[g]||[]).push(c)})});
+  Object.keys(S.cards).forEach(function(k){var c=S.cards[k];if(visOf(c)==='deep')return;(c.games||[]).forEach(function(g){(by[g]=by[g]||[]).push(c)})});
   for(var i=0;i<gs.length;i++){var cs=by[gs[i].id];if(cs&&cs.length)return {g:gs[i],cards:cs.sort(function(a,b){return (a.kind==='mine'?0:1)-(b.kind==='mine'?0:1)||a.line.length-b.line.length})}}
   return null;
 }
@@ -463,8 +543,7 @@ function loadCard(c){
   var ref=c.kind==='mine'?c.s0:c.s1;cur.fen=fen;cur.ref=ref;
   setBar(toW(ref,c.side));
   var head=kindPill(c.kind==='mine'?(c.trap?'trap':'mine'):'punish',sideTxt(c.side));
-  var p=c.kind==='mine'?t('pMine',esc(c.played),evalTxt(c.s0),evalTxt(c.s1))
-    :t('pPun',esc(c.oppMove),evalTxt(c.s0),evalTxt(c.s1));
+  var p=c.kind==='mine'?t(visOf(c)==='win'?'pMineWin':'pMineLose',esc(c.played)):t('pPun2',esc(c.oppMove));
   $('prompt').innerHTML='<div class="op">'+head+'</div>'+p;
   cur.anPath=function(){return {start:INIT,moves:c.line.concat(cur.okMove?[cur.okMove]:[]),i:c.line.length+(cur.okMove?1:0),base:c.line.length,keepArrows:true}};
   anSet(INIT,c.line,c.line.length);B.onMove=onCardMove;
@@ -494,19 +573,20 @@ function cardResult(ok,san,sAfter,pvAfter){
   if(ok&&san!=='—')cur.okMove=san;
   var ba=arrowFor(fen0,best,'#0E9488');B.arrows=ba&&(!ok||san!==best)?[ba]:[];
   /* why */
-  var w=[],ply=c.line.length;
+  var w=[],ply=c.line.length,bestPv=c.pvBest&&c.pvBest.length?c.pvBest:[best];
   if(c.kind==='mine'){
-    w.push(t('swing',evalTxt(c.s0),evalTxt(c.s1),'−'+Math.round(wp(c.s0)-wp(c.s1))));
-    if(c.pvBad)explainBad(fen0,c.played,c.pvBad,c.s1,col,ply).forEach(function(x){w.push(x)});
-    if(!ok&&san!==c.played&&pvAfter&&sAfter!=null)explainBad(fen0,san,pvAfter,sAfter,col,ply).forEach(function(x){w.push('<i>'+esc(san)+':</i> '+x)});
-    explainBest(fen0,best,c.pvBest,c.s0,col,c.threat,c.s0).forEach(function(x){w.push(x)});
-    w.push('<b>'+t('stBest',esc(best))+'</b>'+story(fen0,c.pvBest&&c.pvBest.length?c.pvBest:[best],col,5));
-    if(c.pvBad)w.push('<b>'+t('stIf',esc(c.played))+'</b>'+story(fen0,[c.played].concat(c.pvBad),col,5));
+    var tb=visOf(c)==='win'?teachWin(fen0,bestPv,col):teachBad(fen0,c.played,c.pvBad,col);
+    var box=visOf(c)==='win'?teachBox(tb,t('tMissed',sanH(c.played))):teachBox(tb);if(!box&&visOf(c)!=='win')box=teachBox(teachWin(fen0,bestPv,col),t('tMissed',sanH(c.played)));
+    w.push(box||t('tNoIdea'));
+    if(!ok&&san!=='—'&&san!==c.played&&pvAfter){var t2=teachBad(fen0,san,pvAfter,col);if(t2)w.push('<b>'+t('tYours',sanH(san))+'</b>'+teachBox(t2))}
+    var th=c.threat&&c.threat.pv&&c.threat.pv.length?explainBest(fen0,best,null,c.s0,col,c.threat,c.s0)[0]:null;if(th&&/threat|amenaza/i.test(th))w.push(th);
+    if(c.pvBad&&visOf(c)!=='win')w.push('<b>'+t('stIf',esc(c.played))+'</b>'+story(fen0,[c.played].concat(c.pvBad),col,4));
+    w.push('<b>'+t('stBest',esc(best))+'</b>'+story(fen0,bestPv,col,5));
   }else{
-    if(!ok&&pvAfter&&sAfter!=null)explainBad(fen0,san,pvAfter,sAfter,col,ply).forEach(function(x){w.push('<i>'+esc(san)+':</i> '+x)});
-    explainBest(fen0,best,c.pvBest,c.s1,col,null,c.s1).forEach(function(x){w.push(x)});
+    w.push(teachBox(teachWin(fen0,bestPv,col),t('tPunLead',sanH(c.oppMove)))||t('tNoIdea'));
+    if(!ok&&san!=='—'&&pvAfter){var t3=teachBad(fen0,san,pvAfter,col);if(t3)w.push('<b>'+t('tYours',sanH(san))+'</b>'+teachBox(t3))}
     if(c.oppBest&&c.oppBest!==c.oppMove)w.push(t('oppShould','<span class="mono">'+esc(c.oppBest)+'</span>'));
-    w.push('<b>'+t('stBest',esc(best))+'</b>'+story(fen0,c.pvBest&&c.pvBest.length?c.pvBest:[best],col,5));
+    w.push('<b>'+t('stBest',esc(best))+'</b>'+story(fen0,bestPv,col,5));
   }
   showWhy(w);
   cur.badLine=c.kind==='mine'&&c.pvBad?[c.played].concat(c.pvBad.slice(0,6)):(!ok&&pvAfter?[san].concat(pvAfter.slice(0,6)):null);
@@ -1360,11 +1440,11 @@ function analyseGame(info,sans,ms){
     ev(p).then(function(){return ev(p+1)}).then(function(){
       var s0=R[p].s,s1=-R[p+1].s,drop=wp(s0)-wp(s1),best=R[p].pv[0],rep=isRep(info.side,sans);
       if(p%2===us){
-        if(isMistake(s0,s1)&&best&&best!==sans[p]){errs++;var k=posKey(fens[p])+'|'+sans[p];
+        if(isMistake(s0,s1)&&best&&best!==sans[p]){var k=posKey(fens[p])+'|'+sans[p];
           if(S.cards[k]){var e=S.cards[k];if((e.games||[]).indexOf(info.id)<0){e.games=(e.games||[]).concat(info.id);e.count=(e.count||1)+1}}
           else{S.cards[k]={id:k,kind:'mine',src:'app',side:info.side,opening:info.opening,line:sans.slice(0,p),played:sans[p],best:best,s0:s0,s1:s1,drop:Math.round(drop),
             sev:(s1<=-300||drop>=25)?'blunder':'mistake',trap:s0>=-200&&s1<=-300,pvBest:R[p].pv,pvBad:R[p+1].pv,threat:null,games:[info.id],count:1,date:info.date,rep:rep,
-            mat:outcome(fens[p+1],R[p+1].pv,info.side,6).delta,box:0,due:0};found++}}
+            mat:outcome(fens[p+1],R[p+1].pv,info.side,6).delta,box:0,due:0};found++}if(visOf(S.cards[k])!=='deep')errs++}
       }else if(p+1<=n&&R[p+1].pv.length&&isPunish(-s0,R[p+1].s)){
         var kp='P|'+posKey(fens[p+1]);
         if(!S.cards[kp]){S.cards[kp]={id:kp,kind:'punish',src:'app',side:info.side,opening:info.opening,line:sans.slice(0,p+1),oppMove:sans[p],oppBest:best,best:R[p+1].pv[0],
@@ -1410,7 +1490,7 @@ $('bPgn').onclick=function(){
 $('bBackup').onclick=function(){var tx=JSON.stringify(S);$('iBackup').value=tx;
   try{navigator.clipboard.writeText(tx).then(function(){$('bkStatus').textContent=t('bkCopied')},function(){$('iBackup').select();$('bkStatus').textContent=t('bkSelect')})}catch(e){$('iBackup').select()}};
 $('bRestore').onclick=function(){try{var o=JSON.parse($('iBackup').value);if(!o.cards||!o.games)throw 0;S=o;upgrade();save();$('bkStatus').textContent=t('bkRestored')}catch(e){$('bkStatus').textContent=t('bkBad')}};
-$('bBase').onclick=function(){fetch('datos.json?v=5',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(D){DATA.stats=D.stats||{};mergeBase(D);save();$('bkStatus').textContent=t('bkLoaded')}).catch(function(){$('bkStatus').textContent=t('bkNone')})};
+$('bBase').onclick=function(){fetch('datos.json?v=6',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(D){DATA.stats=D.stats||{};mergeBase(D);save();$('bkStatus').textContent=t('bkLoaded')}).catch(function(){$('bkStatus').textContent=t('bkNone')})};
 var armed=false;
 $('bReset').onclick=function(){if(!armed){armed=true;$('bReset').textContent=t('bkResetSure');setTimeout(function(){armed=false;$('bReset').textContent=t('bkReset')},4000);return}
   S=blank();save();armed=false;$('bReset').textContent=t('bkReset');$('bkStatus').textContent=t('bkWiped')};
