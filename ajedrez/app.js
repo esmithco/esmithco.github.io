@@ -118,7 +118,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=23;
+var APP_VER=24;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -966,11 +966,18 @@ function flashAnswers(c,kind,ans){
   });return out;
 }
 function flashExplain(c,kind,good,sq,ok){
-  var ms=c.moves({verbose:true}),lst=good.map(function(g){var m=ms.filter(function(x){return x.to===g&&(kind!=='mate'||(function(){c.move(x.san);var y=c.in_checkmate();c.undo();return y})())})[0];
-    return m?(kind==='mate'?'<b class="mono">'+esc(m.san)+'</b>':pcName(m.captured)+' '+g+' (<span class="mono">'+esc(m.san)+'</span>)'):g}).join(', ');
-  var h=kind==='mate'?t('flashMates',lst):t('flashFree',lst);
-  if(!ok){var p=c.get(sq);h+=' · '+(!p?t('flashEmpty',sq):p.color===c.turn()?t('flashOwn',sq):t('flashDefended',pcName(p.type),sq))}
-  return h;
+  var ms=c.moves({verbose:true}),E=good.map(function(g){var m=ms.filter(function(x){return x.to===g&&(kind!=='mate'||(function(){c.move(x.san);var y=c.in_checkmate();c.undo();return y})())})[0];
+    return {sq:g,m:m,v:m&&m.captured?VAL[m.captured]:0}}).filter(function(e){return e.m});
+  var fmt=function(e){return kind==='mate'?'<b class="mono">'+esc(e.m.san)+'</b>':pcA(e.m.captured)+' '+e.sq+' (<span class="mono">'+esc(e.m.san)+'</span>)'};
+  if(ok){ /* he saw one: that is the point. Others are a tip, not a mistake. */
+    var mine=E.filter(function(e){return e.sq===sq})[0],rest=E.filter(function(e){return e.sq!==sq});
+    var h=kind==='mate'?t('flashOkMate',mine?fmt(mine):sq):t('flashOkFree',mine?fmt(mine):sq);
+    if(rest.length){var big=kind!=='mate'&&mine&&rest.some(function(e){return e.v>mine.v});
+      h+=' '+(big?t('flashTipBig',rest.filter(function(e){return e.v>mine.v}).map(fmt).join(', ')):t('flashAlso',rest.map(fmt).join(', ')))}
+    return h}
+  var h2=kind==='mate'?t('flashMates',E.map(fmt).join(', ')):t('flashFree',E.map(fmt).join(', '));
+  var p=c.get(sq);h2+=' · '+(!p?t('flashEmpty',sq):p.color===c.turn()?t('flashOwn',sq):t('flashDefended',pcName(p.type),sq));
+  return h2;
 }
 var TBAR=0;function stopBar(){TBAR++}
 function timerBar(ms,cb){var el=$('tmr');if(!el){later(cb,ms);return}var t0=now(),ck=$('clk'),my=++TBAR;
@@ -1052,7 +1059,7 @@ function defNext(){
 }
 /* shared pause after an answer: pieces stay, analysis bar on, threat/answer arrows, "Next ▶" */
 function pauseReview(fen,moves,ok,html,arrows,next,why){
-  cur.answered=true;if(why){$('why').innerHTML='';showWhy([why])}else{$('why').hidden=true}anSet(fen,moves,moves.length,0);B.onMove=anMove;
+  cur.answered=true;if(why){$('why').innerHTML='';showWhy([why])}else{$('why').hidden=true}anSet(fen,moves,Math.min(1,moves.length),0);B.onMove=anMove;
   if(arrows&&arrows.length){B.arrows=arrows;drawBoard()}
   $('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=html+' <span class="small">'+t('flashReview')+'</span>';
   var ch=$('choices');ch.hidden=false;ch.classList.remove('grid');ch.innerHTML='<button class="btn primary" id="bPauseNext">'+t('flashNextR')+'</button>';
