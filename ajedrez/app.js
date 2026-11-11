@@ -118,7 +118,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=29;
+var APP_VER=30;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -447,7 +447,7 @@ function renderHome(){
   $('bToday').textContent=d.done?t('todaySecond'):d.idx>0?t('todayCont',d.idx,n):t('todayStart');
   syncStreak();$('hStreak').textContent=S.streak.n>0?'🔥 '+t(S.streak.n===1?'streak1':'streak',S.streak.n):'';
   var cm=counts('mine'),cp=counts('punish');
-  $('tMineN').textContent=fmtCount(cm);$('tPunN').textContent=fmtCount(cp);
+  $('tMineN').innerHTML=fmtCount(cm);$('tPunN').innerHTML=fmtCount(cp);
   renderCoach();
   if(!running&&!$('syncStatus').textContent)$('syncStatus').textContent=S.lastSync?t('lastSync',new Date(S.lastSync).toLocaleDateString(LANG)):t('syncHint');
 }
@@ -470,17 +470,22 @@ function coachStats(){
   return {days:Object.keys(days).length,weak:weak&&weak.p<75?weak:null,fast:fast};
 }
 function renderCoach(){
-  var el=$('coach');if(!el)return;var cs=coachStats(),lg=lastGameCards(),h='<h3>'+t('coachT')+'</h3>';
-  h+='<p>'+t('coachDays',cs.days)+' '+(cs.days>=5?t('coachDaysOk'):t('coachDaysGo'))+'</p>';
-  if(cs.weak)h+='<p>'+t('coachWeak',t(cs.weak.k),cs.weak.p)+' <button class="btn small-btn" id="bCoachWeak" type="button">'+t('coachPractice')+'</button></p>';
-  if(cs.fast)h+='<p>'+t('coachFast',cs.fast.bad,cs.fast.ok)+'</p>';
+  var el=$('coach');if(!el)return;var cs=coachStats(),lg=lastGameCards(),trained={};
+  (S.log||[]).forEach(function(e){trained[dkey(new Date(e[0]))]=1});
+  var L=LANG==='es'?'DLMXJVS':'SMTWTFS',dots='',n=0;
+  for(var k=6;k>=0;k--){var d=new Date();d.setDate(d.getDate()-k);var on=trained[dkey(d)];if(on)n++;
+    dots+='<span class="wd'+(on?' on':'')+(k===0?' today':'')+'"><i></i>'+L[d.getDay()]+'</span>'}
+  var h='<div class="chead"><b>'+t('coachT')+'</b><span class="small">'+t('coachWeek',n)+'</span></div><div class="week">'+dots+'</div>';
   if(lg){var g=lg.g,opp=g.side==='w'?g.black:g.white,res=t(g.r==='W'?'resW':g.r==='L'?'resL':'resD');
-    h+='<p>'+t('coachLast',opp,res,lg.cards.length)+' <button class="btn small-btn" id="bCoachLast" type="button">'+t('coachReview')+'</button></p>'}
+    h+='<button class="crow" id="bCoachLast" type="button"><span class="ci">♟</span><span class="ct"><b>'+t('coachLastT')+'</b><small>'+t('coachLastS',esc(opp),res,lg.cards.length)+'</small></span><span class="go">›</span></button>'}
+  if(cs.weak)h+='<button class="crow" id="bCoachWeak" type="button"><span class="ci">🎯</span><span class="ct"><b>'+t('coachWeakT',t(cs.weak.k))+'</b><small>'+t('coachWeakS',cs.weak.p)+'</small></span><span class="go">›</span></button>';
+  if(cs.fast)h+='<div class="ctip">⏱ '+t('coachFastS',cs.fast.bad,cs.fast.ok)+'</div>';
   el.innerHTML=h;
   if($('bCoachWeak'))$('bCoachWeak').onclick=function(){var g=cs.weak.go;if(LISTS[g])quickSession(g);else go(g)};
   if($('bCoachLast'))$('bCoachLast').onclick=function(){startSession(lg.cards.slice(0,10).map(function(c){return {t:'card',id:c.id}}),'mine');X.back='home'};
 }
-function fmtCount(c){return LANG==='es'?(c.due?c.due+' para repasar · ':'')+c.nw+' nuevas':(c.due?c.due+' to review · ':'')+c.nw+' new'}
+function fmtCount(c){var es=LANG==='es';
+  return c.due?'<strong>'+c.due+'</strong>'+(es?'para repasar':'to review')+'<small>'+c.nw+(es?' nuevas':' new')+'</small>':'<strong>'+c.nw+'</strong>'+(es?'nuevas':'new')}
 $('bToday').onclick=function(){
   var d=dailyNow();if(d.done){buildToday((d.n||1)+1);d=S.daily}
   startSession(d.items,'today',d.idx);
