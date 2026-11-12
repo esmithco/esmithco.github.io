@@ -44,8 +44,6 @@ h1 { max-width: 820px; margin: 0; font-family: Georgia, serif; font-size: clamp(
 .aws .icon, .aws .card-label, .aws .card-link { color: var(--amber); }
 .chess { border-top-color: var(--violet); }
 .chess .icon, .chess .card-label, .chess .card-link { color: var(--violet); }
-.mind { border-top-color: var(--green); grid-column: 1 / -1; min-height: 220px; }
-.mind .icon, .mind .card-label, .mind .card-link { color: var(--green); }
 
 .icon { position: absolute; top: 22px; right: 24px; font-size: 1.35rem; font-weight: 700; }
 .card-label { margin: 0 0 36px; }
