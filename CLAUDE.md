@@ -11,7 +11,7 @@ Independent sections, each self-contained:
 - **`fitness/index.html`** — the gym-routine app. A **single file** with all CSS and JS inline; state persists in `localStorage`.
 - **`books/`** — a reading-notes library with a dynamic reader.
 - **`aws/index.html`** — a standalone reference page (the AWS backend learning plan), in the grid-paper note style.
-- **`mente/`** — *Gimnasio Mental* ("Mind gym" on the home page, green `#0F7B5F`): a 10-minute daily trainer of broad general knowledge. See "Mind gym" below.
+- **Mind gym** (*Gimnasio Mental*, green `#0F7B5F` card): lives ONLY as a private Claude artifact now (he chose it over the website version, Nov 12); the home card links to it. Its source is `mente/artifact/gimnasio-mental.html` (self-contained). See "Mind gym" below.
 - **`ajedrez/`** — chess trainer (ES/EN): daily practice, repertoire, own mistakes, punish mistakes, key ideas. See "Chess trainer architecture" below.
 
 **Shared visual system (keep it cohesive):** cool, light palette — ink `#172033`/`#1e2631`, light surfaces. Three accent hues used consistently: **blue `#2563EB`/`#2F5FE0`** (fitness), **teal `#0E9488`/`#0e8f82`** (books), **amber/orange `#E8730C`** (aws). The **home page** (`index.html`) background is soft rounded color **blobs** (radial-gradients in blue/teal/amber) on `#F5F7FB` — *not* a grid; four white cards (2×2 grid) with colored top accent bars; the chess card uses **violet `#7C3AED`**, the Mind gym card **green `#0F7B5F`** (full-width fifth card). Headings are Georgia serif; small labels/links use a monospace stack. Favicons are inline-SVG rounded squares (home = navy "B", books = teal book, fitness = blue dumbbell, aws = amber cloud). Fitness keeps **functional day colors** (`--blue/red/yellow/green` = Mon/Tue/Thu/Fri; brand `--accent` = blue). Book **note pages** and the **aws page** keep the grid-paper study style; the home page deliberately does not.
@@ -110,7 +110,9 @@ Ideas not done yet: more key ideas drawn from his own middlegame blunders.
 - **Cache-busting via query strings.** iOS caches HTML/CSS/JS aggressively. Shared assets are versioned (`site.css?v=2`, `reader.js?v=3`); when you change `books/site.css` or `books/reader.js`, **bump the `?v=` number** in every referencing page.
 - **`apple-touch-icon` / favicons are inline SVG data-URIs** in each page's `<head>` (green "B" = home, purple book = book notes, blue dumbbell = fitness, violet knight = chess). Keep the rounded-square style consistent if adding sections.
 
-## Mind gym (`mente/`)
+## Mind gym (now only in Claude)
+
+> The website version (`mente/index.html`, `app.js`, `contenido.js`) was removed on Nov 12 at his request; everything below describes the code that now lives inlined in `mente/artifact/gimnasio-mental.html` (git history has the separate files). Edit that file and publish it to the artifact URL.
 
 Started as a claude.ai artifact (handoff: `~/Downloads/HANDOFF-claude-chat.md`), moved here Nov 11 2026. Files: `index.html` (markup + CSS), `contenido.js` (`window.GM`: `AREAS`, concepts `C` = `[id, area, nameES, nameEN, defES, defEN, exES, exEN]`, cases `K` = `[id, conceptId, qES, qEN, whyES, whyEN]`, `TOPICS`, static `LESSONS[id].es/en = {t,l,talk,p,f:[[q,a]x3]}`), `app.js` (logic). Bump `?v=` when changing them.
 - **Content is broad general knowledge on purpose** (he asked: physics, relativity, biology, geology, history… not his job — no ETL/data-science examples). 82 concepts in 9 areas (math, probability, economics, psychology, logic, systems + physics & universe `f`, life & body `b`, planet Earth `g`), 66 cases, 30 lessons. New concepts rotate through areas, science first (`ORDER`).
