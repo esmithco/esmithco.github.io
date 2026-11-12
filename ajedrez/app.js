@@ -67,7 +67,7 @@ function boot(){connectFromLink();
   var raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
   if(raw){try{S=JSON.parse(raw)}catch(e){S=blank()}}
   upgrade();applyRule();
-  fetch('datos.json?v=6',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
+  fetch('datos.json?v=7',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
     DATA.stats=D.stats||{};
     if(!S.base||S.base<(D.base||0)){mergeBase(D);save()}
   }).catch(function(){}).then(function(){route();clStatus();cloudPull();
@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=41;
+var APP_VER=42;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -472,7 +472,7 @@ function hintsUI(){var c=$('optHints');if(!c)return;c.checked=HINTS;c.onchange=f
 /* coach: last-game review, weekly rhythm, weakest area */
 function lastGameCards(){
   var gs=Object.keys(S.games).map(function(k){return S.games[k]}).sort(function(a,b){return (b.date||0)-(a.date||0)}).slice(0,8),by={};
-  Object.keys(S.cards).forEach(function(k){var c=S.cards[k];if(visOf(c)==='deep')return;(c.games||[]).forEach(function(g){(by[g]=by[g]||[]).push(c)})});
+  Object.keys(S.cards).forEach(function(k){var c=S.cards[k];if(visOf(c)==='deep'||((c.reps||0)>0&&(c.due||0)>now()))return;(c.games||[]).forEach(function(g){(by[g]=by[g]||[]).push(c)})});
   for(var i=0;i<gs.length;i++){var cs=by[gs[i].id];if(cs&&cs.length)return {g:gs[i],cards:cs.sort(function(a,b){return (a.kind==='mine'?0:1)-(b.kind==='mine'?0:1)||a.line.length-b.line.length})}}
   return null;
 }
@@ -499,10 +499,13 @@ function renderCoach(){
   if(g0&&(!lg||lg.g.id!==g0.id)){var o0=g0.side==='w'?g0.black:g0.white,r0=t(g0.r==='W'?'resW':g0.r==='L'?'resL':'resD');
     if(S.pend&&S.pend[g0.id])h+='<div class="crow"><span class="ci">⏳</span><span class="ct"><b>'+t('coachPendT')+'</b><small>'+t('coachLastS0',esc(o0),r0)+'</small></span></div>';
     else if(g0.r==='L')h+='<a class="crow" href="'+esc(g0.id)+'" target="_blank" rel="noopener"><span class="ci">♟</span><span class="ct"><b>'+t('coachNoErrT')+'</b><small>'+t('coachLastS0',esc(o0),r0)+' · '+t('coachNoErrS')+'</small></span><span class="go">›</span></a>'}
+  var rpt=cardsOf('mine').filter(function(c){return (c.count||1)>=2&&(c.due||0)<=now()}).sort(function(a,b){return (b.again||b.date||0)-(a.again||a.date||0)});
+  if(rpt.length)h+='<button class="crow" id="bCoachRep" type="button"><span class="ci">🔁</span><span class="ct"><b>'+t('coachRepT',rpt.length)+'</b><small>'+t('coachRepS')+'</small></span><span class="go">›</span></button>';
   if(cs.weak)h+='<button class="crow" id="bCoachWeak" type="button"><span class="ci">🎯</span><span class="ct"><b>'+t('coachWeakT',t(cs.weak.k))+'</b><small>'+t('coachWeakS',cs.weak.ok,cs.weak.n)+'</small></span><span class="go">›</span></button>';
   if(cs.fast)h+='<div class="ctip">⏱ '+t('coachFastS',cs.fast.bad,cs.fast.ok)+'</div>';
   el.innerHTML=h;
   if($('bCoachWeak'))$('bCoachWeak').onclick=function(){var g=cs.weak.go;if(LISTS[g])quickSession(g);else go(g)};
+  if($('bCoachRep'))$('bCoachRep').onclick=function(){startSession(rpt.slice(0,10).map(function(c){return {t:'card',id:c.id}}),'mine');X.back='home'};
   if($('bCoachLast'))$('bCoachLast').onclick=function(){startSession(lg.cards.slice(0,10).map(function(c){return {t:'card',id:c.id}}),'mine');X.back='home'};
 }
 function fmtCount(c){var es=LANG==='es';
@@ -588,12 +591,13 @@ function onCardMove(mv){
   var c=cur.card;if(cur.answered)return;B.locked=true;
   var col=c.side,fen0=cur.fen;
   if(mv.san===c.best){B.marks[mv.to]='ok';drawBoard();cardResult(true,mv.san,c.kind==='mine'?c.s0:c.s1,c.pvBest?c.pvBest.slice(1):null);return}
+  if((c.alts||[]).indexOf(mv.san)>=0){B.marks[mv.to]='ok';drawBoard();cardResult(true,mv.san,cur.ref,null);return}
   if(c.kind==='mine'&&mv.san===c.played&&c.pvBad){B.marks[mv.to]='bad';drawBoard();cardResult(false,mv.san,c.s1,c.pvBad);return}
   $('fb').className='feedback';$('fb').textContent=t('checking',mv.san);
-  analyse(B.chess.fen(),900).then(function(r){
+  analyse(B.chess.fen(),1800).then(function(r){
     if(!r){B.marks[mv.to]='bad';drawBoard();cardResult(false,mv.san,null,null);return}
     var s=-r.s,drop=wp(cur.ref)-wp(s);
-    B.marks[mv.to]=drop<5?'ok':'bad';drawBoard();cardResult(drop<5,mv.san,s,r.pv);
+    B.marks[mv.to]=drop<8?'ok':'bad';drawBoard();cardResult(drop<8,mv.san,s,r.pv);
   });
 }
 function cardResult(ok,san,sAfter,pvAfter){
@@ -671,6 +675,7 @@ function anEval(){
   get(fen).then(function(e){
     if(tok!==AN.tok||!e)return;setBar(e.w);
     var h='';
+    if(AN.i===AN.base&&cur&&cur.answered){$('anEval').innerHTML='';return}
     if(e.pv&&e.pv.length){var a=arrowFor(fen,e.pv[0],'#2563EB');B.arrows=a?[a]:[];drawBoard();h+=t('engineBest',pvText(fen,e.pv,4))}
     if(!prevFen||AN.i<=AN.base||AN.i<=(AN.known||0)){$('anEval').innerHTML=h;return}
     get(prevFen).then(function(p){if(tok!==AN.tok||!p)return;var mover=side==='w'?'b':'w',d=mover==='w'?wp(p.w)-wp(e.w):wp(-p.w)-wp(-e.w);
@@ -1515,7 +1520,7 @@ function analyseGame(info,sans,ms){
       var s0=R[p].s,s1=-R[p+1].s,drop=wp(s0)-wp(s1),best=R[p].pv[0],rep=isRep(info.side,sans);
       if(p%2===us){
         if(isMistake(s0,s1)&&best&&best!==sans[p]){var k=posKey(fens[p])+'|'+sans[p];
-          if(S.cards[k]){var e=S.cards[k];if((e.games||[]).indexOf(info.id)<0){e.games=(e.games||[]).concat(info.id);e.count=(e.count||1)+1}}
+          if(S.cards[k]){var e=S.cards[k];if((e.games||[]).indexOf(info.id)<0){e.games=(e.games||[]).concat(info.id);e.count=(e.count||1)+1;e.due=0;e.box=Math.max(0,(e.box||0)-2);e.again=info.date}}
           else{S.cards[k]={id:k,kind:'mine',src:'app',side:info.side,opening:info.opening,line:sans.slice(0,p),played:sans[p],best:best,s0:s0,s1:s1,drop:Math.round(drop),
             sev:(s1<=-300||drop>=25)?'blunder':'mistake',trap:s0>=-200&&s1<=-300,pvBest:R[p].pv,pvBad:R[p+1].pv,threat:null,games:[info.id],count:1,date:info.date,rep:rep,
             mat:outcome(fens[p+1],R[p+1].pv,info.side,6).delta,box:0,due:0};found++}if(visOf(S.cards[k])!=='deep')errs++}
@@ -1564,7 +1569,7 @@ $('bPgn').onclick=function(){
 $('bBackup').onclick=function(){var tx=JSON.stringify(S);$('iBackup').value=tx;
   try{navigator.clipboard.writeText(tx).then(function(){$('bkStatus').textContent=t('bkCopied')},function(){$('iBackup').select();$('bkStatus').textContent=t('bkSelect')})}catch(e){$('iBackup').select()}};
 $('bRestore').onclick=function(){try{var o=JSON.parse($('iBackup').value);if(!o.cards||!o.games)throw 0;S=o;upgrade();save();$('bkStatus').textContent=t('bkRestored')}catch(e){$('bkStatus').textContent=t('bkBad')}};
-$('bBase').onclick=function(){fetch('datos.json?v=6',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(D){DATA.stats=D.stats||{};mergeBase(D);save();$('bkStatus').textContent=t('bkLoaded')}).catch(function(){$('bkStatus').textContent=t('bkNone')})};
+$('bBase').onclick=function(){fetch('datos.json?v=7',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(D){DATA.stats=D.stats||{};mergeBase(D);save();$('bkStatus').textContent=t('bkLoaded')}).catch(function(){$('bkStatus').textContent=t('bkNone')})};
 var armed=false;
 $('bReset').onclick=function(){if(!armed){armed=true;$('bReset').textContent=t('bkResetSure');setTimeout(function(){armed=false;$('bReset').textContent=t('bkReset')},4000);return}
   S=blank();save();armed=false;$('bReset').textContent=t('bkReset');$('bkStatus').textContent=t('bkWiped')};
