@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=42;
+var APP_VER=44;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -456,7 +456,48 @@ $('bClose').onclick=function(){if(location.hash==='#data'){go('progress');return
 document.querySelectorAll('#tabbar button').forEach(function(b){b.onclick=function(){go(b.getAttribute('data-tab'))}});
 function rerender(){route()}
 
+/* ---------- critical fixes: the few kinds of mistakes that cost him the most games lately ---------- */
+/* each own-mistake card gets the idea behind it (same teacher logic as the explanations), grouped into themes */
+var THEMES={hang:{k:['hanging','leftdef','material','badtrade'],ls:['hanging','defender']},forkd:{k:['fork'],ls:['fork']},lines:{k:['pin','skewer','discovered'],ls:['pin','skewer','discovered']},
+  matek:{k:['mate','backrank','king'],ls:['backrank','mate1']},missfree:{k:['w:free'],ls:['hanging']},misstac:{k:['w:fork','w:pin','w:skewer','w:discovered','w:material'],ls:['fork','pin']},missmate:{k:['w:mate','w:backrank'],ls:['mate1','mate2']}};
+function cardTheme(c){
+  if(c.th!==undefined)return c.th;var th=null;
+  try{var b=new Chess();(c.line||[]).forEach(function(m){b.move(m,{sloppy:true})});var f=b.fen(),o=null;
+    if(visOf(c)==='win'){o=teachWin(f,c.pvBest&&c.pvBest.length?c.pvBest:[c.best],c.side);if(o)o='w:'+o.k}
+    else{o=teachBad(f,c.played,c.pvBad,c.side);if(o)o=o.k}
+    Object.keys(THEMES).forEach(function(k){if(o&&THEMES[k].k.indexOf(o)>=0)th=k})}catch(e){}
+  return c.th=th;
+}
+function gameDate(id){var g=S.games[id];return g&&g.date||0}
+function criticalThemes(){
+  var t90=now()/1000-90*86400,t14=now()/1000-14*86400,by={};
+  cardsOf('mine').forEach(function(c){var th=cardTheme(c);if(!th)return;var o=by[th]||(by[th]={id:th,cards:[],recent:0,total:0,fresh:0});
+    o.cards.push(c);var rc=false;(c.games||[]).forEach(function(g){var d=gameDate(g)||c.date||0;o.total++;if(d>=t90){o.recent++;rc=true}if(d>=t14)o.fresh++});if(rc)(o.rcards=o.rcards||[]).push(c)});
+  S.crit=S.crit||{};
+  var L=Object.keys(by).map(function(k){var o=by[k];o.score=o.recent*3+o.total;o.pool=o.rcards&&o.rcards.length?o.rcards:o.cards;o.fixedN=o.pool.filter(function(c){return (c.box||0)>=2}).length;
+    o.lastNew=Math.max.apply(null,o.cards.map(function(c){return c.again||0}).concat([0]));
+    /* "fixed" = he solves them (box ≥ 2) AND the mistake hasn't come back in a new game since it was marked fixed */
+    var st=S.crit[k]||(S.crit[k]={}),solved=o.fixedN>=Math.max(3,Math.ceil(o.pool.length*.7));
+    if(solved&&!st.at)st.at=now()/1000;if(st.at&&o.lastNew>st.at){st.at=0}
+    o.fixed=solved&&!!st.at;return o});
+  return L.filter(function(o){return o.recent>0||o.total>=3}).sort(function(a,b){return (a.fixed?1:0)-(b.fixed?1:0)||b.score-a.score}).slice(0,3);
+}
+function critSession(o){
+  var cs=o.pool.filter(function(c){return (c.box||0)<2}).sort(function(a,b){return ((a.due||0)<=now()?0:1)-((b.due||0)<=now()?0:1)||(b.date||0)-(a.date||0)}).slice(0,6);
+  if(cs.length<6)cs=cs.concat(o.cards.filter(function(c){return cs.indexOf(c)<0}).slice(0,6-cs.length));
+  var it=cs.map(function(c){return {t:'card',id:c.id}}),ls=THEMES[o.id].ls;
+  ls.forEach(function(lid){var l=lessonById(lid);if(!l)return;var p=lessonItems(l,1).filter(function(x){return x.t==='puz'})[0];if(p&&it.length<9)it.push(p)});
+  S.crit=S.crit||{};S.crit[o.id]=Object.assign(S.crit[o.id]||{},{lastRun:now()});save();
+  startSession(it,'mine');X.back='home';
+}
+function renderCrit(){
+  var el=$('crit');if(!el)return;var L=criticalThemes();if(!L.length){el.innerHTML='';el.hidden=true;return}el.hidden=false;
+  el.innerHTML='<div class="chead"><b>🚨 '+t('critT')+'</b><span class="small">'+t('critSub')+'</span></div>'+L.map(function(o,i){var n=o.pool.length,f=o.fixedN,pct=Math.round(f/Math.max(1,n)*100);
+    return '<button class="crow critrow" data-ci="'+i+'" type="button"><span class="ci">'+(o.fixed?'✅':['1','2','3'][i])+'</span><span class="ct"><b>'+esc(t('th_'+o.id))+'</b><small>'+(o.fixed?t('critFixed'):t('critStat',o.recent,f,n))+'</small><span class="bar2"><span style="width:'+pct+'%"></span></span></span><span class="go">›</span></button>'}).join('');
+  el.querySelectorAll('[data-ci]').forEach(function(b){b.onclick=function(){critSession(L[+b.getAttribute('data-ci')])}});
+}
 function renderHome(){
+  try{renderCrit()}catch(e){}
   var d=dailyNow(),n=d.items.length;
   var sn=d.n||1;$('hToday').textContent=sn>1?t('todayExtra'):t('today');
   $('hTodaySub').textContent=d.done?t(sn>1?'todayDone2':'todayDone'):(sn>1?t('todayExtraSub')+' ':'')+t('todaySub',n,Math.max(3,Math.round(estSec(d.items.slice(d.idx||0))/60)));

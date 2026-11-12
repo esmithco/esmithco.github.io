@@ -51,6 +51,7 @@ h3{margin:0;font-size:1rem}
 .hero .btn{background:#fff;color:var(--accent);border-color:#fff;font-size:1rem;padding:12px 18px;align-self:flex-start}
 .hero .streak{font-size:.88rem;opacity:.95;min-height:1.2em}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.crit{background:linear-gradient(165deg,#FFECEC 0%,#fff 62%)!important;border-color:#F5C2C2!important}.crit .ci{background:#FFE1E1!important;font-weight:800;color:#C0392B}.crit .bar2{display:block;height:4px;background:#F3DADA;border-radius:2px;margin-top:5px;overflow:hidden}.crit .bar2 span{display:block;height:100%;background:#16A34A}
 .coach{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:12px 0}
 .chead{display:flex;justify-content:space-between;align-items:baseline}.chead b{font-family:var(--f-display);font-size:1.05rem}
 .week{display:flex;justify-content:space-between;margin:10px 0 6px}.wd{display:flex;flex-direction:column;align-items:center;gap:4px;font:600 .68rem var(--f-mono);color:var(--muted)}
@@ -297,6 +298,7 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
       <button class="btn" id="bToday"></button>
       <div class="streak" id="hStreak"></div>
     </div>
+    <div class="coach crit" id="crit" hidden></div>
     <div class="tiles">
       <button class="tile" data-go="mine" style="--tc:var(--c-mist)"><span class="ti">🎯</span><b data-t="tMine"></b><em id="tMineN"></em></button>
       <button class="tile" data-go="punish" style="--tc:var(--good)"><span class="ti">⚔️</span><b data-t="tPun"></b><em id="tPunN"></em></button>
@@ -424,12 +426,12 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
   <button data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg><span data-t="navProg"></span></button>
 </nav>
 <script src="chess.js"></script>
-<script src="textos.js?v=37"></script>
+<script src="textos.js?v=38"></script>
 <script src="conceptos.js?v=1"></script>
 <script src="repertorio.js?v=5"></script>
 <script src="curso.js?v=1"></script>
 <script src="fundamentos.js?v=7"></script>
 <script src="planes.js?v=1"></script>
-<script src="app.js?v=42"></script>
+<script src="app.js?v=44"></script>
 </body>
 </html>
