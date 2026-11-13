@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=44;
+var APP_VER=45;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -483,16 +483,15 @@ function criticalThemes(){
   return L.filter(function(o){return o.recent>0||o.total>=3}).sort(function(a,b){return (a.fixed?1:0)-(b.fixed?1:0)||b.score-a.score}).slice(0,3);
 }
 function critSession(o){
-  var cs=o.pool.filter(function(c){return (c.box||0)<2}).sort(function(a,b){return ((a.due||0)<=now()?0:1)-((b.due||0)<=now()?0:1)||(b.date||0)-(a.date||0)}).slice(0,6);
-  if(cs.length<6)cs=cs.concat(o.cards.filter(function(c){return cs.indexOf(c)<0}).slice(0,6-cs.length));
-  var it=cs.map(function(c){return {t:'card',id:c.id}}),ls=THEMES[o.id].ls;
-  ls.forEach(function(lid){var l=lessonById(lid);if(!l)return;var p=lessonItems(l,1).filter(function(x){return x.t==='puz'})[0];if(p&&it.length<9)it.push(p)});
+  var cs=o.pool.filter(function(c){return (c.box||0)<2}).sort(function(a,b){return ((a.due||0)<=now()?0:1)-((b.due||0)<=now()?0:1)||(b.date||0)-(a.date||0)}).slice(0,8);
+  if(cs.length<8)cs=cs.concat(o.pool.filter(function(c){return cs.indexOf(c)<0}).slice(0,8-cs.length));
+  var it=cs.map(function(c){return {t:'card',id:c.id}});
   S.crit=S.crit||{};S.crit[o.id]=Object.assign(S.crit[o.id]||{},{lastRun:now()});save();
   startSession(it,'mine');X.back='home';
 }
 function renderCrit(){
   var el=$('crit');if(!el)return;var L=criticalThemes();if(!L.length){el.innerHTML='';el.hidden=true;return}el.hidden=false;
-  el.innerHTML='<div class="chead"><b>🚨 '+t('critT')+'</b><span class="small">'+t('critSub')+'</span></div>'+L.map(function(o,i){var n=o.pool.length,f=o.fixedN,pct=Math.round(f/Math.max(1,n)*100);
+  el.innerHTML='<div class="chead"><b>🚨 '+t('critT')+'</b><span class="small">'+t('critSub')+'</span></div>'+L.map(function(o,i){var n=o.pool.length,f=o.fixedN,pct=Math.round(o.pool.reduce(function(a,c){return a+Math.min(c.box||0,2)},0)/Math.max(1,2*n)*100);
     return '<button class="crow critrow" data-ci="'+i+'" type="button"><span class="ci">'+(o.fixed?'✅':['1','2','3'][i])+'</span><span class="ct"><b>'+esc(t('th_'+o.id))+'</b><small>'+(o.fixed?t('critFixed'):t('critStat',o.recent,f,n))+'</small><span class="bar2"><span style="width:'+pct+'%"></span></span></span><span class="go">›</span></button>'}).join('');
   el.querySelectorAll('[data-ci]').forEach(function(b){b.onclick=function(){critSession(L[+b.getAttribute('data-ci')])}});
 }
