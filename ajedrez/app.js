@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=47;
+var APP_VER=48;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -623,6 +623,7 @@ function loadCard(c){
   var ref=c.kind==='mine'?c.s0:c.s1;cur.fen=fen;cur.ref=ref;
   setBar(toW(ref,c.side));
   var head=kindPill(c.kind==='mine'?(c.trap?'trap':'mine'):'punish',sideTxt(c.side));
+  if(c.kind==='punish'&&(c.s0||0)<=-150)head+=' <span class="pill come">'+t('kComeback')+'</span>';
   var p=c.kind==='mine'?t(visOf(c)==='win'?'pMineWin':'pMineLose',esc(c.played)):t('pPun2',esc(c.oppMove));
   $('prompt').innerHTML='<div class="op">'+head+'</div>'+p;
   cur.anPath=function(){return {start:INIT,moves:c.line.concat(cur.okMove?[cur.okMove]:[]),i:c.line.length+(cur.okMove?1:0),base:c.line.length,keepArrows:true}};
