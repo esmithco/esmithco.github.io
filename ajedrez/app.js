@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=46;
+var APP_VER=47;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -368,7 +368,10 @@ function gradeObj(o,ok){
   else{o.lapses=(o.lapses||0)+1;o.box=1;o.due=now()+10*6e4}
   o.reps=(o.reps||0)+1;save();
 }
-function cardsOf(kind){return Object.keys(S.cards).map(function(k){return S.cards[k]}).filter(function(c){return c.kind===kind&&visOf(c)!=='deep'})}
+/* a card worth practising: visible within a move or two, and (own mistakes) from a position that was still playable —
+   if the best move still leaves him clearly lost (below −1.0), there is nothing to learn there */
+function usable(c){return visOf(c)!=='deep'&&!(c.kind==='mine'&&(c.s0||0)<-100)}
+function cardsOf(kind){return Object.keys(S.cards).map(function(k){return S.cards[k]}).filter(function(c){return c.kind===kind&&usable(c)})}
 function prio(c){return (c.rep?1e6:0)+(c.kind==='punish'?(c.mat>=1?2e5:0)+(c.missed?1e5:0):(c.trap?2e5:0)+(c.sev==='blunder'?1e5:0))+(c.count||1)*5e4+(c.date||0)/1e5}
 function dueList(kind,onlyRep){return cardsOf(kind).filter(function(c){return (c.due||0)<=now()&&(!onlyRep||c.rep)}).sort(function(a,b){
   var sa=(a.reps||0)>0,sb=(b.reps||0)>0;if(sa!==sb)return sa?-1:1;return prio(b)-prio(a)})}
@@ -512,7 +515,7 @@ function hintsUI(){var c=$('optHints');if(!c)return;c.checked=HINTS;c.onchange=f
 /* coach: last-game review, weekly rhythm, weakest area */
 function lastGameCards(){
   var gs=Object.keys(S.games).map(function(k){return S.games[k]}).sort(function(a,b){return (b.date||0)-(a.date||0)}).slice(0,8),by={};
-  Object.keys(S.cards).forEach(function(k){var c=S.cards[k];if(visOf(c)==='deep'||((c.reps||0)>0&&(c.due||0)>now()))return;(c.games||[]).forEach(function(g){(by[g]=by[g]||[]).push(c)})});
+  Object.keys(S.cards).forEach(function(k){var c=S.cards[k];if(!usable(c)||((c.reps||0)>0&&(c.due||0)>now()))return;(c.games||[]).forEach(function(g){(by[g]=by[g]||[]).push(c)})});
   for(var i=0;i<gs.length;i++){var cs=by[gs[i].id];if(cs&&cs.length)return {g:gs[i],cards:cs.sort(function(a,b){return (a.kind==='mine'?0:1)-(b.kind==='mine'?0:1)||a.line.length-b.line.length})}}
   return null;
 }
