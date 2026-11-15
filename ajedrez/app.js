@@ -27,7 +27,7 @@ function blank(){return {days:{},pend:{},rating:null,v:3,user:'Esmithco',games:{
 var S=blank(),DATA={stats:{}};
 function upgrade(){
   var noDays=!S.days;var b=blank();Object.keys(b).forEach(function(k){if(S[k]==null)S[k]=b[k]});
-  Object.keys(S.cards).forEach(function(k){if(!S.cards[k].kind)S.cards[k].kind='mine'});S.v=3;
+  Object.keys(S.cards).forEach(function(k){var c=S.cards[k];if(!c.kind)c.kind='mine';if(c.last==null&&(c.box||0)>=2)c.last=1});S.v=3;
   if(S.daily)S.daily.date=padKey(S.daily.date);
   if(noDays){S.days={};
     /* rebuild finished days: from the old streak record and from days with a real session in the log */
@@ -54,7 +54,7 @@ function applyRule(){ /* one-time: drop old app-analysed cards that are only sma
 }
 function mergeBase(D){
   var nc={};
-  Object.keys(D.cards||{}).forEach(function(k){var c=D.cards[k],o=S.cards[k];if(o){c.box=o.box||0;c.due=o.due||0;c.reps=o.reps||0;c.lapses=o.lapses||0}nc[k]=c});
+  Object.keys(D.cards||{}).forEach(function(k){var c=D.cards[k],o=S.cards[k];if(o){c.box=o.box||0;c.due=o.due||0;c.reps=o.reps||0;c.lapses=o.lapses||0;c.last=o.last!=null?o.last:((o.box||0)>=2?1:0)}nc[k]=c});
   Object.keys(S.cards).forEach(function(k){var o=S.cards[k];if(!nc[k]&&o.src==='app')nc[k]=o});
   S.cards=nc;
   Object.keys(D.games||{}).forEach(function(k){var g=S.games[k],d=D.games[k];if(!g)S.games[k]=d;else{g.op=1;g.tr=1;g.errors=d.errors;if(d.rt){g.rt=d.rt;g.tc=d.tc}}});
@@ -67,7 +67,7 @@ function boot(){connectFromLink();
   var raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
   if(raw){try{S=JSON.parse(raw)}catch(e){S=blank()}}
   upgrade();applyRule();
-  fetch('datos.json?v=8',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
+  fetch('datos.json?v=9',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
     DATA.stats=D.stats||{};
     if(!S.base||S.base<(D.base||0)){mergeBase(D);save()}
   }).catch(function(){}).then(function(){route();clStatus();cloudPull();
@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=52;
+var APP_VER=53;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1636,7 +1636,7 @@ $('bPgn').onclick=function(){
 $('bBackup').onclick=function(){var tx=JSON.stringify(S);$('iBackup').value=tx;
   try{navigator.clipboard.writeText(tx).then(function(){$('bkStatus').textContent=t('bkCopied')},function(){$('iBackup').select();$('bkStatus').textContent=t('bkSelect')})}catch(e){$('iBackup').select()}};
 $('bRestore').onclick=function(){try{var o=JSON.parse($('iBackup').value);if(!o.cards||!o.games)throw 0;S=o;upgrade();save();$('bkStatus').textContent=t('bkRestored')}catch(e){$('bkStatus').textContent=t('bkBad')}};
-$('bBase').onclick=function(){fetch('datos.json?v=8',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(D){DATA.stats=D.stats||{};mergeBase(D);save();$('bkStatus').textContent=t('bkLoaded')}).catch(function(){$('bkStatus').textContent=t('bkNone')})};
+$('bBase').onclick=function(){fetch('datos.json?v=9',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(D){DATA.stats=D.stats||{};mergeBase(D);save();$('bkStatus').textContent=t('bkLoaded')}).catch(function(){$('bkStatus').textContent=t('bkNone')})};
 var armed=false;
 $('bReset').onclick=function(){if(!armed){armed=true;$('bReset').textContent=t('bkResetSure');setTimeout(function(){armed=false;$('bReset').textContent=t('bkReset')},4000);return}
   S=blank();save();armed=false;$('bReset').textContent=t('bkReset');$('bkStatus').textContent=t('bkWiped')};
