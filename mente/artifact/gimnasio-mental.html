@@ -113,6 +113,7 @@ body{margin:0;background:radial-gradient(600px 420px at 0% -6%,rgba(15,123,95,.1
 .ctap{appearance:none;border:0;text-align:left;font:inherit;color:inherit;cursor:pointer;display:flex;flex-direction:column;gap:4px}.ctap .cdef{font-size:.9rem;color:var(--ink);border-top:1px solid var(--line);padding-top:6px}.ctap .tapme{color:var(--accent)}
 @media (min-width:980px){.wrap{max-width:760px}}
 </style><style>
+.plan{background:var(--accent-soft);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}.plan p{margin:0;white-space:pre-wrap;line-height:1.5}
 .note2{color:var(--accent);display:block;margin-top:6px}
 .chat{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--bg)}
 .chathead{font:600 .78rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
@@ -537,7 +538,7 @@ var T={
   newPerDay:'Conceptos nuevos por día',newPerDayHelp:'Con 2 por día ves todos en unos 40 días.',backup:'Respaldo',backupHelp:'El progreso se guarda en este navegador. Copia el respaldo para pasarlo a otro dispositivo.',
   copy:'Copiar respaldo',restore:'Restaurar desde el cuadro',reset:'Borrar todo',resetArm:'Toca otra vez para borrar',copied:'Respaldo copiado.',selectIt:'Selecciona y copia el texto del cuadro.',restored:'Respaldo restaurado.',badBackup:'Ese texto no es un respaldo válido.',wiped:'Se borró el progreso.',
   howTitle:'Por qué funciona',howText:'Se basa en tres hallazgos sólidos sobre aprendizaje: recordar sin mirar fija mejor que releer (práctica de recuperación), repasar justo antes de olvidar ahorra tiempo (repetición espaciada) y relacionar ideas de distintas áreas crea los modelos mentales que permiten conectar rápido. No sube el CI; construye conocimiento organizado y la costumbre de usarlo.',
-  langNote:'Escribe en el idioma que quieras practicar.',tapDef:'Toca para ver qué es',hintL:'Pista:',showConn:'No sé, muéstrame',yourConn:'Tu conexión',oneConn:'Una conexión posible:',dontKnow:'No lo sé',claudeNote:'Lo que Claude recuerda de ti',chatT:'Habla con Claude sobre esto',chatPh:'Pregunta lo que quieras sobre este tema…',chatSend:'Enviar',chatErr:'No pude responder ahora. Inténtalo de nuevo en un momento.',chatNo:'La conversación con Claude se activa cuando abres esta página en Claude.',writeFirst:'Escribe al menos una frase antes de ver la respuesta: el esfuerzo de recordar es lo que entrena.',keysL:'Mencionaste {h} de {n} ideas clave.',sug0:'Sugerencia: «No lo sabía».',sug1:'Sugerencia: «Más o menos».',sug2:'Sugerencia: «Lo sabía».',backupHelp:'Tu progreso se guarda solo y sigue en cualquier dispositivo. El respaldo es por si acaso.',home:'Inicio'},
+  langNote:'Escribe en el idioma que quieras practicar.',tapDef:'Toca para ver qué es',hintL:'Pista:',showConn:'No sé, muéstrame',yourConn:'Tu conexión',oneConn:'Una conexión posible:',dontKnow:'No lo sé',planT:'Tu profesor: plan de hoy',planWait:'Tu profesor está preparando el plan de hoy…',sumT:'Tu profesor: resumen de hoy',claudeNote:'Lo que Claude recuerda de ti',chatT:'Habla con Claude sobre esto',chatPh:'Pregunta lo que quieras sobre este tema…',chatSend:'Enviar',chatErr:'No pude responder ahora. Inténtalo de nuevo en un momento.',chatNo:'La conversación con Claude se activa cuando abres esta página en Claude.',writeFirst:'Escribe al menos una frase antes de ver la respuesta: el esfuerzo de recordar es lo que entrena.',keysL:'Mencionaste {h} de {n} ideas clave.',sug0:'Sugerencia: «No lo sabía».',sug1:'Sugerencia: «Más o menos».',sug2:'Sugerencia: «Lo sabía».',backupHelp:'Tu progreso se guarda solo y sigue en cualquier dispositivo. El respaldo es por si acaso.',home:'Inicio'},
  en:{eyebrow:'Daily training · 10 minutes',title:'Gimnasio Mental',subtitle:'Recall, connect and apply ideas from science, history, math, economics, psychology and logic.',
   sStreak:'day streak',tKnow:'Knowledge',b4:'Discover',discQ:'A short lesson so you can talk about anything. Tomorrow I\'ll quiz you on the key points.',pick:'Or pick another topic:',gen:'Preparing the lesson…',genErr:'Couldn\'t prepare the lesson right now. Try later or skip this block.',noSample:'This block needs Claude: open the page from the Claude app.',talkL:'To bring it up in conversation:',perspL:'Two views',keyL:'Key points (you\'ll review these)',finish:'Finish session',knowHelp:'Lessons you\'ve discovered. Their key points go into your reviews.',noKnow:'No lessons discovered yet.',factQ:'Answer without looking.',sLearned:'concepts seen',sMastered:'mastered',sAcc:'apply accuracy',tToday:'Today',tLib:'Concepts',tJournal:'Journal',tSet:'Settings',
   b1:'Recall',b2:'Connect',b3:'Apply',min:'≈ 2-3 min',start:'Start session',startSub:'Four blocks of 2 to 3 minutes. Write in your own words: the effort of recalling is what makes ideas stick.',
@@ -552,7 +553,7 @@ var T={
   newPerDay:'New concepts per day',newPerDayHelp:'At 2 a day you\'ll see them all in about 40 days.',backup:'Backup',backupHelp:'Progress is saved in this browser. Copy the backup to move it to another device.',
   copy:'Copy backup',restore:'Restore from the box',reset:'Erase everything',resetArm:'Tap again to erase',copied:'Backup copied.',selectIt:'Select and copy the text in the box.',restored:'Backup restored.',badBackup:'That text isn\'t a valid backup.',wiped:'Progress erased.',
   howTitle:'Why it works',howText:'It\'s built on three solid findings about learning: recalling without looking beats rereading (retrieval practice), reviewing right before you forget saves time (spaced repetition), and linking ideas across fields builds the mental models that let you connect things fast. It won\'t raise your IQ; it builds organized knowledge and the habit of using it.',
-  langNote:'Write in whichever language you want to practice.',tapDef:'Tap to see what it is',hintL:'Hint:',showConn:'I don\'t know, show me',yourConn:'Your connection',oneConn:'One possible connection:',dontKnow:'I don\'t know',claudeNote:'What Claude remembers about you',chatT:'Talk with Claude about this',chatPh:'Ask anything about this topic…',chatSend:'Send',chatErr:'Couldn\'t answer right now. Try again in a moment.',chatNo:'The conversation with Claude works when you open this page in Claude.',writeFirst:'Write at least one sentence before seeing the answer: the effort of recalling is what trains you.',keysL:'You mentioned {h} of {n} key ideas.',sug0:'Suggestion: “Didn\'t know”.',sug1:'Suggestion: “Sort of”.',sug2:'Suggestion: “Knew it”.',backupHelp:'Your progress saves itself and follows you on any device. The backup is just in case.',home:'Home'}
+  langNote:'Write in whichever language you want to practice.',tapDef:'Tap to see what it is',hintL:'Hint:',showConn:'I don\'t know, show me',yourConn:'Your connection',oneConn:'One possible connection:',dontKnow:'I don\'t know',planT:'Your teacher: today\'s plan',planWait:'Your teacher is preparing today\'s plan…',sumT:'Your teacher: today\'s summary',claudeNote:'What Claude remembers about you',chatT:'Talk with Claude about this',chatPh:'Ask anything about this topic…',chatSend:'Send',chatErr:'Couldn\'t answer right now. Try again in a moment.',chatNo:'The conversation with Claude works when you open this page in Claude.',writeFirst:'Write at least one sentence before seeing the answer: the effort of recalling is what trains you.',keysL:'You mentioned {h} of {n} key ideas.',sug0:'Suggestion: “Didn\'t know”.',sug1:'Suggestion: “Sort of”.',sug2:'Suggestion: “Knew it”.',backupHelp:'Your progress saves itself and follows you on any device. The backup is just in case.',home:'Home'}
 };
 
 /* ---------------- state ---------------- */
@@ -572,7 +573,7 @@ function dbWrite(){if(!DB)return;if(dbBusy){dbAgain=true;return}dbBusy=true;var 
   DB.doc(DBPATH).set({s:JSON.stringify(c),at:Date.now()}).catch(function(){}).then(function(){dbBusy=false;if(dbAgain){dbAgain=false;dbWrite()}})}
 /* progress follows him on any device: Firebase /progress/mente (public, like the chess app). Every write = read, merge, write. */
 var OPEN_URL='',cloudT=null,cloudBusy=false;
-function mergeIn(R){if(!R||!R.cards)return;S.notes=S.notes||{};Object.keys(R.notes||{}).forEach(function(k){var a=S.notes[k]||[],seen={};a.forEach(function(x){seen[x.d+x.n]=1});(R.notes[k]||[]).forEach(function(x){if(!seen[x.d+x.n])a.push(x)});S.notes[k]=a.sort(function(x,y){return x.d<y.d?-1:1}).slice(-6)});if(!cur&&R.cur&&R.curDate===today()){cur=R.cur;S.cur=R.cur;S.curDate=R.curDate}
+function mergeIn(R){if(!R||!R.cards)return;if(R.planDate&&R.planDate>=(S.planDate||'')){S.planDate=R.planDate;S.planText=R.planText}var cl={};(S.coachLog||[]).forEach(function(x){cl[x.d+x.text]=1});S.coachLog=(S.coachLog||[]).concat((R.coachLog||[]).filter(function(x){return !cl[x.d+x.text]})).slice(-20);S.notes=S.notes||{};Object.keys(R.notes||{}).forEach(function(k){var a=S.notes[k]||[],seen={};a.forEach(function(x){seen[x.d+x.n]=1});(R.notes[k]||[]).forEach(function(x){if(!seen[x.d+x.n])a.push(x)});S.notes[k]=a.sort(function(x,y){return x.d<y.d?-1:1}).slice(-6)});if(!cur&&R.cur&&R.curDate===today()){cur=R.cur;S.cur=R.cur;S.curDate=R.curDate}
   Object.keys(R.cards).forEach(function(k){var a=S.cards[k],r=R.cards[k];if(!a||(r.reps||0)>(a.reps||0)||((r.reps||0)===(a.reps||0)&&r.due>a.due))S.cards[k]=r});
   Object.keys(R.cases||{}).forEach(function(k){var a=S.cases[k],r=R.cases[k];if(!a||(r.n||0)>(a.n||0))S.cases[k]=r});
   var js={};S.journal.forEach(function(e){js[e.date+e.text]=1});(R.journal||[]).forEach(function(e){if(!js[e.date+e.text]){S.journal.push(e);js[e.date+e.text]=1}});S.journal.sort(function(a,b){return a.date<b.date?1:-1});
@@ -604,11 +605,14 @@ function chatSys(){return (L()==='en'?'You are a warm, precise teacher of genera
 /* memory: Claude's notes per concept (what he got wrong or missed), fed back the next time that concept comes up */
 function noteKey(key){return key.slice(2)}
 function pastNotes(key){var n=(S.notes||{})[noteKey(key)]||[];return n.length?'\nNotas de sesiones anteriores sobre Brayan y este tema (úsalas: si repite el mismo error, díselo): '+n.slice(-3).map(function(x){return x.d+': '+x.n}).join(' | '):''}
+function memory(){var n=S.notes||{},all=[];Object.keys(n).forEach(function(k){n[k].forEach(function(x){all.push(x.d+' · '+(CONCEPTS[k]?CONCEPTS[k].n.es:k)+': '+x.n)})});all.sort();
+  var lg=(S.coachLog||[]).slice(-3).map(function(x){return x.d+' resumen: '+x.text});return all.slice(-12).concat(lg).join('\n')||'(todavía sin notas)'}
+function chatTeach(key,ctx,ask){if(CHAT&&CHAT.key===key)return;CHAT={key:key,ctx:ctx+pastNotes(key),msgs:[],busy:false};if(sample)chatAsk(ask,true)}
 function chatOpen(key,ctx,auto){if(CHAT&&CHAT.key===key)return;CHAT={key:key,ctx:ctx+pastNotes(key),msgs:[],busy:false};if(auto&&sample)chatGrade(auto)}
 /* first reply = a structured verdict: score (pre-selects the rating), feedback, a better example, and a short note to remember */
 function chatGrade(ask){var C2=CHAT;C2.msgs.push({role:'user',content:ask,hidden:true});var last={role:'assistant',content:'',wait:true};C2.msgs.push(last);C2.busy=true;renderChat();
   var es=L()!=='en',prompt=chatSys()+'\n\n'+C2.ctx+'\n\n'+ask+'\n\n'+(es?'Devuelve SOLO JSON: {"score": 0 (no lo sabía o está mal) | 1 (a medias) | 2 (bien), "feedback": "2-4 frases: qué acertó, qué falta o está mal", "example": "un ejemplo mejor y cotidiano si el suyo no encaja o falta, si no cadena vacía", "note": "una frase corta para recordar en el futuro sobre su comprensión de este tema"}':'Return ONLY JSON: {"score": 0 (did not know or wrong) | 1 (partly) | 2 (right), "feedback": "2-4 sentences: what he got right, what is missing or wrong", "example": "a better everyday example if his is missing or off, else empty string", "note": "one short sentence to remember later about his understanding of this topic"}');
-  sample.json(prompt,{modelTier:'quick',cache:false}).then(function(j){
+  sample.json(prompt,{modelTier:'default',cache:false}).then(function(j){
     var sc=Math.max(0,Math.min(2,+j.score||0));last.content=(j.feedback||'')+(j.example?'\n\n'+(es?'Un mejor ejemplo: ':'A better example: ')+j.example:'');last.wait=false;
     if(j.note){S.notes=S.notes||{};var k=noteKey(C2.key);(S.notes[k]=S.notes[k]||[]).push({d:today(),n:String(j.note).slice(0,240),s:sc});S.notes[k]=S.notes[k].slice(-6);save()}
     if(CHAT===C2){cur.sug=sc;document.querySelectorAll('[data-r]').forEach(function(b){b.classList.toggle('sugg',+b.getAttribute('data-r')===sc)})}
@@ -616,7 +620,7 @@ function chatGrade(ask){var C2=CHAT;C2.msgs.push({role:'user',content:ask,hidden
 function chatAsk(q,hidden){if(!sample||!CHAT||CHAT.busy)return;var C2=CHAT;C2.msgs.push({role:'user',content:q,hidden:!!hidden});C2.msgs.push({role:'assistant',content:'',wait:true});C2.busy=true;renderChat();
   var arr=[],first=true;C2.msgs.forEach(function(m){if(m.wait)return;var c=m.content;if(first&&m.role==='user'){c=chatSys()+'\n\n'+C2.ctx+'\n\n'+c;first=false}arr.push({role:m.role,content:c})});
   var last=C2.msgs[C2.msgs.length-1];
-  sample(arr,{modelTier:'quick',cache:false,onText:function(u){last.content=u.text;last.wait=false;if(CHAT===C2)renderChat(true)}})
+  sample(arr,{modelTier:'default',cache:false,onText:function(u){last.content=u.text;last.wait=false;if(CHAT===C2)renderChat(true)}})
   .then(function(r){last.content=r.text;last.wait=false}).catch(function(e){last.content=t('chatErr');last.wait=false}).then(function(){C2.busy=false;if(CHAT===C2)renderChat()})}
 function renderChat(partial){var el=$('chat');if(!el||!CHAT)return;if(!sample){el.innerHTML='<p class="small">'+t('chatNo')+'</p>';return}
   var box=el.querySelector('.msgs');var h=CHAT.msgs.filter(function(m){return !m.hidden}).map(function(m){return '<div class="msg '+m.role+'">'+(m.wait?'<i>'+t('fbWait')+'</i>':esc(m.content))+'</div>'}).join('');
@@ -658,6 +662,10 @@ function pickPair(){
 var cur=null;
 (function(){try{if(S.cur&&S.curDate===today())cur=S.cur}catch(e){}})();
 function keepCur(){S.cur=cur;S.curDate=today();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof dbSoon==='function')dbSoon()}
+var planBusy=false;
+function planToday(){if(!sample||planBusy||S.planDate===today())return;planBusy=true;var due=dueToday().filter(function(x){return !isFact(x)}).slice(0,6).map(cn).join(', ')||'-',nw=unseen().slice(0,S.npd).map(cn).join(', ');
+  sample((L()==='en'?'You are Brayan\'s personal teacher of general knowledge. In 3 short sentences, in English, tell him the plan for today\'s 10-minute session and why, using what you remember about him. Be concrete and encouraging, no filler.':'Eres el profesor personal de cultura general de Brayan. En 3 frases cortas, en español, dile el plan de la sesión de hoy (10 minutos) y por qué, usando lo que recuerdas de él. Concreto y motivador, sin relleno.')+'\nRepasos de hoy: '+due+'\nConceptos nuevos de hoy: '+nw+'\nLo que recuerdas de él:\n'+memory(),{modelTier:'default',cache:false})
+  .then(function(r){S.planText=r.text;S.planDate=today();save();if(!cur)render()}).catch(function(){}).then(function(){planBusy=false})}
 function newSession(){
   var dueAll=shuffle(dueToday());var due=dueAll.filter(function(x){return !isFact(x)}).slice(0,4).concat(dueAll.filter(isFact).slice(0,2));var fresh=unseen().slice(0,S.npd);
   var items=due.map(function(id){return {id:id,kind:'review'}}).concat(fresh.map(function(id){return {id:id,kind:'new'}}));
@@ -679,7 +687,7 @@ function render(){try{render0()}finally{renderChat()}}
 function render0(){keepCur();
   stats();steps();var st=$('stage');
   if(!cur){var r=Math.min(6,dueToday().length),n=Math.min(S.npd,unseen().length);
-    st.innerHTML='<h2>'+t('start')+'</h2><p class="small">'+t('startSub')+'</p><p>'+t('todayPlan',{r:r,n:n})+'</p><div class="row"><button class="btn primary" id="go">'+t('start')+'</button></div>';
+    planToday();st.innerHTML='<h2>'+t('start')+'</h2>'+(S.planDate===today()&&S.planText?'<div class="plan"><b>🧑‍🏫 '+t('planT')+'</b><p>'+esc(S.planText)+'</p></div>':sample?'<p class="small">'+t('planWait')+'</p>':'')+'<p class="small">'+t('startSub')+'</p><p>'+t('todayPlan',{r:r,n:n})+'</p><div class="row"><button class="btn primary" id="go">'+t('start')+'</button></div>';
     $('go').onclick=function(){newSession();cur.block=1;if(!cur.items.length)cur.block=2;render()};return}
   if(cur.block===1)return renderRecall(st);
   if(cur.block===2)return renderConnect(st);
@@ -691,7 +699,7 @@ function head(k,extra){return '<div class="blockhead"><span class="kicker">'+t(k
 function fbHtml(){if(!cur.fb)return '';return '<div class="fb'+(cur.fb.wait?' wait':'')+'" id="fbOut">'+esc(cur.fb.text)+'</div>'}
 function askClaude(prompt){
   if(!sample)return;cur.fb={wait:true,text:t('fbWait')};render();
-  sample(prompt,{cache:false,modelTier:'quick',onText:function(u){cur.fb={wait:false,text:u.text};var o=$('fbOut');if(o){o.textContent=u.text;o.className='fb'}}})
+  sample(prompt,{cache:false,modelTier:'default',onText:function(u){cur.fb={wait:false,text:u.text};var o=$('fbOut');if(o){o.textContent=u.text;o.className='fb'}}})
   .then(function(r){cur.fb={wait:false,text:r.text};render()})
   .catch(function(e){cur.fb={wait:false,text:t('fbErr')};render()});
 }
@@ -700,8 +708,10 @@ function renderRecall(st){
   var it=cur.items[cur.i];if(isFact(it.id))return renderFact(st,it);var c=CONCEPTS[it.id];
   var h=head('b1',(cur.i+1)+' / '+cur.items.length)+'<div class="row">'+areaTag(it.id)+' <span class="small">'+(it.kind==='new'?t('newC'):t('review'))+'</span></div><div class="concept">'+esc(c.n[L()])+'</div>';
   if(it.kind==='new'){
-    h+=defBox(it.id)+'<p class="small">'+t('newHelp')+'</p><div class="row"><button class="btn primary" id="ok">'+t('gotIt')+'</button></div>';
-    st.innerHTML=h;$('ok').onclick=function(){introduce(it.id);nextItem()};return;
+    h+=defBox(it.id)+'<div id="chat" class="chat"></div><p class="small">'+t('newHelp')+'</p><div class="row"><button class="btn primary" id="ok">'+t('gotIt')+'</button></div>';
+    st.innerHTML=h;$('ok').onclick=function(){introduce(it.id);nextItem()};
+    chatTeach('n:'+it.id,'Concepto NUEVO para Brayan: '+c.n.es+' / '+c.n.en+'. Definición: '+c.d[L()]+' Ejemplo de referencia: '+c.x[L()]+'\nLo que recuerdas de él en general:\n'+memory(),
+      L()==='en'?'Teach me this concept like a great teacher: explain it simply in 3-4 sentences, give one vivid everyday example (different from the reference), connect it to something I already know if possible, and end with ONE short question so I check I understood. I will answer below.':'Enséñame este concepto como un gran profesor: explícalo simple en 3-4 frases, dame un ejemplo cotidiano y vívido (distinto al de referencia), conéctalo con algo que ya sepa si se puede, y termina con UNA pregunta corta para comprobar que entendí. Te respondo abajo.');return;
   }
   h+='<p>'+t('recallQ')+'</p><textarea id="rt" placeholder="'+esc(t('recallPh'))+'" aria-label="'+esc(t('recallQ'))+'">'+esc(cur.text)+'</textarea>';
   if(!cur.revealed){h+='<div class="row"><button class="btn primary" id="rv" disabled>'+t('reveal')+'</button><button class="btn" id="dk">'+t('dontKnow')+'</button></div><p class="small">'+t('writeFirst')+'</p>';st.innerHTML=h;
@@ -739,7 +749,13 @@ function renderFact(st,it){
   st.querySelectorAll('[data-r]').forEach(function(b){b.onclick=function(){var r=+b.getAttribute('data-r');logAnswer({k:'fact',id:it.id,q:f.q,a:cur.text,hits:cur.hits||'',rate:r});grade(it.id,r);nextItem()}});
 }
 function topicName(id){var r=TOPICS.filter(function(x){return x[0]===id})[0];return r?(L()==='en'?r[2]:r[1]):id}
-function makeLesson(){var id=cur.topic,ls=LESSONS[id];if(!ls){cur.lesson={err:true};render();return}var x=ls[L()];
+function makeLesson(){var id=cur.topic,ls=LESSONS[id];
+  if(sample){cur.lesson={wait:true};render();var name=topicName(id),ref=ls?ls[L()].l:'';
+    sample.json('You are Brayan\'s personal teacher (math graduate in Colombia, curious about everything). Write today\'s short lesson on "'+name+'" in '+(L()==='en'?'English':'Spanish (Colombian, neutral)')+', accurate and mainstream; on contested topics describe the main positions fairly. Make it vivid, with names, dates and numbers, and connect it to what he already knows. What you remember about him:\n'+memory()+'\nReference text you may build on: '+ref+'\nReturn ONLY JSON: {"title": string, "lesson": string (170-230 words, 2-3 short paragraphs), "perspectives": null or [string, string], "talk": string (one sentence he could say in a conversation), "facts": [{"q": string, "a": string}] (exactly 3)}',{modelTier:'default',cache:false})
+    .then(function(j){if(!j||!j.lesson||!j.facts)throw 0;cur.lesson={topic:id,title:j.title||name,lesson:j.lesson,perspectives:j.perspectives||null,talk:j.talk||'',facts:j.facts.slice(0,3)};render();window.scrollTo(0,0)})
+    .catch(function(){staticLesson(id)});return}
+  staticLesson(id)}
+function staticLesson(id){var ls=LESSONS[id];if(!ls){cur.lesson={err:true};render();return}var x=ls[L()];
   cur.lesson={topic:id,title:x.t,lesson:x.l,perspectives:x.p||null,talk:x.talk||'',facts:x.f.map(function(f){return {q:f[0],a:f[1]}})};render();window.scrollTo(0,0)}
 function saveLesson(){
   var ls=cur.lesson,n=dayNum(today()),lid=today()+'-'+ls.topic;
@@ -747,7 +763,11 @@ function saveLesson(){
   S.lessons.unshift({id:lid,date:today(),topic:ls.topic,title:ls.title,lesson:ls.lesson,perspectives:ls.perspectives,talk:ls.talk,lang:L()});
   if(ls.topic===TOPICS[S.ti%TOPICS.length][0])S.ti++;save();
 }
-function finishSession(){CHAT=null;if(S.days.indexOf(today())<0)S.days.push(today());save();cur.block=5;render();window.scrollTo(0,0)}
+function sessionSummary(){if(!sample)return;var a=(S.answers||[]).filter(function(x){return x.d===today()}).slice(-14).map(function(x){return x.k+' | '+x.q+' | respuesta: '+x.a+(x.ok!=null?' | '+(x.ok?'bien':'mal'):'')}).join('\n');if(!a)return;
+  cur.summary={wait:true};
+  sample((L()==='en'?'You are Brayan\'s teacher. In 3-4 short sentences in English: what went well today, the one thing to fix, and what we will focus on next time. Warm and concrete.':'Eres el profesor de Brayan. En 3-4 frases cortas en español: qué salió bien hoy, la única cosa a corregir y en qué nos enfocaremos la próxima vez. Cercano y concreto.')+'\nRespuestas de hoy:\n'+a+'\nLo que ya recordabas de él:\n'+memory(),{modelTier:'default',cache:false})
+  .then(function(r){cur.summary={text:r.text};S.coachLog=(S.coachLog||[]).concat([{d:today(),text:r.text}]).slice(-20);save();render()}).catch(function(){cur.summary=null;render()})}
+function finishSession(){CHAT=null;setTimeout(sessionSummary,50);if(S.days.indexOf(today())<0)S.days.push(today());save();cur.block=5;render();window.scrollTo(0,0)}
 function renderDiscover(st){
   var h=head('b4')+'<p class="small">'+t('discQ')+'</p>';
   var ls=cur.lesson;
@@ -808,7 +828,7 @@ function renderApply(st){
 }
 function renderDone(st){
   var n=stats();var d=dayNum(today())+1;var tomorrow=Object.keys(S.cards).filter(function(id){return S.cards[id].due<=d}).length;
-  st.innerHTML='<div class="done-hero"><div class="big">'+n+'</div><h2>'+t('doneT')+'</h2><p class="small">'+t(n===1&&L()==='es'?'doneS1':'doneS',{n:n,d:tomorrow})+'</p></div><div class="row" style="justify-content:center"><button class="btn" id="ag">'+t('again')+'</button></div>';
+  st.innerHTML='<div class="done-hero"><div class="big">'+n+'</div><h2>'+t('doneT')+'</h2><p class="small">'+t(n===1&&L()==='es'?'doneS1':'doneS',{n:n,d:tomorrow})+'</p></div>'+(cur.summary?'<div class="plan"><b>🧑‍🏫 '+t('sumT')+'</b><p>'+(cur.summary.wait?t('fbWait'):esc(cur.summary.text))+'</p></div>':'')+'<div class="row" style="justify-content:center"><button class="btn" id="ag">'+t('again')+'</button></div>';
   $('ag').onclick=function(){cur.cases=pickCases(3);cur.ci=0;cur.answered=null;cur.block=3;cur.again=true;render()};
 }
 
