@@ -526,7 +526,7 @@ var T={
   sStreak:'días seguidos',tKnow:'Saberes',b4:'Descubrir',discQ:'Una lección corta para hablar de cualquier tema. Mañana te pregunto lo clave.',pick:'O elige otro tema:',gen:'Preparando la lección…',genErr:'No pude preparar la lección ahora. Inténtalo más tarde o salta este bloque.',noSample:'Este bloque necesita a Claude: abre la página desde la app de Claude.',talkL:'Para sacarlo en una conversación:',perspL:'Dos miradas',keyL:'Lo clave (lo repasarás)',finish:'Terminar sesión',knowHelp:'Las lecciones que has descubierto. Sus ideas clave entran en tus repasos.',noKnow:'Aún no has descubierto ninguna lección.',factQ:'Responde sin mirar.',sLearned:'conceptos vistos',sMastered:'dominados',sAcc:'aciertos al aplicar',tToday:'Hoy',tLib:'Conceptos',tJournal:'Diario',tSet:'Ajustes',
   b1:'Recordar',b2:'Conectar',b3:'Aplicar',min:'≈ 2-3 min',start:'Empezar sesión',startSub:'Cuatro bloques de 2 a 3 minutos. Escribe con tus palabras: el esfuerzo de recordar es lo que fija la idea.',
   todayPlan:'Hoy: {r} repasos, {n} conceptos nuevos, 1 conexión, 2 casos y 1 lección nueva.',newC:'Concepto nuevo',review:'Repaso',
-  recallQ:'Explícalo con tus palabras y da un ejemplo propio, sin mirar.',recallPh:'Escribe aquí lo que recuerdas…',reveal:'Ver la respuesta',
+  recallQ:'Explícalo con tus palabras y da un ejemplo tuyo, sin mirar. El ejemplo lo inventas tú, de tu vida o de algo que conozcas: no hace falta buscar nada.',recallPh:'Escribe aquí lo que recuerdas…',reveal:'Ver la respuesta',
   rate0:'No lo sabía',rate1:'Más o menos',rate2:'Lo sabía',gotIt:'Entendido',newHelp:'Léelo con calma y piensa en un ejemplo de tu vida o tu trabajo. Mañana te lo pregunto.',
   feedback:'Opinión de Claude',fbWait:'Claude está leyendo…',fbErr:'No pude obtener la opinión ahora. Sigue sin ella.',
   connQ:'¿Cómo se relacionan estas dos ideas? Busca un caso real donde aparezcan juntas, o donde una explique a la otra.',connPh:'Por ejemplo: "En mi trabajo, …"',save:'Guardar y seguir',skip:'Saltar',
@@ -541,7 +541,7 @@ var T={
   sStreak:'day streak',tKnow:'Knowledge',b4:'Discover',discQ:'A short lesson so you can talk about anything. Tomorrow I\'ll quiz you on the key points.',pick:'Or pick another topic:',gen:'Preparing the lesson…',genErr:'Couldn\'t prepare the lesson right now. Try later or skip this block.',noSample:'This block needs Claude: open the page from the Claude app.',talkL:'To bring it up in conversation:',perspL:'Two views',keyL:'Key points (you\'ll review these)',finish:'Finish session',knowHelp:'Lessons you\'ve discovered. Their key points go into your reviews.',noKnow:'No lessons discovered yet.',factQ:'Answer without looking.',sLearned:'concepts seen',sMastered:'mastered',sAcc:'apply accuracy',tToday:'Today',tLib:'Concepts',tJournal:'Journal',tSet:'Settings',
   b1:'Recall',b2:'Connect',b3:'Apply',min:'≈ 2-3 min',start:'Start session',startSub:'Four blocks of 2 to 3 minutes. Write in your own words: the effort of recalling is what makes ideas stick.',
   todayPlan:'Today: {r} reviews, {n} new concepts, 1 connection, 2 cases and 1 new lesson.',newC:'New concept',review:'Review',
-  recallQ:'Explain it in your own words and give your own example, without looking.',recallPh:'Write what you remember…',reveal:'Show answer',
+  recallQ:'Explain it in your own words and give your own example, without looking. Make the example up yourself, from your life or something you know: no need to look anything up.',recallPh:'Write what you remember…',reveal:'Show answer',
   rate0:'Didn\'t know',rate1:'Sort of',rate2:'Knew it',gotIt:'Got it',newHelp:'Read it slowly and think of an example from your life or work. I\'ll ask you tomorrow.',
   feedback:'Claude\'s take',fbWait:'Claude is reading…',fbErr:'Couldn\'t get feedback right now. Keep going without it.',
   connQ:'How are these two ideas related? Find a real case where they show up together, or where one explains the other.',connPh:'For example: "At work, …"',save:'Save and continue',skip:'Skip',
@@ -571,7 +571,7 @@ function dbWrite(){if(!DB)return;if(dbBusy){dbAgain=true;return}dbBusy=true;var 
   DB.doc(DBPATH).set({s:JSON.stringify(c),at:Date.now()}).catch(function(){}).then(function(){dbBusy=false;if(dbAgain){dbAgain=false;dbWrite()}})}
 /* progress follows him on any device: Firebase /progress/mente (public, like the chess app). Every write = read, merge, write. */
 var OPEN_URL='',cloudT=null,cloudBusy=false;
-function mergeIn(R){if(!R||!R.cards)return;
+function mergeIn(R){if(!R||!R.cards)return;if(!cur&&R.cur&&R.curDate===today()){cur=R.cur;S.cur=R.cur;S.curDate=R.curDate}
   Object.keys(R.cards).forEach(function(k){var a=S.cards[k],r=R.cards[k];if(!a||(r.reps||0)>(a.reps||0)||((r.reps||0)===(a.reps||0)&&r.due>a.due))S.cards[k]=r});
   Object.keys(R.cases||{}).forEach(function(k){var a=S.cases[k],r=R.cases[k];if(!a||(r.n||0)>(a.n||0))S.cases[k]=r});
   var js={};S.journal.forEach(function(e){js[e.date+e.text]=1});(R.journal||[]).forEach(function(e){if(!js[e.date+e.text]){S.journal.push(e);js[e.date+e.text]=1}});S.journal.sort(function(a,b){return a.date<b.date?1:-1});
@@ -644,6 +644,8 @@ function pickPair(){
 
 /* ---------------- session ---------------- */
 var cur=null;
+(function(){try{if(S.cur&&S.curDate===today())cur=S.cur}catch(e){}})();
+function keepCur(){S.cur=cur;S.curDate=today();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof dbSoon==='function')dbSoon()}
 function newSession(){
   var dueAll=shuffle(dueToday());var due=dueAll.filter(function(x){return !isFact(x)}).slice(0,4).concat(dueAll.filter(isFact).slice(0,2));var fresh=unseen().slice(0,S.npd);
   var items=due.map(function(id){return {id:id,kind:'review'}}).concat(fresh.map(function(id){return {id:id,kind:'new'}}));
@@ -662,7 +664,7 @@ function areaTag(id){var a=CONCEPTS[id].area;return '<span class="area '+a+'">'+
 function defBox(id){var c=CONCEPTS[id];return '<div class="def"><p>'+esc(c.d[L()])+'</p><p class="ex">'+esc(c.x[L()])+'</p></div>'}
 function steps(){var s=$('steps').children;for(var i=0;i<4;i++){s[i].className=!cur?'':i<cur.block-1?'done':i===cur.block-1?'on':''}}
 function render(){try{render0()}finally{renderChat()}}
-function render0(){
+function render0(){keepCur();
   stats();steps();var st=$('stage');
   if(!cur){var r=Math.min(6,dueToday().length),n=Math.min(S.npd,unseen().length);
     st.innerHTML='<h2>'+t('start')+'</h2><p class="small">'+t('startSub')+'</p><p>'+t('todayPlan',{r:r,n:n})+'</p><div class="row"><button class="btn primary" id="go">'+t('start')+'</button></div>';
