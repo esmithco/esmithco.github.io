@@ -195,7 +195,7 @@ details summary{cursor:pointer;font-weight:600}
 .trhead .small-btn{padding:5px 10px;font-size:.8rem;white-space:nowrap}
 .odot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:-1px}
 .board.nopieces .pc{visibility:hidden}
-.clockrow{display:flex;align-items:center;gap:10px}.clockrow .timer{flex:1}.clock{font:700 1.3rem ui-monospace,Menlo,monospace;background:#1e2631;color:#fff;border-radius:8px;padding:4px 10px;min-width:78px;text-align:center}.clock.low{background:#C0392B}
+.clockrow{display:flex;align-items:center;gap:10px}.clockrow .timer{flex:1}.clock{font:700 1.3rem ui-monospace,Menlo,monospace;background:#1e2631;color:#fff;border-radius:8px;padding:4px 10px;min-width:78px;text-align:center}.clock.low{background:#C0392B}.trhead .clock{font-size:1.05rem;padding:3px 9px;min-width:64px}
 .why li:has(.teach){list-style:none;margin-left:-1.1em}
 .fold{margin:4px 0}.fold summary{cursor:pointer;font-weight:600;color:var(--accent);padding:4px 0}.fold summary::marker{color:var(--accent)}
 .feedback.exm{font-weight:500;color:var(--ink)}.exl{font:700 .72rem var(--f-mono);color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
@@ -309,7 +309,7 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 
   <!-- TRAINER (shared by every exercise type) -->
   <section class="screen" id="s-train" hidden>
-    <div class="trhead"><button class="btn small-btn" id="bPrevEx" type="button" data-t="bPrevEx"></button><div class="progress"><span id="trProg"></span></div><span class="small" id="trCount"></span><button class="btn small-btn" id="bFinish" type="button" data-t="bFinish"></button></div>
+    <div class="trhead"><button class="btn small-btn" id="bPrevEx" type="button" data-t="bPrevEx"></button><div class="progress"><span id="trProg"></span></div><span class="small" id="trCount"></span><span class="clock" id="dclk" hidden></span><button class="btn small-btn" id="bFinish" type="button" data-t="bFinish"></button></div>
     <div id="trBody" class="screen">
       <div class="tcol tleft">
       <div class="sidebadge" id="sideBadge"></div>
@@ -426,12 +426,12 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
   <button data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg><span data-t="navProg"></span></button>
 </nav>
 <script src="chess.js"></script>
-<script src="textos.js?v=41"></script>
+<script src="textos.js?v=42"></script>
 <script src="conceptos.js?v=1"></script>
 <script src="repertorio.js?v=7"></script>
 <script src="curso.js?v=1"></script>
 <script src="fundamentos.js?v=7"></script>
 <script src="planes.js?v=1"></script>
-<script src="app.js?v=49"></script>
+<script src="app.js?v=51"></script>
 </body>
 </html>
