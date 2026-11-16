@@ -573,7 +573,7 @@ function dbWrite(){if(!DB)return;if(dbBusy){dbAgain=true;return}dbBusy=true;var 
   DB.doc(DBPATH).set({s:JSON.stringify(c),at:Date.now()}).catch(function(){}).then(function(){dbBusy=false;if(dbAgain){dbAgain=false;dbWrite()}})}
 /* progress follows him on any device: Firebase /progress/mente (public, like the chess app). Every write = read, merge, write. */
 var OPEN_URL='',cloudT=null,cloudBusy=false;
-function mergeIn(R){if(!R||!R.cards)return;if(R.planDate&&R.planDate>=(S.planDate||'')){S.planDate=R.planDate;S.planText=R.planText}var cl={};(S.coachLog||[]).forEach(function(x){cl[x.d+x.text]=1});S.coachLog=(S.coachLog||[]).concat((R.coachLog||[]).filter(function(x){return !cl[x.d+x.text]})).slice(-20);S.notes=S.notes||{};Object.keys(R.notes||{}).forEach(function(k){var a=S.notes[k]||[],seen={};a.forEach(function(x){seen[x.d+x.n]=1});(R.notes[k]||[]).forEach(function(x){if(!seen[x.d+x.n])a.push(x)});S.notes[k]=a.sort(function(x,y){return x.d<y.d?-1:1}).slice(-6)});if(!cur&&R.cur&&R.curDate===today()){cur=R.cur;S.cur=R.cur;S.curDate=R.curDate}
+function mergeIn(R){if(!R||!R.cards)return;if(R.planDate&&R.planDate>=(S.planDate||'')&&R.planSig){S.planDate=R.planDate;S.planText=R.planText;S.planSig=R.planSig}var cl={};(S.coachLog||[]).forEach(function(x){cl[x.d+x.text]=1});S.coachLog=(S.coachLog||[]).concat((R.coachLog||[]).filter(function(x){return !cl[x.d+x.text]})).slice(-20);S.notes=S.notes||{};Object.keys(R.notes||{}).forEach(function(k){var a=S.notes[k]||[],seen={};a.forEach(function(x){seen[x.d+x.n]=1});(R.notes[k]||[]).forEach(function(x){if(!seen[x.d+x.n])a.push(x)});S.notes[k]=a.sort(function(x,y){return x.d<y.d?-1:1}).slice(-6)});if(!cur&&R.cur&&R.curDate===today()){cur=R.cur;S.cur=R.cur;S.curDate=R.curDate}
   Object.keys(R.cards).forEach(function(k){var a=S.cards[k],r=R.cards[k];if(!a||(r.reps||0)>(a.reps||0)||((r.reps||0)===(a.reps||0)&&r.due>a.due))S.cards[k]=r});
   Object.keys(R.cases||{}).forEach(function(k){var a=S.cases[k],r=R.cases[k];if(!a||(r.n||0)>(a.n||0))S.cases[k]=r});
   var js={};S.journal.forEach(function(e){js[e.date+e.text]=1});(R.journal||[]).forEach(function(e){if(!js[e.date+e.text]){S.journal.push(e);js[e.date+e.text]=1}});S.journal.sort(function(a,b){return a.date<b.date?1:-1});
@@ -595,13 +595,13 @@ function cn(id){return CONCEPTS[id].n[L()]}
 function isFact(id){return id.indexOf('f:')===0}
 
 /* ---------------- sample (Claude feedback, optional) ---------------- */
-var sample=null;
+var sample=null,READY=!(window.claude&&window.claude.use);setTimeout(function(){if(!READY){READY=true;if(!cur)render()}},6000);
 if(window.claude&&window.claude.use){window.claude.use('sample').then(function(s){sample=s;render()}).catch(function(){});
   Promise.all([window.claude.use('db'),window.claude.use('user')]).then(function(r){var db=r[0],u=r[1];if(!db||!u)return;return u.id().then(function(id){if(!id)return;DB=db;DBPATH='data/users/'+id+'/mind';
-    return db.doc(DBPATH).get().then(function(d){var v=d&&d.exists?d.data:null;if(typeof v==='function')v=d.data();var sv=v&&v.s;if(sv){mergeIn(JSON.parse(sv));if(!cur)render()}dbWrite()})})}).catch(function(){})}
+    return db.doc(DBPATH).get().then(function(d){var v=d&&d.exists?d.data:null;if(typeof v==='function')v=d.data();var sv=v&&v.s;if(sv){mergeIn(JSON.parse(sv))}READY=true;if(!cur)render();dbWrite()})})}).then(function(){if(!READY){READY=true;if(!cur)render()}},function(){READY=true;if(!cur)render()})}
 /* ---------- talk with Claude about each answer ---------- */
 var CHAT=null;
-function chatSys(){return (L()==='en'?'You are a warm, precise teacher of general knowledge (science, history, thinking tools) for Brayan, a curious adult in Colombia. Reply in English, 2-5 short sentences, plain text, no headings. If he wrote in English and made a real grammar or word-choice error, add a last line "English fix: …" with the single most useful correction (American English).':'Eres un profesor cercano y preciso de cultura general (ciencia, historia, herramientas de pensamiento) para Brayan, un adulto curioso de Colombia. Responde en español, 2 a 5 frases cortas, texto plano, sin títulos. Si escribió en inglés con un error real, añade al final una línea "English fix: …" con la corrección más útil (inglés americano).')}
+function chatSys(){return (L()==='en'?'You are a warm, precise teacher of general knowledge (science, history, thinking tools) for Brayan, a curious adult in Colombia. Reply in English, 2-4 short sentences, plain text, no headings. Never end with a question and never invite more discussion: he will ask if he wants to talk more. Only answer what he asks. If he wrote in English and made a real grammar or word-choice error, add a last line "English fix: …" with the single most useful correction (American English).':'Eres un profesor cercano y preciso de cultura general (ciencia, historia, herramientas de pensamiento) para Brayan, un adulto curioso de Colombia. Responde en español, 2 a 4 frases cortas, texto plano, sin títulos. Nunca termines con una pregunta ni invites a seguir conversando: si él quiere hablar más, te preguntará. Responde solo lo que pregunta. Si escribió en inglés con un error real, añade al final una línea "English fix: …" con la corrección más útil (inglés americano).')}
 /* memory: Claude's notes per concept (what he got wrong or missed), fed back the next time that concept comes up */
 function noteKey(key){return key.slice(2)}
 function pastNotes(key){var n=(S.notes||{})[noteKey(key)]||[];return n.length?'\nNotas de sesiones anteriores sobre Brayan y este tema (úsalas: si repite el mismo error, díselo): '+n.slice(-3).map(function(x){return x.d+': '+x.n}).join(' | '):''}
@@ -663,9 +663,10 @@ var cur=null;
 (function(){try{if(S.cur&&S.curDate===today())cur=S.cur}catch(e){}})();
 function keepCur(){S.cur=cur;S.curDate=today();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof dbSoon==='function')dbSoon()}
 var planBusy=false;
-function planToday(){if(!sample||planBusy||S.planDate===today())return;planBusy=true;var due=dueToday().filter(function(x){return !isFact(x)}).slice(0,6).map(cn).join(', ')||'-',nw=unseen().slice(0,S.npd).map(cn).join(', ');
+function planSig(){return conceptIds().length+'/'+S.days.length}
+function planToday(){if(!READY||!sample||planBusy||(S.planDate===today()&&S.planSig===planSig()))return;planBusy=true;var due=dueToday().filter(function(x){return !isFact(x)}).slice(0,6).map(cn).join(', ')||'-',nw=unseen().slice(0,S.npd).map(cn).join(', ');
   sample((L()==='en'?'You are Brayan\'s personal teacher of general knowledge. In 3 short sentences, in English, tell him the plan for today\'s 10-minute session and why, using what you remember about him. Be concrete and encouraging, no filler.':'Eres el profesor personal de cultura general de Brayan. En 3 frases cortas, en español, dile el plan de la sesión de hoy (10 minutos) y por qué, usando lo que recuerdas de él. Concreto y motivador, sin relleno.')+'\nRepasos de hoy: '+due+'\nConceptos nuevos de hoy: '+nw+'\nLo que recuerdas de él:\n'+memory(),{modelTier:'default',cache:false})
-  .then(function(r){S.planText=r.text;S.planDate=today();save();if(!cur)render()}).catch(function(){}).then(function(){planBusy=false})}
+  .then(function(r){S.planText=r.text;S.planDate=today();S.planSig=planSig();save();if(!cur)render()}).catch(function(){}).then(function(){planBusy=false})}
 function newSession(){
   var dueAll=shuffle(dueToday());var due=dueAll.filter(function(x){return !isFact(x)}).slice(0,4).concat(dueAll.filter(isFact).slice(0,2));var fresh=unseen().slice(0,S.npd);
   var items=due.map(function(id){return {id:id,kind:'review'}}).concat(fresh.map(function(id){return {id:id,kind:'new'}}));
@@ -687,7 +688,8 @@ function render(){try{render0()}finally{renderChat()}}
 function render0(){keepCur();
   stats();steps();var st=$('stage');
   if(!cur){var r=Math.min(6,dueToday().length),n=Math.min(S.npd,unseen().length);
-    planToday();st.innerHTML='<h2>'+t('start')+'</h2>'+(S.planDate===today()&&S.planText?'<div class="plan"><b>🧑‍🏫 '+t('planT')+'</b><p>'+esc(S.planText)+'</p></div>':sample?'<p class="small">'+t('planWait')+'</p>':'')+'<p class="small">'+t('startSub')+'</p><p>'+t('todayPlan',{r:r,n:n})+'</p><div class="row"><button class="btn primary" id="go">'+t('start')+'</button></div>';
+    if(!READY){st.innerHTML='<h2>'+t('start')+'</h2><p class="small">'+(L()==='en'?'Loading your progress…':'Cargando tu progreso…')+'</p>';return}
+    planToday();st.innerHTML='<h2>'+t('start')+'</h2>'+(S.planDate===today()&&S.planText&&S.planSig===planSig()?'<div class="plan"><b>🧑‍🏫 '+t('planT')+'</b><p>'+esc(S.planText)+'</p></div>':sample?'<p class="small">'+t('planWait')+'</p>':'')+'<p class="small">'+t('startSub')+'</p><p>'+t('todayPlan',{r:r,n:n})+'</p><div class="row"><button class="btn primary" id="go">'+t('start')+'</button></div>';
     $('go').onclick=function(){newSession();cur.block=1;if(!cur.items.length)cur.block=2;render()};return}
   if(cur.block===1)return renderRecall(st);
   if(cur.block===2)return renderConnect(st);
@@ -711,7 +713,7 @@ function renderRecall(st){
     h+=defBox(it.id)+'<div id="chat" class="chat"></div><p class="small">'+t('newHelp')+'</p><div class="row"><button class="btn primary" id="ok">'+t('gotIt')+'</button></div>';
     st.innerHTML=h;$('ok').onclick=function(){introduce(it.id);nextItem()};
     chatTeach('n:'+it.id,'Concepto NUEVO para Brayan: '+c.n.es+' / '+c.n.en+'. Definición: '+c.d[L()]+' Ejemplo de referencia: '+c.x[L()]+'\nLo que recuerdas de él en general:\n'+memory(),
-      L()==='en'?'Teach me this concept like a great teacher: explain it simply in 3-4 sentences, give one vivid everyday example (different from the reference), connect it to something I already know if possible, and end with ONE short question so I check I understood. I will answer below.':'Enséñame este concepto como un gran profesor: explícalo simple en 3-4 frases, dame un ejemplo cotidiano y vívido (distinto al de referencia), conéctalo con algo que ya sepa si se puede, y termina con UNA pregunta corta para comprobar que entendí. Te respondo abajo.');return;
+      L()==='en'?'Teach me this concept like a great teacher: explain it simply in 3-4 sentences, give one vivid everyday example (different from the reference), connect it to something I already know if possible. Keep it short and do not ask me any question.':'Enséñame este concepto como un gran profesor: explícalo simple en 3-4 frases, dame un ejemplo cotidiano y vívido (distinto al de referencia), conéctalo con algo que ya sepa si se puede. Que sea corto y no me hagas ninguna pregunta.');return;
   }
   h+='<p>'+t('recallQ')+'</p><textarea id="rt" placeholder="'+esc(t('recallPh'))+'" aria-label="'+esc(t('recallQ'))+'">'+esc(cur.text)+'</textarea>';
   if(!cur.revealed){h+='<div class="row"><button class="btn primary" id="rv" disabled>'+t('reveal')+'</button><button class="btn" id="dk">'+t('dontKnow')+'</button></div><p class="small">'+t('writeFirst')+'</p>';st.innerHTML=h;

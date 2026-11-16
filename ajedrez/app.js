@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=54;
+var APP_VER=55;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -611,6 +611,16 @@ function kindPill(k,extra){var m={mine:['kMine','mist'],punish:['kPun','good'],r
   return '<span class="pill '+m[1]+'">'+t(m[0])+'</span>'+(extra?' <span class="small">'+extra+'</span>':'')}
 function sideTxt(side){return ''}  /* the big badge above the board already says it */
 
+/* the analysis bar's quick engine (about a second) can disagree with the deep check (depth 18) behind each card;
+   seed the deep numbers so the best move / equally good moves are never called mistakes and the bar matches the explanation */
+function seedDeep(c,fen){try{
+  var v=c.kind==='mine'?c.s0:c.s1;if(v==null||!c.best)return;var w=toW(v,c.side);
+  AN.ev[fen]={w:w,pv:(c.pvBest&&c.pvBest.length?c.pvBest:[c.best]).slice()};
+  var after=function(san){var b=new Chess(fen);return b.move(san,{sloppy:true})?b.fen():null};
+  var f1=after(c.best);if(f1){AN.ev[f1]={w:w,pv:(c.pvBest||[]).slice(1)};AN.good[f1]=1}
+  (c.alts||[]).forEach(function(a){var f=after(a);if(f){AN.good[f]=1;if(!AN.ev[f])AN.ev[f]={w:w,pv:[]}}});
+  if(c.kind==='mine'&&c.played&&c.s1!=null){var fp=after(c.played);if(fp&&fp!==f1)AN.ev[fp]={w:toW(c.s1,c.side),pv:(c.pvBad||[]).slice()}}
+}catch(e){}}
 /* card: own mistake or punish */
 function loadCard(c){
   var fen=fenOf(c.line),prev=c.line.length?fenOf(c.line.slice(0,-1)):null;
@@ -619,9 +629,10 @@ function loadCard(c){
   setBar(toW(ref,c.side));
   var head=kindPill(c.kind==='mine'?(c.trap?'trap':'mine'):'punish',sideTxt(c.side));
   if(c.kind==='punish'&&(c.s0||0)<=-150)head+=' <span class="pill come">'+t('kComeback')+'</span>';
-  var p=c.kind==='mine'?t(visOf(c)==='win'?'pMineWin':'pMineLose',esc(c.played)):t('pPun2',esc(c.oppMove));
+  var p=c.kind==='mine'?(c.line.length?t('oppJust',esc(c.line[c.line.length-1]))+' ':'')+t(visOf(c)==='win'?'pMineWin':'pMineLose',esc(c.played)):t('pPun2',esc(c.oppMove));
   $('prompt').innerHTML='<div class="op">'+head+'</div>'+p;
   cur.anPath=function(){return {start:INIT,moves:c.line.concat(cur.okMove?[cur.okMove]:[]),i:c.line.length+(cur.okMove?1:0),base:c.line.length,keepArrows:true}};
+  seedDeep(c,fen);
   anSet(INIT,c.line,c.line.length);B.onMove=onCardMove;
   setBtns({scan:true,hint:true,show:true});Engine.init();
 }
@@ -677,7 +688,7 @@ function cardResult(ok,san,sAfter,pvAfter){
 function showWhy(list){if(!list.length)return;$('why').hidden=false;$('why').innerHTML='<h3>'+t('why')+'</h3><ul>'+list.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>'}
 /* ---------- analysis board: step through any line yourself (◀ ▶), and after answering move freely with live engine ---------- */
 var INIT=new Chess().fen();
-var AN={on:false,start:INIT,moves:[],i:0,base:0,tok:0,ev:{}};
+var AN={on:false,start:INIT,moves:[],i:0,base:0,tok:0,ev:{},good:{}};
 function anSet(start,moves,i,base){AN.known=moves.length;AN.on=true;AN.start=start;AN.moves=moves.slice();AN.i=Math.max(0,Math.min(i,AN.moves.length));AN.base=base==null?AN.i:base;$('anBar').hidden=false;$('line').hidden=true;anRender()}
 function anOff(){AN.on=false;AN.tok++;$('anBar').hidden=true;$('anStory').innerHTML='';$('line').hidden=false;$('anEval').innerHTML=''}
 function anChess(n){var c=new Chess(AN.start);for(var k=0;k<n&&k<AN.moves.length;k++){if(!c.move(AN.moves[k],{sloppy:true}))break}return c}
@@ -706,18 +717,19 @@ $('anLast').onclick=function(){AN.i=AN.moves.length;anRender()};
 $('anBase').onclick=function(){AN.i=AN.base;anRender()};
 /* a move on the board while analysing (after the exercise is answered) */
 function anMove(mv){$('anStory').innerHTML='';AN.known=Math.min(AN.known||0,AN.i);AN.moves=AN.moves.slice(0,AN.i).concat([mv.san]);AN.i++;anRender()}
+function sameMove(f,a,b){try{var x=new Chess(f).move(a,{sloppy:true}),y=new Chess(f).move(b,{sloppy:true});return !!(x&&y&&x.from===y.from&&x.to===y.to&&(x.promotion||'')===(y.promotion||''))}catch(e){return false}}
 function anEval(){
   var c=anChess(AN.i),fen=c.fen(),tok=++AN.tok,side=c.turn();
   var prevFen=AN.i>0?anChess(AN.i-1).fen():null,lastSan=AN.i>0?AN.moves[AN.i-1]:null;
   $('anEval').innerHTML=t('thinking');
-  var get=function(f){return AN.ev[f]?Promise.resolve(AN.ev[f]):analyse(f,700).then(function(r){if(r){var cc=new Chess(f);AN.ev[f]={w:toW(r.s,cc.turn()),pv:r.pv}}return AN.ev[f]})};
+  var get=function(f){return AN.ev[f]?Promise.resolve(AN.ev[f]):analyse(f,1200).then(function(r){if(r){var cc=new Chess(f);AN.ev[f]={w:toW(r.s,cc.turn()),pv:r.pv}}return AN.ev[f]})};
   get(fen).then(function(e){
     if(tok!==AN.tok||!e)return;setBar(e.w);
     var h='';
     if(AN.i===AN.base&&cur&&cur.answered){$('anEval').innerHTML='';return}
     if(e.pv&&e.pv.length){var a=arrowFor(fen,e.pv[0],'#2563EB');B.arrows=a?[a]:[];drawBoard();h+=t('engineBest',pvText(fen,e.pv,4))}
     if(!prevFen||AN.i<=AN.base||AN.i<=(AN.known||0)){$('anEval').innerHTML=h;return}
-    get(prevFen).then(function(p){if(tok!==AN.tok||!p)return;var mover=side==='w'?'b':'w',d=mover==='w'?wp(p.w)-wp(e.w):wp(-p.w)-wp(-e.w);
+    get(prevFen).then(function(p){if(tok!==AN.tok||!p)return;var mover=side==='w'?'b':'w',d=mover==='w'?wp(p.w)-wp(e.w):wp(-p.w)-wp(-e.w);if(AN.good[fen]||(p.pv&&p.pv[0]&&sameMove(prevFen,p.pv[0],lastSan)))d=0;
       $('anEval').innerHTML=chip(lastSan,Math.max(0,d),mover==='w'?e.w:-e.w)+' '+h});
   });
 }
