@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=55;
+var APP_VER=57;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1281,7 +1281,9 @@ function loadGame(){
   var N=(cur.it&&cur.it.n)||10,ND=Math.round(N*.3),NT=Math.round(N*.4),NQ=Math.max(1,N-ND-NT);
   var dp=puzPool(['mate1','hanging','backrank','fork'],1500),nd=0;for(var i=0;i<dp.length&&nd<ND;i++){var x=defMake(dp[i]);if(x){x.type='def';L.push(x);nd++}}
   puzPool(['hanging','fork','pin','skewer','discovered','backrank','mate1','mate2','trapped','defender','smothered'],1450).slice(0,NT).forEach(function(it){L.push({type:'tac',it:it})});
-  var qs=[];Object.keys(PLANS).forEach(function(k){PLANS[k].forEach(function(p){qs.push({type:'quiet',p:p,tag:k})})});shuf(qs).slice(0,NQ).forEach(function(q){L.push(q)});
+  /* the moment in his own games right before it fell apart (he asked: "show me the 1-2 moves that destroy everything") */
+  var mc=shuf(cardsOf('mine').filter(function(c){return visOf(c)!=='win'&&c.pvBad&&c.line&&c.line.length})).slice(0,Math.min(2,NQ-1));mc.forEach(function(c){L.push({type:'mine',c:c})});
+  var qs=[];Object.keys(PLANS).forEach(function(k){PLANS[k].forEach(function(p){qs.push({type:'quiet',p:p,tag:k})})});shuf(qs).slice(0,NQ-mc.length).forEach(function(q){L.push(q)});
   cur.game={list:shuf(L),n:0,ok:0,total:L.length,t0:now()};setBar(null,false);setBtns({});gameNext();
 
 }
@@ -1289,7 +1291,7 @@ function gameHead(){var G=cur.game;return '<div class="op">'+kindPill('idea',t('
 function gameNext(){
   var G=cur.game;if(G.n>=G.total){gameEnd();return}
   var x=G.list[G.n],fen,me,last=null,prev=null;anOff();cur.answered=false;$('choices').hidden=true;$('fb').innerHTML='';$('fb').className='feedback';
-  if(x.type==='def')fen=x.d.fen();else if(x.type==='quiet')fen=x.p.fen;else{var a=afterFirst(x.it.p);fen=a.c.fen();last=a.m.san;prev=x.it.p.fen}
+  if(x.type==='def')fen=x.d.fen();else if(x.type==='quiet')fen=x.p.fen;else if(x.type==='mine'){fen=fenOf(x.c.line);last=x.c.line[x.c.line.length-1];prev=fenOf(x.c.line.slice(0,-1))}else{var a=afterFirst(x.it.p);fen=a.c.fen();last=a.m.san;prev=x.it.p.fen}
   me=new Chess(fen).turn();setBoard(fen,me==='b',last,prev);
   $('prompt').innerHTML=gameHead()+'<div class="bigq">'+t('gameQ')+'</div><p class="small">'+sideTxt(me)+'</p>';
   B.locked=false;B.onMove=function(mv){B.locked=true;B.onMove=null;G.n++;
@@ -1299,6 +1301,13 @@ function gameNext(){
     if(x.type==='tac'){var p=x.it.p,want=p.m[1],ok2=mv.san===want||(p.m.length===2&&B.chess.in_checkmate()),nm=esc(tt(x.it.l.t));
       var ar=arrowFor(fen,want,'#0E9488');
       markPuz(p,ok2);done(ok2,ok2?'✓ '+t('gameTacOk',nm):'✗ '+t('gameWasTac',nm,'<b class="mono">'+esc(want)+'</b>'),ok2?[]:(ar?[ar]:[]),ok2?p.m.slice(1):[mv.san],fold(t('stStep'),story(fen,p.m.slice(1),me,8)));return}
+    if(x.type==='mine'){var c=x.c,tb=teachBad(fen,c.played,c.pvBad,me),box=tb?teachBox(tb):'',ba=arrowFor(fen,c.best,'#0E9488'),bd=arrowFor(fen,c.played,'#C0392B'),
+        why=box+fold(t('stIf',esc(c.played)),story(fen,[c.played].concat(c.pvBad),me,4))+fold(t('stBest',esc(c.best)),story(fen,c.pvBest&&c.pvBest.length?c.pvBest:[c.best],me,5)),
+        P='<b class="mono">'+esc(c.played)+'</b>',Bm='<b class="mono">'+esc(c.best)+'</b>',fin=function(ok){c.last=ok?1:0;save();done(ok,ok?'✓ '+t('gameMineOk',P):'✗ '+t(mv.san===c.played?'gameMineSame':'gameMineBad',P,Bm),ok?[bd]:[ba,bd],ok?[mv.san]:[c.played].concat(c.pvBad),why)};
+      if(mv.san===c.best||(c.alts||[]).indexOf(mv.san)>=0){fin(true);return}
+      if(mv.san===c.played){fin(false);return}
+      $('fb').className='feedback';$('fb').textContent=t('thinking');
+      analyse(B.chess.fen(),1200).then(function(r){fin(r?wp(-r.s)>=wp(c.s0)-8:false)});return}
     /* quiet: ask the engine whether his move keeps the position */
     var q=x.p,st=stratById(x.tag),bestA=arrowFor(fen,q.best,'#0E9488');
     if(mv.san===q.best){done(true,'✓ '+t('gameQuietBest',esc(tt(st.t))),[],q.pv,fold(t('stPlan',esc(q.best)),story(fen,q.pv,me,4)));return}
@@ -1311,6 +1320,8 @@ function gameNext(){
       pauseReview(fen,[],false,T+t('gameWasDef')+' '+th+' '+t('defGoodWere',sanList(x.good)),x.th.slice(0,2).map(function(m){return {from:m.from,to:m.to,c:'#C0392B'}}).concat(ga?[ga]:[]),gameNext,fold(t('stThreat'),story(flipTurn(fen,me==='w'?'b':'w'),[x.th[0].san],me,1)));return}
     if(x.type==='tac'){var p=x.it.p,want=p.m[1],ar=arrowFor(fen,want,'#0E9488');
       pauseReview(fen,p.m.slice(1),false,T+t('gameWasTac',esc(tt(x.it.l.t)),'<b class="mono">'+esc(want)+'</b>'),ar?[ar]:[],gameNext,fold(t('stStep'),story(fen,p.m.slice(1),me,8)));return}
+    if(x.type==='mine'){var c=x.c,ba2=arrowFor(fen,c.best,'#0E9488'),bd2=arrowFor(fen,c.played,'#C0392B');c.last=0;save();
+      pauseReview(fen,[c.played].concat(c.pvBad),false,T+t('gameMineBad','<b class="mono">'+esc(c.played)+'</b>','<b class="mono">'+esc(c.best)+'</b>'),[ba2,bd2].filter(Boolean),gameNext,fold(t('stIf',esc(c.played)),story(fen,[c.played].concat(c.pvBad),me,4)));return}
     var q=x.p,bA=arrowFor(fen,q.best,'#0E9488');
     pauseReview(fen,q.pv||[q.best],false,T+t('gameQuietBest0','<b class="mono">'+esc(q.best)+'</b>'),bA?[bA]:[],gameNext,fold(t('stPlan',esc(q.best)),story(fen,q.pv,me,4)))});
 }

@@ -54,6 +54,7 @@ for fen,r in res.items():
     if len(r)<3: continue
     b=chess.Board(fen); best=r[0]
     if abs(best['s'])>250: continue
+    if best['s']<-50: continue  # he is already worse: nothing to learn (Nov 17)
     gap=best['s']-r[1]['s']
     if gap<50 or gap>250: continue  # clear, but the runner-up is a real move, not a blunder
     if any(best['s']-x['s']>400 for x in r[:4]): continue  # sharp/tactical position: skip
@@ -66,6 +67,9 @@ for fen,r in res.items():
     bb=b.copy();b0=bal(bb,b.turn)
     for s in best['pv'][:4]: bb.push_san(s)
     if bal(bb,b.turn)-b0>=2: continue
+    bf=b.copy()
+    for s_ in best['pv']: bf.push_san(s_)
+    if bal(bf,b.turn)-b0<=-1: continue  # best line gives up material: not a lesson (Nov 17)
     opts=[x for x in r[1:] if 60<=best['s']-x['s']<=300]
     if len(opts)<2: continue
     opts=opts[:2]
