@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=59;
+var APP_VER=60;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -401,6 +401,8 @@ function buildToday(n){
   var trapL=lines.filter(function(x){return x.l.kind!=='main'})[0];
   var pickL=[];if(trapL)pickL.push(trapL);lines.forEach(function(x){if(pickL.length<2&&pickL.indexOf(x)<0)pickL.push(x)});
   var mine=dueList('mine',true);if(mine.length<4)mine=mine.concat(dueList('mine',false).filter(function(c){return mine.indexOf(c)<0}));
+  /* weak-spot themes are trained on their own screen: keep the daily different */
+  var wtop=weakRank().filter(function(x){return x.k!=='calc'}).slice(0,2).map(function(x){return x.k});mine=mine.filter(function(c){return wtop.indexOf(cardWk(c))<0});
   var pun=dueList('punish',true).filter(function(c){return c.mat>=1});if(pun.length<2)pun=pun.concat(dueList('punish',false).filter(function(c){return pun.indexOf(c)<0}));
   var idea=IDEAS.filter(function(x){var s=S.ideas[x.id];return !s})[0]||IDEAS.filter(function(x){var s=S.ideas[x.id];return s&&(s.due||0)<=now()})[0];
   var L=function(x){return x?{t:'line',op:x.op,i:x.i}:null},C=function(c){return c?{t:'card',id:c.id}:null};
@@ -420,12 +422,12 @@ function buildToday(n){
   var o=(n-1)*2,rot=[qz?{t:'quiz',id:qz.id}:null,pl[0],vq?{t:'quiz',id:vq.id}:null,nq?{t:'name',op:nq.op,i:nq.i}:null,idea?{t:'idea',id:idea.id}:null].filter(Boolean),r1=rot[(dd+n)%Math.max(1,rot.length)]||null;
   var speed=(dd+n)%2?{t:'drill',f:'flash',n:3}:{t:'drill',f:'rush',n:3};
   var pzA=pz.slice(),g1=grab(pzA),g2=grab(pz2);
-  /* a bit of everything (calculation first); his weak spots have their own button on home (weakItems) */
-  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},{t:'drill',f:basics[(dd+n)%3],n:basics[(dd+n)%3]==='nota'?3:5},L(pickL[n>1?1:0]||pickL[0]),{t:'drill',f:'defend',n:2}].concat(g1,[C(mine[o]),speed,C(pun[n>1?1:0]||pun[0])],g2,[r1,
+  /* a bit of everything to stay sharp; calculation and his weak themes live on the weak-spots screen (weakItems) */
+  var it=[{t:'drill',f:basics[(dd+n)%3],n:basics[(dd+n)%3]==='nota'?3:5},L(pickL[n>1?1:0]||pickL[0]),{t:'drill',f:'defend',n:2}].concat(g1,[C(mine[o]),speed,C(pun[n>1?1:0]||pun[0])],g2,[r1,
       {t:'drill',f:'game',n:3},C(mine[o+1]),extra||grab(pzA)[0]]).filter(Boolean);
   while(it.length>5&&estSec(it)>660)it.splice(it.length-1,1);
   while(it.length&&it[it.length-1].t==='theory')it.pop();
-  S.daily={v:8,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
+  S.daily={v:9,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
 }
 /* how long things take him: median of his last logged times per type, defaults otherwise */
 var EST={drill:75,line:80,puz:60,card:90,plan:60,quiz:25,idea:60,name:25,theory:40,ftheory:40,stheory:40,play:150};
@@ -438,26 +440,26 @@ function estOne(it){
   return a.length>=4?med(a):(EST[it.t]||60);
 }
 function estSec(items){return items.reduce(function(a,x){return a+estOne(x)},0)}
-function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<8&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
+function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<9&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
 
 /* ---------- routing / screens ---------- */
-var SCREENS=['home','train','rep','learn','progress','data'],LISTS={mine:1,punish:1},TABS={home:'navToday',rep:'navRep',learn:'navLearn',progress:'navProg',data:'tData'};
+var SCREENS=['home','train','rep','learn','progress','data','weak'],LISTS={mine:1,punish:1},TABS={weak:'weakScrT',home:'navToday',rep:'navRep',learn:'navLearn',progress:'navProg',data:'tData'};
 function route(){
   var h=(location.hash||'#home').slice(1).split('/');var s=h[0];if(SCREENS.indexOf(s)<0)s='home';
   if(s==='train'&&!X.items.length)s='home';
   if(s!=='train')stopTimers();
   if(LISTS[s]){quickSession(s);return}
   SCREENS.forEach(function(x){$('s-'+x).hidden=x!==s});
-  $('tabbar').hidden=s==='train';$('bClose').hidden=s!=='train'&&s!=='data';$('bSite').hidden=!$('bClose').hidden;
+  $('tabbar').hidden=s==='train';$('bClose').hidden=s!=='train'&&s!=='data'&&s!=='weak';$('bSite').hidden=!$('bClose').hidden;
   $('topTitle').textContent=s==='train'?'':s==='home'?t('title'):t(TABS[s]);
   document.querySelectorAll('#tabbar button').forEach(function(b){if(b.getAttribute('data-tab')===s)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
   if(s==='home')renderHome();if(s==='rep')renderRep(h[1]);if(s==='learn')renderLearn();if(s==='progress')renderProgress();
-  if(s==='data')renderData();if(s==='train')renderItem();
+  if(s==='data')renderData();if(s==='weak')renderWeakScr();if(s==='train')renderItem();
   window.scrollTo(0,0);
 }
 function go(s){if(location.hash==='#'+s)route();else location.hash=s}
 window.addEventListener('hashchange',route);
-$('bClose').onclick=function(){if(location.hash==='#data'){go('progress');return}closeItemTime();stopTimers();go(X.back||'home')};
+$('bClose').onclick=function(){if(location.hash==='#data'){go('progress');return}if(location.hash==='#weak'){go('home');return}closeItemTime();stopTimers();go(X.back||'home')};
 document.querySelectorAll('#tabbar button').forEach(function(b){b.onclick=function(){go(b.getAttribute('data-tab'))}});
 function rerender(){route()}
 
@@ -489,22 +491,52 @@ function critSession(o){
   S.crit=S.crit||{};S.crit[o.id]=Object.assign(S.crit[o.id]||{},{lastRun:now()});save();
   startSession(it,'mine');X.back='home';
 }
-/* Home "🎯 Mejora tus puntos débiles" (Nov 17, he wants one button for his weak spots and less on the screen):
-   calculation ×3 (his #1 weakness) + his recent unsolved mistakes of the top "Para arreglar ya" themes + course puzzles of the top theme. */
+/* ---------- Weak spots (Nov 17): its own screen and its own big bank (debiles.js, ~2,400 Lichess puzzles in his weak themes,
+   none of them in the course). Daily practice = keep sharp (openings, reviews, course, Game mode); weak spots = calculation + the themes
+   his own mistakes show, ranked. Everything shares state: a card or puzzle solved anywhere (S.cards / S.puz by id) counts everywhere. ---------- */
+var WK=['calc','hang','forkd','lines','matek'],WALIAS={missfree:'hang',misstac:'forkd',missmate:'matek'},WEAKL={};
+(function(){if(!window.WEAKDB)return;Object.keys(WEAKDB).forEach(function(k){WEAKL[k]={id:'w_'+k,weak:k,t:{es:'',en:''},body:{es:[],en:[]},
+  p:WEAKDB[k].map(function(r){return {id:r[0],fen:r[1],m:r[2].split(' '),r:r[3]}})}})})();
+function weakL(k){var l=WEAKL[k];if(!l)return null;l.t={es:TXT.es['wt_'+k],en:TXT.en['wt_'+k]};l.body={es:[TXT.es['wb_'+k]],en:[TXT.en['wb_'+k]]};return l}
+function cardWk(c){var th=cardTheme(c);return th?(WALIAS[th]||th):null}
+function weakCards(k){return cardsOf('mine').filter(function(c){return cardWk(c)===k})}
+function weakRank(){
+  var t30=now()/1000-30*86400,sc={};WK.forEach(function(k){sc[k]=0});
+  cardsOf('mine').forEach(function(c){var k=cardWk(c);if(!k||sc[k]==null)return;sc[k]+=((c.date||0)>=t30?3:1)});
+  var to=Object.keys(S.games).map(function(k){return S.games[k]}).filter(function(g){return (g.date||0)>=t30&&g.r==='L'&&g.how==='timeout'}).length;
+  sc.calc=Math.max(sc.calc,to*3+1);   /* slow calculation shows up as losses on time */
+  return WK.slice().sort(function(a,b){return sc[b]-sc[a]}).map(function(k){return {k:k,score:sc[k],timeouts:k==='calc'?to:0}});
+}
+function weakProg(k){var l=WEAKL[k],n=l?l.p.length:0,ok=l?l.p.filter(function(p){var s=S.puz[p.id];return s&&s.box>=1}).length:0,cs=k==='calc'?[]:weakCards(k),cf=cs.filter(function(c){return c.last===1}).length;
+  return {n:n,ok:ok,cards:cs.length,cfix:cf}}
+/* bank puzzles for a theme: due reviews first, then new ones near his level (target rating rises as he solves more of the theme) */
+function weakPuz(k,max){var l=WEAKL[k];if(!l)return [];var pr=weakProg(k),tgt=950+Math.min(850,pr.ok*6);
+  var due=l.p.filter(function(p){var s=S.puz[p.id];return s&&(s.due||0)<=now()&&s.box<4}),fresh=l.p.filter(function(p){return !S.puz[p.id]}).sort(function(a,b){return Math.abs(a.r-tgt)-Math.abs(b.r-tgt)});
+  return due.slice(0,Math.ceil(max/2)).concat(fresh).slice(0,max).sort(function(a,b){return a.r-b.r}).map(function(p){return {t:'puz',l:'w_'+k,id:p.id}})}
+function weakCardItems(k,max){return weakCards(k).filter(function(c){return c.last!==1||(c.due||0)<=now()}).sort(function(a,b){return (a.last===1?1:0)-(b.last===1?1:0)||(b.date||0)-(a.date||0)}).slice(0,max).map(function(c){return {t:'card',id:c.id}})}
+function weakTheme(k){
+  if(k==='calc')return [S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:6}].filter(Boolean);
+  var c=weakCardItems(k,4),p=weakPuz(k,10-c.length),o=[],i=0,j=0;while(i<c.length||j<p.length){if(j<p.length)o.push(p[j++]);if(j<p.length)o.push(p[j++]);if(i<c.length)o.push(c[i++])}return o}
 function weakItems(){
-  var L=criticalThemes(),it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3}];
-  if(L.length){var a=L[0],cs=a.pool.filter(function(c){return c.last!==1}).sort(function(x,y){return (y.date||0)-(x.date||0)}).slice(0,5);
-    it=it.concat(cs.map(function(c){return {t:'card',id:c.id}}));
-    var wl=CURSO.lessons.filter(function(l){return THEMES[a.id].ls.indexOf(l.id)>=0});wl.forEach(function(l){it=it.concat(lessonItems(l,1).filter(function(x){return x.t==='puz'}))});
-    if(L[1])it=it.concat(L[1].pool.filter(function(c){return c.last!==1}).slice(0,2).map(function(c){return {t:'card',id:c.id}}));}
-  else it=it.concat([{t:'drill',f:'defend',n:4},{t:'drill',f:'game',n:3}]);
-  return {themes:L,items:it.filter(Boolean)};
+  var R=weakRank().filter(function(x){return x.k!=='calc'}),a=R[0]&&R[0].k,b=R[1]&&R[1].k;
+  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3}];
+  if(a){it=it.concat(weakCardItems(a,2),weakPuz(a,4))}if(b){it=it.concat(weakCardItems(b,1),weakPuz(b,2))}
+  return {items:it.filter(Boolean)};
 }
 function renderWeak(){
-  var b=$('bWeak');if(!b)return;var w=weakItems(),L=w.themes,lv=t('calcT')+' '+t('calcLvl',calcLvl()).toLowerCase();
-  $('weakSub').textContent=[lv].concat(L.slice(0,2).map(function(o){return t('th_'+o.id)})).join(' · ');
-  var a=L[0],pct=a?Math.round(a.pool.filter(function(c){return c.last===1}).length/Math.max(1,a.pool.length)*100):0;$('weakBar').style.width=pct+'%';$('weakBar').parentNode.hidden=!a;
-  b.onclick=function(){startSession(weakItems().items,'weak');X.back='home'};
+  var b=$('bWeak');if(!b)return;var R=weakRank();
+  $('weakSub').textContent=R.slice(0,3).map(function(o){return t('wt_'+o.k)}).join(' · ');
+  var top=R.filter(function(x){return x.k!=='calc'})[0],pr=top?weakProg(top.k):null;$('weakBar').style.width=(pr?Math.round(pr.ok/Math.max(1,pr.n)*100):0)+'%';
+  b.onclick=function(){go('weak')};
+}
+function renderWeakScr(){
+  var el=$('weakList');if(!el)return;var R=weakRank();
+  $('bWeakGo').onclick=function(){startSession(weakItems().items,'weak')};
+  el.innerHTML=R.map(function(o,i){var k=o.k,pr=weakProg(k),sub,pct;
+    if(k==='calc'){var ct=calcTrend();sub=t('calcLvl',calcLvl())+(ct?' · '+t('calcAvg',ct.last):'')+(o.timeouts?' · '+t('wTimeouts',o.timeouts):'');pct=(calcLvl()-1)/4*100}
+    else{sub=t('wSub',pr.cards,pr.ok,pr.n);pct=Math.round(pr.ok/Math.max(1,pr.n)*100)}
+    return '<button class="crow critrow" data-wk="'+k+'" type="button"><span class="ci">'+(i+1)+'</span><span class="ct"><b>'+esc(t('wt_'+k))+'</b><small>'+sub+'</small><span class="bar2"><span style="width:'+pct+'%"></span></span></span><span class="go">›</span></button>'}).join('');
+  el.querySelectorAll('[data-wk]').forEach(function(x){x.onclick=function(){var k=x.getAttribute('data-wk');startSession(weakTheme(k),'weak')}});
 }
 function renderCrit(){
   var el=$('crit');if(!el)return;var L=criticalThemes();if(!L.length){el.innerHTML='';el.hidden=true;return}el.hidden=false;
@@ -1363,8 +1395,8 @@ var CALC=[null,{len:4,r:1200,st:2},{len:4,r:1550,st:2},{len:6,r:1350,st:3},{len:
 var CALC_ATT=['mate2','mate3','backrank','anastasia','arabian','smothered','doublecheck','attraction','deflection','fork','discovered'];
 function calcLvl(){var s=S.drill.calc||(S.drill.calc={best:0,bestT:0,runs:0});return Math.max(1,Math.min(5,s.lvl||1))}
 function calcPool(lvl,att){
-  var out=[];for(var L=lvl;L>=1&&out.length<6;L--){var c=CALC[L];
-    CURSO.lessons.forEach(function(l){if(att&&CALC_ATT.indexOf(l.id)<0)return;l.p.forEach(function(p){
+  var out=[],LS=CURSO.lessons.concat(WEAKL.calc&&!att?[WEAKL.calc]:[]);for(var L=lvl;L>=1&&out.length<6;L--){var c=CALC[L];
+    LS.forEach(function(l){if(att&&CALC_ATT.indexOf(l.id)<0)return;l.p.forEach(function(p){
       if(p.m.length!==c.len||p.r>c.r||(L<lvl&&p.r<CALC[L].r-400))return;
       if(att&&!p.m.slice(1).some(function(s,i){return i%2===0&&/^Q/.test(s)}))return;   /* attacker's queen takes part */
       out.push({l:l,p:p})})})}
@@ -1401,7 +1433,7 @@ function calcNext(){
     ch.querySelectorAll('[data-s]').forEach(function(b){b.onclick=function(){pick(b.getAttribute('data-s'))}});
   };
   var finish=function(ok,html,wrong){
-    dclkPause();var sec=Math.round((now()-t0)/1000);C.secs.push(sec);C.n++;if(ok)C.ok++;$('choices').hidden=true;
+    dclkPause();var sec=Math.round((now()-t0)/1000);C.secs.push(sec);C.n++;if(ok)C.ok++;markPuz(p,ok);$('choices').hidden=true;
     var mv=sol.slice(),arr=[],a1=arrowFor(fen,sol[0],x.att?'#C0392B':'#0E9488');if(a1)arr.push(a1);
     pauseReview(fen,mv,ok,html+' <span class="small">('+sec+' s)</span>',arr,calcNext,
       fold(t('stStep'),story(fen,sol,me,8)));
@@ -1464,7 +1496,7 @@ $('bScan').onclick=function(){if(!cur||cur.answered)return;var c=B.chess,L=scanL
   B.arrows=l.arr;drawBoard();$('fb').className='feedback';$('fb').innerHTML='<b>'+cur.scan+'/3</b> '+l.txt};
 
 /* ---------- learn: course of tactics, mates, endgames (+ strategy ideas) ---------- */
-function lessonById(id){return CURSO.lessons.filter(function(l){return l.id===id})[0]}
+function lessonById(id){if(/^w_/.test(id))return weakL(id.slice(2));return CURSO.lessons.filter(function(l){return l.id===id})[0]}
 function techById(id){return CURSO.tech.filter(function(x){return x.id===id})[0]}
 function puzSt(id){return S.puz[id]}
 function lessonProg(l){var n=l.p.length,ok=l.p.filter(function(p){var s=S.puz[p.id];return s&&s.box>=1}).length;return {ok:ok,n:n,pct:n?ok/n:0}}
