@@ -692,10 +692,10 @@ function render(){try{render0()}catch(e){var st=$('stage');if(st)st.innerHTML+='
 function render0(){keepCur();
   stats();steps();var st=$('stage');
   if(!cur){var r=Math.min(6,dueToday().length),n=Math.min(S.npd,unseen().length);
-    if(!READY){st.innerHTML='<h2>'+t('start')+'</h2><p class="small">'+(L()==='en'?'Loading your progress…':'Cargando tu progreso…')+'</p>';setTimeout(function(){if(!READY&&!cur)goReady('timeout')},8000-Math.min(8000,Date.now()-T0)+50);return}
-    var dbNote=DBST&&DBST!=='ok'?'<p class="small">⚠ '+(L()==='en'?'Could not load your saved progress ('+esc(DBST)+'). You can still practice; it will be saved.':'No pude cargar tu progreso guardado ('+esc(DBST)+'). Puedes practicar igual; se guardará.')+'</p>':'';
-    planToday();st.innerHTML='<h2>'+t('start')+'</h2>'+(S.planDate===today()&&S.planText&&S.planSig===planSig()?'<div class="plan"><b>🧑‍🏫 '+t('planT')+'</b><p>'+esc(S.planText)+'</p></div>':sample?'<p class="small">'+t('planWait')+'</p>':'')+dbNote+'<p class="small">'+t('startSub')+'</p><p>'+t('todayPlan',{r:r,n:n})+'</p><div class="row"><button class="btn primary" id="go">'+t('start')+'</button></div>';
-    $('go').onclick=function(){newSession();cur.block=1;if(!cur.items.length)cur.block=2;render()};return}
+    var VTAG='<p class="small" style="opacity:.6">v8</p>';
+    var dbNote=!READY?'<p class="small">⏳ '+(L()==='en'?'Loading your saved progress… you can start now anyway.':'Cargando tu progreso guardado… puedes empezar ya si quieres.')+'</p>':DBST&&DBST!=='ok'?'<p class="small">⚠ '+(L()==='en'?'Could not load your saved progress ('+esc(DBST)+'). You can still practice; it will be saved.':'No pude cargar tu progreso guardado ('+esc(DBST)+'). Puedes practicar igual; se guardará.')+'</p>':'';
+    planToday();st.innerHTML='<h2>'+t('start')+'</h2>'+(S.planDate===today()&&S.planText&&S.planSig===planSig()?'<div class="plan"><b>🧑‍🏫 '+t('planT')+'</b><p>'+esc(S.planText)+'</p></div>':sample?'<p class="small">'+t('planWait')+'</p>':'')+dbNote+'<p class="small">'+t('startSub')+'</p><p>'+t('todayPlan',{r:r,n:n})+'</p><div class="row"><button class="btn primary" id="go">'+t('start')+'</button></div>'+VTAG;
+    $('go').onclick=function(){if(!READY)goReady('timeout');newSession();cur.block=1;if(!cur.items.length)cur.block=2;render()};return}
   if(cur.block===1)return renderRecall(st);
   if(cur.block===2)return renderConnect(st);
   if(cur.block===3)return renderApply(st);
