@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=58;
+var APP_VER=59;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -420,25 +420,12 @@ function buildToday(n){
   var o=(n-1)*2,rot=[qz?{t:'quiz',id:qz.id}:null,pl[0],vq?{t:'quiz',id:vq.id}:null,nq?{t:'name',op:nq.op,i:nq.i}:null,idea?{t:'idea',id:idea.id}:null].filter(Boolean),r1=rot[(dd+n)%Math.max(1,rot.length)]||null;
   var speed=(dd+n)%2?{t:'drill',f:'flash',n:3}:{t:'drill',f:'rush',n:3};
   var pzA=pz.slice(),g1=grab(pzA),g2=grab(pz2);
-  /* Nov 17 ("the daily keeps me sharp but doesn't fix my weak spots"): the first session of the day is an improvement session, ~12 min:
-     1) calculation ladder every day (his #1 weakness: 11 of 36 recent losses on time, 3-4 tries per small calculation)
-     2) his current weak spot = top "Para arreglar ya" theme (rotating by day): his own recent cards of that theme + one course puzzle of it
-     3) Game mode (blunder check under a clock), 4) one more own mistake, 5) the current lesson, 6) openings only every other day (his mistakes now come after move 20). */
-  var it;
-  if(n===1){
-    var cth=criticalThemes(),wt=cth.length?cth[dd%cth.length]:null,wc=[],wp=[];
-    if(wt){wc=wt.pool.filter(function(c){return c.last!==1}).sort(function(a,b){return (b.date||0)-(a.date||0)}).slice(0,2);
-      var wl=CURSO.lessons.filter(function(l){return THEMES[wt.id].ls.indexOf(l.id)>=0});if(wl.length){var wq=lessonItems(wl[dd%wl.length],1).filter(function(x){return x.t==='puz'});wp=wq.slice(0,1)}}
-    var m2=mine.filter(function(c){return wc.indexOf(c)<0});
-    it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:5}].concat(wc.map(C),wp,[{t:'drill',f:'game',n:3},C(m2[0])],g1,[dd%2?L(pickL[0]):{t:'drill',f:'defend',n:2}]).filter(Boolean);
-    while(it.length>5&&estSec(it)>780)it.splice(it.length-1,1);
-    while(it.length&&it[it.length-1].t==='theory')it.pop();
-  }else{
-    it=[{t:'drill',f:'calc',n:3},{t:'drill',f:basics[(dd+n)%3],n:basics[(dd+n)%3]==='nota'?3:5},L(pickL[n>1?1:0]||pickL[0]),{t:'drill',f:'defend',n:2}].concat(g1,[C(mine[o]),speed,C(pun[n>1?1:0]||pun[0])],g2,[r1,
+  /* a bit of everything (calculation first); his weak spots have their own button on home (weakItems) */
+  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},{t:'drill',f:basics[(dd+n)%3],n:basics[(dd+n)%3]==='nota'?3:5},L(pickL[n>1?1:0]||pickL[0]),{t:'drill',f:'defend',n:2}].concat(g1,[C(mine[o]),speed,C(pun[n>1?1:0]||pun[0])],g2,[r1,
       {t:'drill',f:'game',n:3},C(mine[o+1]),extra||grab(pzA)[0]]).filter(Boolean);
-    while(it.length>5&&estSec(it)>600)it.splice(it.length-1,1);
-  }
-  S.daily={v:7,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
+  while(it.length>5&&estSec(it)>660)it.splice(it.length-1,1);
+  while(it.length&&it[it.length-1].t==='theory')it.pop();
+  S.daily={v:8,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
 }
 /* how long things take him: median of his last logged times per type, defaults otherwise */
 var EST={drill:75,line:80,puz:60,card:90,plan:60,quiz:25,idea:60,name:25,theory:40,ftheory:40,stheory:40,play:150};
@@ -451,7 +438,7 @@ function estOne(it){
   return a.length>=4?med(a):(EST[it.t]||60);
 }
 function estSec(items){return items.reduce(function(a,x){return a+estOne(x)},0)}
-function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<7&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
+function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<8&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
 
 /* ---------- routing / screens ---------- */
 var SCREENS=['home','train','rep','learn','progress','data'],LISTS={mine:1,punish:1},TABS={home:'navToday',rep:'navRep',learn:'navLearn',progress:'navProg',data:'tData'};
@@ -502,6 +489,23 @@ function critSession(o){
   S.crit=S.crit||{};S.crit[o.id]=Object.assign(S.crit[o.id]||{},{lastRun:now()});save();
   startSession(it,'mine');X.back='home';
 }
+/* Home "🎯 Mejora tus puntos débiles" (Nov 17, he wants one button for his weak spots and less on the screen):
+   calculation ×3 (his #1 weakness) + his recent unsolved mistakes of the top "Para arreglar ya" themes + course puzzles of the top theme. */
+function weakItems(){
+  var L=criticalThemes(),it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3}];
+  if(L.length){var a=L[0],cs=a.pool.filter(function(c){return c.last!==1}).sort(function(x,y){return (y.date||0)-(x.date||0)}).slice(0,5);
+    it=it.concat(cs.map(function(c){return {t:'card',id:c.id}}));
+    var wl=CURSO.lessons.filter(function(l){return THEMES[a.id].ls.indexOf(l.id)>=0});wl.forEach(function(l){it=it.concat(lessonItems(l,1).filter(function(x){return x.t==='puz'}))});
+    if(L[1])it=it.concat(L[1].pool.filter(function(c){return c.last!==1}).slice(0,2).map(function(c){return {t:'card',id:c.id}}));}
+  else it=it.concat([{t:'drill',f:'defend',n:4},{t:'drill',f:'game',n:3}]);
+  return {themes:L,items:it.filter(Boolean)};
+}
+function renderWeak(){
+  var b=$('bWeak');if(!b)return;var w=weakItems(),L=w.themes,lv=t('calcT')+' '+t('calcLvl',calcLvl()).toLowerCase();
+  $('weakSub').textContent=[lv].concat(L.slice(0,2).map(function(o){return t('th_'+o.id)})).join(' · ');
+  var a=L[0],pct=a?Math.round(a.pool.filter(function(c){return c.last===1}).length/Math.max(1,a.pool.length)*100):0;$('weakBar').style.width=pct+'%';$('weakBar').parentNode.hidden=!a;
+  b.onclick=function(){startSession(weakItems().items,'weak');X.back='home'};
+}
 function renderCrit(){
   var el=$('crit');if(!el)return;var L=criticalThemes();if(!L.length){el.innerHTML='';el.hidden=true;return}el.hidden=false;
   el.innerHTML='<div class="chead"><b>🚨 '+t('critT')+'</b><span class="small">'+t('critSub')+'</span></div>'+L.map(function(o,i){var n=o.pool.length,f=o.pool.filter(function(c){return c.last===1}).length,pct=Math.round(f/Math.max(1,n)*100);
@@ -509,7 +513,7 @@ function renderCrit(){
   el.querySelectorAll('[data-ci]').forEach(function(b){b.onclick=function(){critSession(L[+b.getAttribute('data-ci')])}});
 }
 function renderHome(){
-  try{renderCrit()}catch(e){}
+  try{renderWeak()}catch(e){}
   var d=dailyNow(),n=d.items.length;
   var sn=d.n||1;$('hToday').textContent=sn>1?t('todayExtra'):t('today');
   $('hTodaySub').textContent=d.done?t(sn>1?'todayDone2':'todayDone'):(sn>1?t('todayExtraSub')+' ':'')+t('todaySub',n,Math.max(3,Math.round(estSec(d.items.slice(d.idx||0))/60)));
@@ -518,7 +522,6 @@ function renderHome(){
   syncStreak();$('hStreak').textContent=S.streak.n>0?'🔥 '+t(S.streak.n===1?'streak1':'streak',S.streak.n):'';
   var cm=counts('mine'),cp=counts('punish');
   $('tMineN').innerHTML=fmtCount(cm);$('tPunN').innerHTML=fmtCount(cp);
-  renderCoach();
   if(!running&&!$('syncStatus').textContent)$('syncStatus').textContent=S.lastSync?t('lastSync',new Date(S.lastSync).toLocaleDateString(LANG)):t('syncHint');
 }
 function hintsUI(){var c=$('optHints');if(!c)return;c.checked=HINTS;c.onchange=function(){HINTS=c.checked;try{localStorage.setItem('taller-aperturas.hints',HINTS?'1':'0')}catch(e){}}}

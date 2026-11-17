@@ -277,6 +277,7 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 .trhead .progress span,#trProg{background:linear-gradient(90deg,#7C3AED,#2563EB)}
 .why{background:linear-gradient(170deg,#F6F1FF,#fff 60%)!important;border:1px solid #E6DCFB}
 .cseq{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:.5em 0 .2em;font-size:1.02em}.cmv{background:rgba(124,58,237,.08);border-radius:10px;padding:4px 9px}.cmv small{opacity:.65;font-size:.78em}.cq{background:rgba(232,115,12,.14)}
+.weakbtn{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;border-radius:18px;padding:14px 16px;margin:12px 0;background:linear-gradient(135deg,rgba(232,115,12,.14),rgba(124,58,237,.10));color:inherit;font:inherit;cursor:pointer;touch-action:manipulation}.weakbtn .wi{font-size:1.6em}.weakbtn .wt{flex:1;display:flex;flex-direction:column;gap:3px}.weakbtn b{font-size:1.08em}.weakbtn small{opacity:.75}.weakbtn .go{font-size:1.5em;opacity:.5}.weakbtn .bar2{display:block;height:6px;border-radius:4px;background:rgba(0,0,0,.08);overflow:hidden;margin-top:4px}.weakbtn .bar2 span{display:block;height:100%;background:#E8730C;border-radius:4px}
 </style>
 </head>
 <body>
@@ -299,13 +300,11 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
       <button class="btn" id="bToday"></button>
       <div class="streak" id="hStreak"></div>
     </div>
-    <div class="coach crit" id="crit" hidden></div>
+    <button class="weakbtn" id="bWeak" type="button"><span class="wi">💪</span><span class="wt"><b data-t="weakBtn"></b><small id="weakSub"></small><span class="bar2"><span id="weakBar"></span></span></span><span class="go">›</span></button>
     <div class="tiles">
       <button class="tile" data-go="mine" style="--tc:var(--c-mist)"><span class="ti">🎯</span><b data-t="tMine"></b><em id="tMineN"></em></button>
       <button class="tile" data-go="punish" style="--tc:var(--good)"><span class="ti">⚔️</span><b data-t="tPun"></b><em id="tPunN"></em></button>
     </div>
-    <div class="coach" id="coach"></div>
-    <div class="sync"><button class="btn" id="bSync" data-t="bSync"></button><span class="small" id="syncStatus"></span><button class="cloudline" id="clHome" type="button"></button></div>
   </section>
 
   <!-- TRAINER (shared by every exercise type) -->
@@ -369,6 +368,7 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 
   <!-- PROGRESS -->
   <section class="screen" id="s-progress" hidden>
+    <div class="sync"><button class="btn" id="bSync" data-t="bSync"></button><span class="small" id="syncStatus"></span><button class="cloudline" id="clHome" type="button"></button></div>
     <div class="kpis" id="kpis"></div>
     <div class="chart"><h3 data-t="prRating"></h3><p class="cap" id="capRating"></p><div id="chRating"></div></div>
     <div class="chart"><h3 data-t="prErr"></h3><p class="cap" data-t="prErrCap"></p><div id="chErr"></div></div>
@@ -427,12 +427,12 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
   <button data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg><span data-t="navProg"></span></button>
 </nav>
 <script src="chess.js"></script>
-<script src="textos.js?v=47"></script>
+<script src="textos.js?v=48"></script>
 <script src="conceptos.js?v=1"></script>
 <script src="repertorio.js?v=7"></script>
 <script src="curso.js?v=1"></script>
 <script src="fundamentos.js?v=9"></script>
 <script src="planes.js?v=2"></script>
-<script src="app.js?v=58"></script>
+<script src="app.js?v=59"></script>
 </body>
 </html>
