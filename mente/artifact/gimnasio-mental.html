@@ -595,10 +595,14 @@ function cn(id){return CONCEPTS[id].n[L()]}
 function isFact(id){return id.indexOf('f:')===0}
 
 /* ---------------- sample (Claude feedback, optional) ---------------- */
-var sample=null,READY=!(window.claude&&window.claude.use);setTimeout(function(){if(!READY){READY=true;if(!cur)render()}},6000);
+var sample=null,READY=!(window.claude&&window.claude.use),T0=Date.now(),DBST='';
+function goReady(st){if(st&&!DBST)DBST=st;if(READY)return;READY=true;try{if(!cur)render()}catch(e){}}
+setTimeout(function(){goReady('timeout')},8000);
+document.addEventListener('pointerdown',function(){if(!READY&&Date.now()-T0>8000)goReady('timeout')},true);
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&!READY&&Date.now()-T0>8000)goReady('timeout')});
 if(window.claude&&window.claude.use){window.claude.use('sample').then(function(s){sample=s;render()}).catch(function(){});
   Promise.all([window.claude.use('db'),window.claude.use('user')]).then(function(r){var db=r[0],u=r[1];if(!db||!u)return;return u.id().then(function(id){if(!id)return;DB=db;DBPATH='data/users/'+id+'/mind';
-    return db.doc(DBPATH).get().then(function(d){var v=d&&d.exists?d.data:null;if(typeof v==='function')v=d.data();var sv=v&&v.s;if(sv){mergeIn(JSON.parse(sv))}READY=true;if(!cur)render();dbWrite()})})}).then(function(){if(!READY){READY=true;if(!cur)render()}},function(){READY=true;if(!cur)render()})}
+    return db.doc(DBPATH).get().then(function(d){var v=d&&d.exists?d.data:null;if(typeof v==='function')v=d.data();var sv=v&&v.s;if(sv){mergeIn(JSON.parse(sv))}DBST='ok';READY=false;goReady();dbWrite()})})}).then(function(){goReady('none')},function(e){goReady('error '+((e&&(e.code||e.message))||''))})}
 /* ---------- talk with Claude about each answer ---------- */
 var CHAT=null;
 function chatSys(){return (L()==='en'?'You are a warm, precise teacher of general knowledge (science, history, thinking tools) for Brayan, a curious adult in Colombia. Reply in English, 2-4 short sentences, plain text, no headings. Never end with a question and never invite more discussion: he will ask if he wants to talk more. Only answer what he asks. If he wrote in English and made a real grammar or word-choice error, add a last line "English fix: …" with the single most useful correction (American English).':'Eres un profesor cercano y preciso de cultura general (ciencia, historia, herramientas de pensamiento) para Brayan, un adulto curioso de Colombia. Responde en español, 2 a 4 frases cortas, texto plano, sin títulos. Nunca termines con una pregunta ni invites a seguir conversando: si él quiere hablar más, te preguntará. Responde solo lo que pregunta. Si escribió en inglés con un error real, añade al final una línea "English fix: …" con la corrección más útil (inglés americano).')}
@@ -607,7 +611,7 @@ function noteKey(key){return key.slice(2)}
 function pastNotes(key){var n=(S.notes||{})[noteKey(key)]||[];return n.length?'\nNotas de sesiones anteriores sobre Brayan y este tema (úsalas: si repite el mismo error, díselo): '+n.slice(-3).map(function(x){return x.d+': '+x.n}).join(' | '):''}
 function memory(){var n=S.notes||{},all=[];Object.keys(n).forEach(function(k){n[k].forEach(function(x){all.push(x.d+' · '+(CONCEPTS[k]?CONCEPTS[k].n.es:k)+': '+x.n)})});all.sort();
   var lg=(S.coachLog||[]).slice(-3).map(function(x){return x.d+' resumen: '+x.text});return all.slice(-12).concat(lg).join('\n')||'(todavía sin notas)'}
-function chatTeach(key,ctx,ask){if(CHAT&&CHAT.key===key)return;CHAT={key:key,ctx:ctx+pastNotes(key),msgs:[],busy:false};if(sample)chatAsk(ask,true)}
+function chatTeach(key,ctx,ask,tier){if(CHAT&&CHAT.key===key)return;CHAT={key:key,ctx:ctx+pastNotes(key),msgs:[],busy:false,tier:tier};if(sample&&ask)chatAsk(ask,true)}
 function chatOpen(key,ctx,auto){if(CHAT&&CHAT.key===key)return;CHAT={key:key,ctx:ctx+pastNotes(key),msgs:[],busy:false};if(auto&&sample)chatGrade(auto)}
 /* first reply = a structured verdict: score (pre-selects the rating), feedback, a better example, and a short note to remember */
 function chatGrade(ask){var C2=CHAT;C2.msgs.push({role:'user',content:ask,hidden:true});var last={role:'assistant',content:'',wait:true};C2.msgs.push(last);C2.busy=true;renderChat();
@@ -620,7 +624,7 @@ function chatGrade(ask){var C2=CHAT;C2.msgs.push({role:'user',content:ask,hidden
 function chatAsk(q,hidden){if(!sample||!CHAT||CHAT.busy)return;var C2=CHAT;C2.msgs.push({role:'user',content:q,hidden:!!hidden});C2.msgs.push({role:'assistant',content:'',wait:true});C2.busy=true;renderChat();
   var arr=[],first=true;C2.msgs.forEach(function(m){if(m.wait)return;var c=m.content;if(first&&m.role==='user'){c=chatSys()+'\n\n'+C2.ctx+'\n\n'+c;first=false}arr.push({role:m.role,content:c})});
   var last=C2.msgs[C2.msgs.length-1];
-  sample(arr,{modelTier:'default',cache:false,onText:function(u){last.content=u.text;last.wait=false;if(CHAT===C2)renderChat(true)}})
+  sample(arr,{modelTier:C2.tier||'default',cache:false,onText:function(u){last.content=u.text;last.wait=false;if(CHAT===C2)renderChat(true)}})
   .then(function(r){last.content=r.text;last.wait=false}).catch(function(e){last.content=t('chatErr');last.wait=false}).then(function(){C2.busy=false;if(CHAT===C2)renderChat()})}
 function renderChat(partial){var el=$('chat');if(!el||!CHAT)return;if(!sample){el.innerHTML='<p class="small">'+t('chatNo')+'</p>';return}
   var box=el.querySelector('.msgs');var h=CHAT.msgs.filter(function(m){return !m.hidden}).map(function(m){return '<div class="msg '+m.role+'">'+(m.wait?'<i>'+t('fbWait')+'</i>':esc(m.content))+'</div>'}).join('');
@@ -684,12 +688,13 @@ function stats(){
 function areaTag(id){var a=CONCEPTS[id].area;return '<span class="area '+a+'">'+esc(AREAS[a][L()])+'</span>'}
 function defBox(id){var c=CONCEPTS[id];return '<div class="def"><p>'+esc(c.d[L()])+'</p><p class="ex">'+esc(c.x[L()])+'</p></div>'}
 function steps(){var s=$('steps').children;for(var i=0;i<4;i++){s[i].className=!cur?'':i<cur.block-1?'done':i===cur.block-1?'on':''}}
-function render(){try{render0()}finally{renderChat()}}
+function render(){try{render0()}catch(e){var st=$('stage');if(st)st.innerHTML+='<p class="small">⚠ '+esc(e&&e.message||e)+'</p><div class="row"><button class="btn" onclick="cur=null;S.cur=null;render()">↻</button></div>'}finally{try{renderChat()}catch(e){}}}
 function render0(){keepCur();
   stats();steps();var st=$('stage');
   if(!cur){var r=Math.min(6,dueToday().length),n=Math.min(S.npd,unseen().length);
-    if(!READY){st.innerHTML='<h2>'+t('start')+'</h2><p class="small">'+(L()==='en'?'Loading your progress…':'Cargando tu progreso…')+'</p>';return}
-    planToday();st.innerHTML='<h2>'+t('start')+'</h2>'+(S.planDate===today()&&S.planText&&S.planSig===planSig()?'<div class="plan"><b>🧑‍🏫 '+t('planT')+'</b><p>'+esc(S.planText)+'</p></div>':sample?'<p class="small">'+t('planWait')+'</p>':'')+'<p class="small">'+t('startSub')+'</p><p>'+t('todayPlan',{r:r,n:n})+'</p><div class="row"><button class="btn primary" id="go">'+t('start')+'</button></div>';
+    if(!READY){st.innerHTML='<h2>'+t('start')+'</h2><p class="small">'+(L()==='en'?'Loading your progress…':'Cargando tu progreso…')+'</p>';setTimeout(function(){if(!READY&&!cur)goReady('timeout')},8000-Math.min(8000,Date.now()-T0)+50);return}
+    var dbNote=DBST&&DBST!=='ok'?'<p class="small">⚠ '+(L()==='en'?'Could not load your saved progress ('+esc(DBST)+'). You can still practice; it will be saved.':'No pude cargar tu progreso guardado ('+esc(DBST)+'). Puedes practicar igual; se guardará.')+'</p>':'';
+    planToday();st.innerHTML='<h2>'+t('start')+'</h2>'+(S.planDate===today()&&S.planText&&S.planSig===planSig()?'<div class="plan"><b>🧑‍🏫 '+t('planT')+'</b><p>'+esc(S.planText)+'</p></div>':sample?'<p class="small">'+t('planWait')+'</p>':'')+dbNote+'<p class="small">'+t('startSub')+'</p><p>'+t('todayPlan',{r:r,n:n})+'</p><div class="row"><button class="btn primary" id="go">'+t('start')+'</button></div>';
     $('go').onclick=function(){newSession();cur.block=1;if(!cur.items.length)cur.block=2;render()};return}
   if(cur.block===1)return renderRecall(st);
   if(cur.block===2)return renderConnect(st);
@@ -799,7 +804,7 @@ function renderConnect(st){
   if(cur.connDone){ /* after he writes (or skips): one possible connection, to compare with his */
     h+=(cur.connText.trim()?'<div class="entry"><span class="meta">'+t('yourConn')+'</span><div>'+esc(cur.connText.trim())+'</div></div>':'')+
       (P?'<div class="def"><p><b>'+t('oneConn')+'</b> '+esc(L()==='en'?P[5]:P[4])+'</p></div>':'')+'<div id="chat" class="chat"></div><div class="row"><button class="btn primary" id="cn">'+t('next')+'</button></div>';
-    chatOpen('c:'+a+b,'Conectar: '+CONCEPTS[a].n.es+' ('+CONCEPTS[a].d.es+') y '+CONCEPTS[b].n.es+' ('+CONCEPTS[b].d.es+'). Una conexión posible: '+(P?P[4]:'')+'\nConexión de Brayan: "'+(cur.connText.trim()||'(no escribió)')+'"',cur.connText.trim()?(L()==='en'?'Is my connection real and well reasoned? Point out any misunderstanding and one sharper connection.':'¿Mi conexión es real y está bien razonada? Señala si hay algún error y propón una conexión más aguda.'):null);
+    chatTeach('c:'+a+b,'Conectar: '+CONCEPTS[a].n.es+' ('+CONCEPTS[a].d.es+') y '+CONCEPTS[b].n.es+' ('+CONCEPTS[b].d.es+'). Una conexión posible: '+(P?P[4]:'')+'\nConexión de Brayan: "'+(cur.connText.trim()||'(no escribió)')+'"',cur.connText.trim()?(L()==='en'?'Is my connection real and well reasoned? Point out any misunderstanding and one sharper connection.':'¿Mi conexión es real y está bien razonada? Señala si hay algún error y propón una conexión más aguda.'):null,'quick');
     st.innerHTML=h;wireDefs(st);$('cn').onclick=function(){cur.fb=null;cur.connDone=false;CHAT=null;cur.block=3;render();window.scrollTo(0,0)};return}
   h+='<p>'+t('connQ')+'</p>'+(P?'<p class="note small"><b>'+t('hintL')+'</b> '+esc(L()==='en'?P[3]:P[2])+'</p>':'')+
     '<textarea id="ct" placeholder="'+esc(t('connPh'))+'" aria-label="'+esc(t('connQ'))+'">'+esc(cur.connText)+'</textarea>'+
