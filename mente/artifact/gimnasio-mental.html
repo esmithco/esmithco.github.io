@@ -526,8 +526,8 @@ var CASES={};K.forEach(function(r){CASES[r[0]]={id:r[0],c:r[1],q:{es:r[2],en:r[3
 var T={
  es:{eyebrow:'Entrenamiento diario · 10 minutos',title:'Gimnasio Mental',subtitle:'Recordar, conectar y aplicar ideas de ciencia, historia, matemáticas, economía, psicología y lógica.',
   sStreak:'días seguidos',tKnow:'Saberes',b4:'Descubrir',discQ:'Una lección corta para hablar de cualquier tema. Mañana te pregunto lo clave.',pick:'O elige otro tema:',gen:'Preparando la lección…',genErr:'No pude preparar la lección ahora. Inténtalo más tarde o salta este bloque.',noSample:'Este bloque necesita a Claude: abre la página desde la app de Claude.',talkL:'Para sacarlo en una conversación:',perspL:'Dos miradas',keyL:'Lo clave (lo repasarás)',finish:'Terminar sesión',knowHelp:'Las lecciones que has descubierto. Sus ideas clave entran en tus repasos.',noKnow:'Aún no has descubierto ninguna lección.',factQ:'Responde sin mirar.',sLearned:'conceptos vistos',sMastered:'dominados',sAcc:'aciertos al aplicar',tToday:'Hoy',tLib:'Conceptos',tJournal:'Diario',tSet:'Ajustes',
-  b1:'Recordar',b2:'Conectar',b3:'Aplicar',min:'≈ 2-3 min',start:'Empezar sesión',startSub:'Cuatro bloques de 2 a 3 minutos. Escribe con tus palabras: el esfuerzo de recordar es lo que fija la idea.',
-  todayPlan:'Hoy: {r} repasos, {n} conceptos nuevos, 1 conexión, 2 casos y 1 lección nueva.',newC:'Concepto nuevo',review:'Repaso',
+  b1:'Recordar',b2:'Conectar',b3:'Aplicar',min:'≈ 2-3 min',start:'Empezar sesión',startSub:'Tres ideas para recordar y un ejercicio. Respuestas cortas, con tus palabras.',
+  todayPlan:'Hoy (unos 10 min): {r} repasos, {n} concepto nuevo y {x}.',newC:'Concepto nuevo',review:'Repaso',
   recallQ:'Explícalo con tus palabras y da un ejemplo tuyo, sin mirar. El ejemplo lo inventas tú, de tu vida o de algo que conozcas: no hace falta buscar nada.',recallPh:'Escribe aquí lo que recuerdas…',reveal:'Ver la respuesta',
   rate0:'No lo sabía',rate1:'Más o menos',rate2:'Lo sabía',gotIt:'Entendido',newHelp:'Léelo con calma y piensa en un ejemplo de tu vida o tu trabajo. Mañana te lo pregunto.',
   feedback:'Opinión de Claude',fbWait:'Claude está leyendo…',fbErr:'No pude obtener la opinión ahora. Sigue sin ella.',
@@ -541,8 +541,8 @@ var T={
   langNote:'Escribe en el idioma que quieras practicar.',tapDef:'Toca para ver qué es',hintL:'Pista:',showConn:'No sé, muéstrame',yourConn:'Tu conexión',oneConn:'Una conexión posible:',dontKnow:'No lo sé',planT:'Tu profesor: plan de hoy',planWait:'Tu profesor está preparando el plan de hoy…',sumT:'Tu profesor: resumen de hoy',claudeNote:'Lo que Claude recuerda de ti',chatT:'Habla con Claude sobre esto',chatPh:'Pregunta lo que quieras sobre este tema…',chatSend:'Enviar',chatErr:'No pude responder ahora. Inténtalo de nuevo en un momento.',chatNo:'La conversación con Claude se activa cuando abres esta página en Claude.',writeFirst:'Escribe al menos una frase antes de ver la respuesta: el esfuerzo de recordar es lo que entrena.',keysL:'Mencionaste {h} de {n} ideas clave.',sug0:'Sugerencia: «No lo sabía».',sug1:'Sugerencia: «Más o menos».',sug2:'Sugerencia: «Lo sabía».',backupHelp:'Tu progreso se guarda solo y sigue en cualquier dispositivo. El respaldo es por si acaso.',home:'Inicio'},
  en:{eyebrow:'Daily training · 10 minutes',title:'Gimnasio Mental',subtitle:'Recall, connect and apply ideas from science, history, math, economics, psychology and logic.',
   sStreak:'day streak',tKnow:'Knowledge',b4:'Discover',discQ:'A short lesson so you can talk about anything. Tomorrow I\'ll quiz you on the key points.',pick:'Or pick another topic:',gen:'Preparing the lesson…',genErr:'Couldn\'t prepare the lesson right now. Try later or skip this block.',noSample:'This block needs Claude: open the page from the Claude app.',talkL:'To bring it up in conversation:',perspL:'Two views',keyL:'Key points (you\'ll review these)',finish:'Finish session',knowHelp:'Lessons you\'ve discovered. Their key points go into your reviews.',noKnow:'No lessons discovered yet.',factQ:'Answer without looking.',sLearned:'concepts seen',sMastered:'mastered',sAcc:'apply accuracy',tToday:'Today',tLib:'Concepts',tJournal:'Journal',tSet:'Settings',
-  b1:'Recall',b2:'Connect',b3:'Apply',min:'≈ 2-3 min',start:'Start session',startSub:'Four blocks of 2 to 3 minutes. Write in your own words: the effort of recalling is what makes ideas stick.',
-  todayPlan:'Today: {r} reviews, {n} new concepts, 1 connection, 2 cases and 1 new lesson.',newC:'New concept',review:'Review',
+  b1:'Recall',b2:'Connect',b3:'Apply',min:'≈ 2-3 min',start:'Start session',startSub:'Three ideas to recall and one exercise. Short answers, in your own words.',
+  todayPlan:'Today (about 10 min): {r} reviews, {n} new concept and {x}.',newC:'New concept',review:'Review',
   recallQ:'Explain it in your own words and give your own example, without looking. Make the example up yourself, from your life or something you know: no need to look anything up.',recallPh:'Write what you remember…',reveal:'Show answer',
   rate0:'Didn\'t know',rate1:'Sort of',rate2:'Knew it',gotIt:'Got it',newHelp:'Read it slowly and think of an example from your life or work. I\'ll ask you tomorrow.',
   feedback:'Claude\'s take',fbWait:'Claude is reading…',fbErr:'Couldn\'t get feedback right now. Keep going without it.',
@@ -671,10 +671,13 @@ function planSig(){return conceptIds().length+'/'+S.days.length}
 function planToday(){if(!READY||!sample||planBusy||(S.planDate===today()&&S.planSig===planSig()))return;planBusy=true;var due=dueToday().filter(function(x){return !isFact(x)}).slice(0,6).map(cn).join(', ')||'-',nw=unseen().slice(0,S.npd).map(cn).join(', ');
   sample((L()==='en'?'You are Brayan\'s personal teacher of general knowledge. In 3 short sentences, in English, tell him the plan for today\'s 10-minute session and why, using what you remember about him. Be concrete and encouraging, no filler.':'Eres el profesor personal de cultura general de Brayan. En 3 frases cortas, en español, dile el plan de la sesión de hoy (10 minutos) y por qué, usando lo que recuerdas de él. Concreto y motivador, sin relleno.')+'\nRepasos de hoy: '+due+'\nConceptos nuevos de hoy: '+nw+'\nLo que recuerdas de él:\n'+memory(),{modelTier:'default',cache:false})
   .then(function(r){S.planText=r.text;S.planDate=today();S.planSig=planSig();save();if(!cur)render()}).catch(function(){}).then(function(){planBusy=false})}
+function todayBlock(){return [2,3,4][dayNum(today())%3]}
+function nextBlock(){var p=cur.plan||[1,2,3,4],i=p.indexOf(cur.block),nx=p[i+1];if(cur.again||!nx){finishSession();return}cur.block=nx}
 function newSession(){
-  var dueAll=shuffle(dueToday());var due=dueAll.filter(function(x){return !isFact(x)}).slice(0,4).concat(dueAll.filter(isFact).slice(0,2));var fresh=unseen().slice(0,S.npd);
+  /* real 10 minutes (Nov 17, he said the old 4 blocks took much longer): 3 things to recall (≤2 reviews + 1 new) and ONE exercise that rotates by day */
+  var dueAll=shuffle(dueToday());var fresh=unseen().slice(0,Math.min(1,S.npd));var due=dueAll.filter(function(x){return !isFact(x)}).concat(dueAll.filter(isFact)).slice(0,3-fresh.length);
   var items=due.map(function(id){return {id:id,kind:'review'}}).concat(fresh.map(function(id){return {id:id,kind:'new'}}));
-  cur={block:0,items:items,i:0,revealed:false,text:'',fb:null,pair:pickPair(),connText:'',cases:pickCases(2),ci:0,answered:null,lesson:null,topic:TOPICS[S.ti%TOPICS.length][0]};
+  cur={block:0,items:items,i:0,revealed:false,text:'',fb:null,pair:pickPair(),connText:'',cases:pickCases(1),ci:0,plan:[1,todayBlock()],t0:Date.now(),answered:null,lesson:null,topic:TOPICS[S.ti%TOPICS.length][0]};
 }
 function stats(){
   var ids=conceptIds();$('sLearned').textContent=ids.length;
@@ -687,15 +690,16 @@ function stats(){
 }
 function areaTag(id){var a=CONCEPTS[id].area;return '<span class="area '+a+'">'+esc(AREAS[a][L()])+'</span>'}
 function defBox(id){var c=CONCEPTS[id];return '<div class="def"><p>'+esc(c.d[L()])+'</p><p class="ex">'+esc(c.x[L()])+'</p></div>'}
-function steps(){var s=$('steps').children;for(var i=0;i<4;i++){s[i].className=!cur?'':i<cur.block-1?'done':i===cur.block-1?'on':''}}
+function steps(){var s=$('steps').children,p=cur&&cur.plan||[1,2,3,4],k=cur?p.indexOf(cur.block):-1;if(cur&&cur.block===5)k=p.length;for(var i=0;i<4;i++){s[i].style.display=i<p.length?'':'none';s[i].className=!cur?'':i<k?'done':i===k?'on':''}}
 function render(){try{render0()}catch(e){var st=$('stage');if(st)st.innerHTML+='<p class="small">⚠ '+esc(e&&e.message||e)+'</p><div class="row"><button class="btn" onclick="cur=null;S.cur=null;render()">↻</button></div>'}finally{try{renderChat()}catch(e){}}}
 function render0(){keepCur();
   stats();steps();var st=$('stage');
-  if(!cur){var r=Math.min(6,dueToday().length),n=Math.min(S.npd,unseen().length);
-    var VTAG='<p class="small" style="opacity:.6">v8</p>';
+  if(!cur){var n=Math.min(1,S.npd,unseen().length),r=Math.min(3-n,dueToday().length),tb=todayBlock(),x=L()==='en'?{2:'one connection',3:'one real-life case',4:'one short lesson'}[tb]:{2:'una conexión',3:'un caso real',4:'una lección corta'}[tb];
+    var VTAG='<p class="small" style="opacity:.6">v9</p>';
     var dbNote=!READY?'<p class="small">⏳ '+(L()==='en'?'Loading your saved progress… you can start now anyway.':'Cargando tu progreso guardado… puedes empezar ya si quieres.')+'</p>':DBST&&DBST!=='ok'?'<p class="small">⚠ '+(L()==='en'?'Could not load your saved progress ('+esc(DBST)+'). You can still practice; it will be saved.':'No pude cargar tu progreso guardado ('+esc(DBST)+'). Puedes practicar igual; se guardará.')+'</p>':'';
-    planToday();st.innerHTML='<h2>'+t('start')+'</h2>'+(S.planDate===today()&&S.planText&&S.planSig===planSig()?'<div class="plan"><b>🧑‍🏫 '+t('planT')+'</b><p>'+esc(S.planText)+'</p></div>':sample?'<p class="small">'+t('planWait')+'</p>':'')+dbNote+'<p class="small">'+t('startSub')+'</p><p>'+t('todayPlan',{r:r,n:n})+'</p><div class="row"><button class="btn primary" id="go">'+t('start')+'</button></div>'+VTAG;
-    $('go').onclick=function(){if(!READY)goReady('timeout');newSession();cur.block=1;if(!cur.items.length)cur.block=2;render()};return}
+    planToday();st.innerHTML='<h2>'+t('start')+'</h2>'+(S.planDate===today()&&S.planText&&S.planSig===planSig()?'<div class="plan"><b>🧑‍🏫 '+t('planT')+'</b><p>'+esc(S.planText)+'</p></div>':sample?'<p class="small">'+t('planWait')+'</p>':'')+dbNote+'<p class="small">'+t('startSub')+'</p><p>'+t('todayPlan',{r:r,n:n,x:x})+'</p><div class="row"><button class="btn primary" id="go">'+t('start')+'</button></div>'+VTAG;
+    $('go').onclick=function(){if(!READY)goReady('timeout');newSession();cur.block=1;if(!cur.items.length)cur.block=cur.plan[1];render()};return}
+  if(cur.block<5&&cur.t0&&Date.now()-cur.t0>=10*6e4&&!cur.over){setTimeout(function(){var b=document.createElement('div');b.className='plan';b.innerHTML='<b>⏱ '+(L()==='en'?'10 minutes done':'Ya van 10 minutos')+'</b><div class="row"><button class="btn primary" id="tOver">'+(L()==='en'?'Finish for today ✓':'Terminar por hoy ✓')+'</button><button class="btn" id="tMore">'+(L()==='en'?'Keep going':'Seguir')+'</button></div>';var s2=$('stage');if(!s2||$('tOver'))return;s2.insertBefore(b,s2.firstChild);$('tOver').onclick=function(){cur.over=true;finishSession()};$('tMore').onclick=function(){cur.over=true;b.remove()}},0)}
   if(cur.block===1)return renderRecall(st);
   if(cur.block===2)return renderConnect(st);
   if(cur.block===3)return renderApply(st);
@@ -758,7 +762,7 @@ function renderFact(st,it){
 function topicName(id){var r=TOPICS.filter(function(x){return x[0]===id})[0];return r?(L()==='en'?r[2]:r[1]):id}
 function makeLesson(){var id=cur.topic,ls=LESSONS[id];
   if(sample){cur.lesson={wait:true};render();var name=topicName(id),ref=ls?ls[L()].l:'';
-    sample.json('You are Brayan\'s personal teacher (math graduate in Colombia, curious about everything). Write today\'s short lesson on "'+name+'" in '+(L()==='en'?'English':'Spanish (Colombian, neutral)')+', accurate and mainstream; on contested topics describe the main positions fairly. Make it vivid, with names, dates and numbers, and connect it to what he already knows. What you remember about him:\n'+memory()+'\nReference text you may build on: '+ref+'\nReturn ONLY JSON: {"title": string, "lesson": string (170-230 words, 2-3 short paragraphs), "perspectives": null or [string, string], "talk": string (one sentence he could say in a conversation), "facts": [{"q": string, "a": string}] (exactly 3)}',{modelTier:'default',cache:false})
+    sample.json('You are Brayan\'s personal teacher (math graduate in Colombia, curious about everything). Write today\'s short lesson on "'+name+'" in '+(L()==='en'?'English':'Spanish (Colombian, neutral)')+', accurate and mainstream; on contested topics describe the main positions fairly. Make it vivid, with names, dates and numbers, and connect it to what he already knows. What you remember about him:\n'+memory()+'\nReference text you may build on: '+ref+'\nReturn ONLY JSON: {"title": string, "lesson": string (90-130 words, 2 short paragraphs), "perspectives": null or [string, string], "talk": string (one sentence he could say in a conversation), "facts": [{"q": string, "a": string}] (exactly 3)}',{modelTier:'default',cache:false})
     .then(function(j){if(!j||!j.lesson||!j.facts)throw 0;cur.lesson={topic:id,title:j.title||name,lesson:j.lesson,perspectives:j.perspectives||null,talk:j.talk||'',facts:j.facts.slice(0,3)};render();window.scrollTo(0,0)})
     .catch(function(){staticLesson(id)});return}
   staticLesson(id)}
@@ -796,7 +800,7 @@ function renderKnow(){
 }
 /* remember what he wrote (and how it went) so Claude can review it in chat later */
 function logAnswer(o){S.answers=S.answers||[];o.d=today();o.lang=L();S.answers.push(o);if(S.answers.length>800)S.answers=S.answers.slice(-800)}
-function nextItem(){CHAT=null;cur.i++;cur.revealed=false;cur.text='';cur.dk=false;cur.sug=null;cur.fb=null;if(cur.i>=cur.items.length)cur.block=2;render();window.scrollTo(0,0)}
+function nextItem(){CHAT=null;cur.i++;cur.revealed=false;cur.text='';cur.dk=false;cur.sug=null;cur.fb=null;if(cur.i>=cur.items.length){nextBlock();if(cur.block===5)return}render();window.scrollTo(0,0)}
 function renderConnect(st){
   var a=cur.pair[0],b=cur.pair[1],P=cur.pair[2];
   var box=function(id){return '<button class="c ctap" type="button" data-cid="'+id+'">'+areaTag(id)+'<b>'+esc(cn(id))+'</b><span class="small tapme">'+t('tapDef')+'</span><span class="cdef" hidden>'+esc(CONCEPTS[id].d[L()])+'<br><i>'+esc(CONCEPTS[id].x[L()])+'</i></span></button>'};
@@ -805,7 +809,7 @@ function renderConnect(st){
     h+=(cur.connText.trim()?'<div class="entry"><span class="meta">'+t('yourConn')+'</span><div>'+esc(cur.connText.trim())+'</div></div>':'')+
       (P?'<div class="def"><p><b>'+t('oneConn')+'</b> '+esc(L()==='en'?P[5]:P[4])+'</p></div>':'')+'<div id="chat" class="chat"></div><div class="row"><button class="btn primary" id="cn">'+t('next')+'</button></div>';
     chatTeach('c:'+a+b,'Conectar: '+CONCEPTS[a].n.es+' ('+CONCEPTS[a].d.es+') y '+CONCEPTS[b].n.es+' ('+CONCEPTS[b].d.es+'). Una conexión posible: '+(P?P[4]:'')+'\nConexión de Brayan: "'+(cur.connText.trim()||'(no escribió)')+'"',cur.connText.trim()?(L()==='en'?'Is my connection real and well reasoned? Point out any misunderstanding and one sharper connection.':'¿Mi conexión es real y está bien razonada? Señala si hay algún error y propón una conexión más aguda.'):null,'quick');
-    st.innerHTML=h;wireDefs(st);$('cn').onclick=function(){cur.fb=null;cur.connDone=false;CHAT=null;cur.block=3;render();window.scrollTo(0,0)};return}
+    st.innerHTML=h;wireDefs(st);$('cn').onclick=function(){cur.fb=null;cur.connDone=false;CHAT=null;nextBlock();if(cur.block===5)return;render();window.scrollTo(0,0)};return}
   h+='<p>'+t('connQ')+'</p>'+(P?'<p class="note small"><b>'+t('hintL')+'</b> '+esc(L()==='en'?P[3]:P[2])+'</p>':'')+
     '<textarea id="ct" placeholder="'+esc(t('connPh'))+'" aria-label="'+esc(t('connQ'))+'">'+esc(cur.connText)+'</textarea>'+
     '<div class="row"><button class="btn primary" id="sv">'+t('save')+'</button><button class="btn" id="sk">'+t('showConn')+'</button></div>';
@@ -831,7 +835,7 @@ function renderApply(st){
   st.querySelectorAll('[data-c]').forEach(function(b){b.onclick=function(){if(cur.answered)return;cur.answered=b.getAttribute('data-c');var ok=cur.answered===k.c;
     var s=S.cases[k.id]||(S.cases[k.id]={n:0,okN:0});s.n++;if(ok)s.okN++;s.ok=ok;s.last=dayNum(today());logAnswer({k:'apply',id:k.id,q:k.q.es,a:cn(cur.answered),ok:ok});
     if(S.cards[k.c]&&!ok){S.cards[k.c].due=Math.min(S.cards[k.c].due,dayNum(today())+1)}save();render()}});
-  if($('nx'))$('nx').onclick=function(){CHAT=null;cur.ci++;cur.answered=null;if(cur.ci>=cur.cases.length){cur.block=cur.again?5:4}render();window.scrollTo(0,0)};
+  if($('nx'))$('nx').onclick=function(){CHAT=null;cur.ci++;cur.answered=null;if(cur.ci>=cur.cases.length){if(cur.again){cur.block=5}else{nextBlock();if(cur.block===5)return}}render();window.scrollTo(0,0)};
 }
 function renderDone(st){
   var n=stats();var d=dayNum(today())+1;var tomorrow=Object.keys(S.cards).filter(function(id){return S.cards[id].due<=d}).length;
