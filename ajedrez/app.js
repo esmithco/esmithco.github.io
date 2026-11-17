@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=57;
+var APP_VER=58;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -420,10 +420,25 @@ function buildToday(n){
   var o=(n-1)*2,rot=[qz?{t:'quiz',id:qz.id}:null,pl[0],vq?{t:'quiz',id:vq.id}:null,nq?{t:'name',op:nq.op,i:nq.i}:null,idea?{t:'idea',id:idea.id}:null].filter(Boolean),r1=rot[(dd+n)%Math.max(1,rot.length)]||null;
   var speed=(dd+n)%2?{t:'drill',f:'flash',n:3}:{t:'drill',f:'rush',n:3};
   var pzA=pz.slice(),g1=grab(pzA),g2=grab(pz2);
-  var it=[{t:'drill',f:basics[(dd+n)%3],n:basics[(dd+n)%3]==='nota'?3:5},L(pickL[n>1?1:0]||pickL[0]),{t:'drill',f:'defend',n:2}].concat(g1,[C(mine[o]),speed,C(pun[n>1?1:0]||pun[0])],g2,[r1,
-    {t:'drill',f:'game',n:3},C(mine[o+1]),extra||grab(pzA)[0]]).filter(Boolean);
-  while(it.length>5&&estSec(it)>600)it.splice(it.length-1,1);
-  S.daily={v:6,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
+  /* Nov 17 ("the daily keeps me sharp but doesn't fix my weak spots"): the first session of the day is an improvement session, ~12 min:
+     1) calculation ladder every day (his #1 weakness: 11 of 36 recent losses on time, 3-4 tries per small calculation)
+     2) his current weak spot = top "Para arreglar ya" theme (rotating by day): his own recent cards of that theme + one course puzzle of it
+     3) Game mode (blunder check under a clock), 4) one more own mistake, 5) the current lesson, 6) openings only every other day (his mistakes now come after move 20). */
+  var it;
+  if(n===1){
+    var cth=criticalThemes(),wt=cth.length?cth[dd%cth.length]:null,wc=[],wp=[];
+    if(wt){wc=wt.pool.filter(function(c){return c.last!==1}).sort(function(a,b){return (b.date||0)-(a.date||0)}).slice(0,2);
+      var wl=CURSO.lessons.filter(function(l){return THEMES[wt.id].ls.indexOf(l.id)>=0});if(wl.length){var wq=lessonItems(wl[dd%wl.length],1).filter(function(x){return x.t==='puz'});wp=wq.slice(0,1)}}
+    var m2=mine.filter(function(c){return wc.indexOf(c)<0});
+    it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:5}].concat(wc.map(C),wp,[{t:'drill',f:'game',n:3},C(m2[0])],g1,[dd%2?L(pickL[0]):{t:'drill',f:'defend',n:2}]).filter(Boolean);
+    while(it.length>5&&estSec(it)>780)it.splice(it.length-1,1);
+    while(it.length&&it[it.length-1].t==='theory')it.pop();
+  }else{
+    it=[{t:'drill',f:'calc',n:3},{t:'drill',f:basics[(dd+n)%3],n:basics[(dd+n)%3]==='nota'?3:5},L(pickL[n>1?1:0]||pickL[0]),{t:'drill',f:'defend',n:2}].concat(g1,[C(mine[o]),speed,C(pun[n>1?1:0]||pun[0])],g2,[r1,
+      {t:'drill',f:'game',n:3},C(mine[o+1]),extra||grab(pzA)[0]]).filter(Boolean);
+    while(it.length>5&&estSec(it)>600)it.splice(it.length-1,1);
+  }
+  S.daily={v:7,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
 }
 /* how long things take him: median of his last logged times per type, defaults otherwise */
 var EST={drill:75,line:80,puz:60,card:90,plan:60,quiz:25,idea:60,name:25,theory:40,ftheory:40,stheory:40,play:150};
@@ -431,12 +446,12 @@ function estOne(it){
   var med=function(a){a=a.slice(-15).map(function(e){return Math.min(240,e[3])}).sort(function(x,y){return x-y});return a[Math.floor(a.length/2)]};
   var full=(S.log||[]).filter(function(e){return e[4]===1});
   if(it.t==='drill'){var key=it.f+':'+(it.n||0),d=full.filter(function(e){return e[5]===key});if(d.length>=2)return med(d);
-    var per={game:25,defend:22,flash:15,rush:12,coord:5,sqname:5,nota:10}[it.f]||8;return 10+per*(it.n||8)}
+    var per={calc:55,game:25,defend:22,flash:15,rush:12,coord:5,sqname:5,nota:10}[it.f]||8;return 10+per*(it.n||8)}
   var a=full.filter(function(e){return e[1]===it.t});
   return a.length>=4?med(a):(EST[it.t]||60);
 }
 function estSec(items){return items.reduce(function(a,x){return a+estOne(x)},0)}
-function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<6&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
+function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<7&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
 
 /* ---------- routing / screens ---------- */
 var SCREENS=['home','train','rep','learn','progress','data'],LISTS={mine:1,punish:1},TABS={home:'navToday',rep:'navRep',learn:'navLearn',progress:'navProg',data:'tData'};
@@ -540,9 +555,11 @@ function renderCoach(){
   var rpt=cardsOf('mine').filter(function(c){return (c.count||1)>=2&&(c.due||0)<=now()}).sort(function(a,b){return (b.again||b.date||0)-(a.again||a.date||0)});
   if(rpt.length)h+='<button class="crow" id="bCoachRep" type="button"><span class="ci">🔁</span><span class="ct"><b>'+t('coachRepT',rpt.length)+'</b><small>'+t('coachRepS')+'</small></span><span class="go">›</span></button>';
   if(cs.weak)h+='<button class="crow" id="bCoachWeak" type="button"><span class="ci">🎯</span><span class="ct"><b>'+t('coachWeakT',t(cs.weak.k))+'</b><small>'+t('coachWeakS',cs.weak.ok,cs.weak.n)+'</small></span><span class="go">›</span></button>';
+  var ct=calcTrend();h+='<button class="crow" id="bCoachCalc" type="button"><span class="ci">🧮</span><span class="ct"><b>'+t('calcT')+' · '+t('calcLvl',calcLvl())+'</b><small>'+(ct?(ct.days>1&&ct.first!==ct.last?t('coachCalc',ct.lvl,ct.last,ct.first):t('coachCalc1',ct.lvl,ct.last)).replace(/^🧮 /,''):t('calcFrozen'))+'</small></span><span class="go">›</span></button>';
   if(cs.fast)h+='<div class="ctip">⏱ '+t('coachFastS',cs.fast.bad,cs.fast.ok)+'</div>';
   el.innerHTML=h;
   if($('bCoachWeak'))$('bCoachWeak').onclick=function(){var g=cs.weak.go;if(LISTS[g])quickSession(g);else go(g)};
+  if($('bCoachCalc'))$('bCoachCalc').onclick=function(){startSession([S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:5}].filter(Boolean),'calc');X.back='home'};
   if($('bCoachRep'))$('bCoachRep').onclick=function(){startSession(rpt.slice(0,10).map(function(c){return {t:'card',id:c.id}}),'mine');X.back='home'};
   if($('bCoachLast'))$('bCoachLast').onclick=function(){startSession(lg.cards.slice(0,10).map(function(c){return {t:'card',id:c.id}}),'mine');X.back='home'};
 }
@@ -576,7 +593,7 @@ function renderItem(){
   else if(it.t==='puz'){var lp=lessonById(it.l),pp=lp&&lp.p.filter(function(x){return x.id===it.id})[0];if(!pp){skip();return}loadPuz(lp,pp)}
   else if(it.t==='ftheory'){var ff=fundById(it.f);if(!ff){skip();return}loadFTheory(ff)}
   else if(it.t==='quiz'){var qq=quizById(it.id);if(!qq){skip();return}loadQuiz(qq)}
-  else if(it.t==='drill'){if(it.f==='flash')loadFlash();else if(it.f==='rush')loadRush();else if(it.f==='defend')loadDefend();else if(it.f==='game')loadGame();else loadDrill(it.f)}
+  else if(it.t==='drill'){if(it.f==='flash')loadFlash();else if(it.f==='rush')loadRush();else if(it.f==='defend')loadDefend();else if(it.f==='game')loadGame();else if(it.f==='calc')loadCalc();else loadDrill(it.f)}
   else if(it.t==='stheory'){var sx=stratById(it.s);if(!sx){skip();return}loadSTheory(sx)}
   else if(it.t==='plan'){loadPlan(it.s,it.k)}
   else if(it.t==='play'){var tx=techById(it.id);if(!tx){skip();return}loadPlay(tx)}
@@ -964,7 +981,7 @@ function fundItems(id){
   var o=[];if(!S.seenLesson['f_'+id])o.push({t:'ftheory',f:id});
   if(id==='quiz'){var qs=QUIZ.filter(function(q){var s=S.quiz[q.id];return !s||(s.due||0)<=now()});if(qs.length<3)qs=QUIZ.slice();
     return o.concat(qs.slice(0,8).map(function(q){return {t:'quiz',id:q.id}}))}
-  if(id==='flash'||id==='rush'||id==='defend'||id==='game')return o.concat([{t:'drill',f:id}]);
+  if(id==='flash'||id==='rush'||id==='defend'||id==='game'||id==='calc')return o.concat([{t:'drill',f:id}]);
   return o.concat([{t:'drill',f:id},{t:'drill',f:id},{t:'drill',f:id}]);
 }
 function loadFTheory(f){
@@ -1054,7 +1071,7 @@ function drillEnd(){dclkStop();
 VOCAB.forEach(function(q){if(q.id.indexOf('v_')!==0)q.id='v_'+q.id});
 var OPTC=['#2563EB','#E8730C','#7C3AED'];
 /* progress that the daily also feeds: every solved position counts toward its drill / lesson in Aprender */
-var GOAL={coord:100,sqname:100,nota:40,flash:40,rush:60,defend:40,game:50};
+var GOAL={coord:100,sqname:100,nota:40,flash:40,rush:60,defend:40,game:50,calc:100};
 function addTot(id,n){var s=S.drill[id]||(S.drill[id]={best:0,bestT:0,runs:0});s.tot=(s.tot||0)+(n||0)}
 function markPuz(p,ok){if(!ok||!p)return;var s=S.puz[p.id]||(S.puz[p.id]={box:0,due:0});if(!s.box||(s.due||0)<=now())gradeObj(s,true)}
 function progSnap(){var o={};
@@ -1335,6 +1352,82 @@ function defEnd(){dclkStop();
   anOff();B.locked=true;B.onMove=null;$('choices').hidden=true;D.done=true;
   $('fb').className='feedback '+(D.ok>=D.total*.75?'good':'bad');$('fb').innerHTML=t('drillRes',D.ok,D.total,mmss(sec))+(better&&D.ok?' 🏆 '+t('newBest'):'');itemDone(D.total>0&&D.ok>=D.total*.75);setBtns({next:true});
 }
+/* Calculation ladder (Nov 17, "I'm really bad at calculating, I need 3-4 tries for small calculations"): the board does NOT move.
+   He picks his moves from 4 choices (the wrong ones are other checks/captures) and reads the replies as text, then checks it on the board.
+   Level = how many of his moves (2-4) and puzzle rating; goes up at >=80%, down at <=40%. Every second position is an attack AGAINST him
+   (his last move allowed it): he picks the ATTACKER's moves — mostly queen + another piece — so he learns to see them coming. */
+var CALC=[null,{len:4,r:1200,st:2},{len:4,r:1550,st:2},{len:6,r:1350,st:3},{len:6,r:1750,st:3},{len:8,r:1900,st:4}];
+var CALC_ATT=['mate2','mate3','backrank','anastasia','arabian','smothered','doublecheck','attraction','deflection','fork','discovered'];
+function calcLvl(){var s=S.drill.calc||(S.drill.calc={best:0,bestT:0,runs:0});return Math.max(1,Math.min(5,s.lvl||1))}
+function calcPool(lvl,att){
+  var out=[];for(var L=lvl;L>=1&&out.length<6;L--){var c=CALC[L];
+    CURSO.lessons.forEach(function(l){if(att&&CALC_ATT.indexOf(l.id)<0)return;l.p.forEach(function(p){
+      if(p.m.length!==c.len||p.r>c.r||(L<lvl&&p.r<CALC[L].r-400))return;
+      if(att&&!p.m.slice(1).some(function(s,i){return i%2===0&&/^Q/.test(s)}))return;   /* attacker's queen takes part */
+      out.push({l:l,p:p})})})}
+  return out.sort(function(){return Math.random()-.5});
+}
+function loadCalc(){
+  var N=(cur.it&&cur.it.n)||6,lvl=calcLvl(),A=calcPool(lvl,true),Nn=calcPool(lvl,false),list=[],used={};
+  for(var i=0;i<N;i++){var att=i%2===1,src=att&&A.length?A:Nn,x=null;while(src.length&&!x){var y=src.shift();if(!used[y.p.id]){used[y.p.id]=1;x=y}}if(x)list.push({it:x,att:att&&src===A})}
+  cur.calc={list:list,n:0,ok:0,total:list.length,t0:now(),secs:[],lvl:lvl};setBar(null,false);setBtns({});calcNext();
+}
+function calcHead(){var C=cur.calc;return '<div class="op">'+kindPill('idea',t('calcT'))+' <span class="pill">'+t('calcLvl',C.lvl)+'</span> <span class="counter">'+Math.min(C.n+1,C.total)+'/'+C.total+' · ✓ '+C.ok+'</span></div>'}
+function calcOpts(ch,want,final){
+  var ms=ch.moves({verbose:true}),o=[],mates=function(san){ch.move(san);var m=ch.in_checkmate();ch.undo();return m};
+  var wm=final&&mates(want);
+  var bad=ms.filter(function(m){return m.san!==want&&!(wm&&mates(m.san))});
+  var forcing=bad.filter(function(m){return /[+#x]/.test(m.san)}).sort(function(){return Math.random()-.5}),rest=bad.filter(function(m){return forcing.indexOf(m)<0}).sort(function(){return Math.random()-.5});
+  o=forcing.slice(0,3);if(o.length<3)o=o.concat(rest.slice(0,3-o.length));
+  return o.map(function(m){return m.san}).concat([want]).sort(function(){return Math.random()-.5});
+}
+function calcNext(){
+  var C=cur.calc;if(C.n>=C.total){calcEnd();return}
+  var x=C.list[C.n],p=x.it.p,a=afterFirst(p),fen=a.c.fen(),mover=a.c.turn(),me=x.att?(mover==='w'?'b':'w'):mover;
+  anOff();cur.answered=false;$('fb').innerHTML='';$('fb').className='feedback';$('why').hidden=true;
+  setBoard(fen,me==='b',a.m.san,p.fen);B.locked=true;B.onMove=null;
+  var h=new Chess(fen),k=0,done=[],t0=now(),sol=p.m.slice(1);
+  var who=function(i){return (i%2===0)!==!!x.att?t('calcYou'):t('calcOpp')};
+  var draw=function(){
+    var q=x.att?t('calcQAtt','<b class="mono">'+esc(a.m.san)+'</b>'):t('calcQ'),
+        seq=done.map(function(s,i){return '<span class="cmv"><small>'+who(i)+'</small> <b class="mono">'+esc(s)+'</b></span>'}).join(' → ');
+    seq+=(seq?' → ':'')+'<span class="cmv cq"><small>'+who(done.length)+'</small> <b>?</b></span>';
+    $('prompt').innerHTML=calcHead()+'<div class="bigq">'+q+'</div><p class="small">'+t('calcFrozen')+'</p><div class="cseq">'+seq+'</div>';
+    var ops=calcOpts(h,sol[2*k],2*k===sol.length-1),ch=$('choices');ch.hidden=false;ch.classList.add('grid');
+    ch.innerHTML=ops.map(function(s){return '<button class="btn mono" data-s="'+esc(s)+'">'+esc(s)+'</button>'}).join('');
+    ch.querySelectorAll('[data-s]').forEach(function(b){b.onclick=function(){pick(b.getAttribute('data-s'))}});
+  };
+  var finish=function(ok,html,wrong){
+    dclkPause();var sec=Math.round((now()-t0)/1000);C.secs.push(sec);C.n++;if(ok)C.ok++;$('choices').hidden=true;
+    var mv=sol.slice(),arr=[],a1=arrowFor(fen,sol[0],x.att?'#C0392B':'#0E9488');if(a1)arr.push(a1);
+    pauseReview(fen,mv,ok,html+' <span class="small">('+sec+' s)</span>',arr,calcNext,
+      fold(t('stStep'),story(fen,sol,me,8)));
+  };
+  var pick=function(s){
+    var want=sol[2*k];
+    if(s!==want&&!(2*k===sol.length-1&&(function(){h.move(s);var m=h.in_checkmate();h.undo();return m})())){
+      finish(false,'✗ '+t(x.att?'calcBadAtt':'calcBad','<b class="mono">'+esc(s)+'</b>',sanSeq(sol)),null);return}
+    h.move(s);done.push(s);
+    if(2*k+1>=sol.length){finish(true,'✓ '+t(x.att?'calcOkAtt':'calcOk',sanSeq(sol)));return}
+    h.move(sol[2*k+1]);done.push(sol[2*k+1]);k++;draw();
+  };
+  draw();
+  var steps=Math.ceil(sol.length/2),myPos=C.n;dclkStart(30*steps+15,function(){if(!cur||cur.calc!==C||C.n!==myPos||cur.answered)return;finish(false,'⏱ '+t('timeOut')+' '+t('calcSol',sanSeq(sol)))});
+}
+function sanSeq(ms){return ms.map(function(m){return '<b class="mono">'+esc(m)+'</b>'}).join(' ')}
+function calcEnd(){dclkStop();
+  var C=cur.calc,sec=Math.round((now()-C.t0)/1000),s=S.drill.calc||(S.drill.calc={best:0,bestT:0,runs:0});s.runs++;addTot('calc',C.ok);
+  var avg=C.secs.length?Math.round(C.secs.reduce(function(a,b){return a+b},0)/C.secs.length):0,pct=C.total?C.ok/C.total:0,old=C.lvl,nl=old;
+  if(C.total>=3&&pct>=.8)nl=Math.min(5,old+1);else if(C.total>=3&&pct<=.4)nl=Math.max(1,old-1);
+  s.lvl=nl;s.at=now();s.h=(s.h||[]).concat([[today(),C.ok,C.total,avg,old]]).slice(-60);if(C.ok>s.best){s.best=C.ok;s.bestT=sec}save();
+  anOff();B.locked=true;B.onMove=null;$('choices').hidden=true;C.done=true;
+  $('fb').className='feedback '+(pct>=.6?'good':'bad');
+  $('fb').innerHTML=t('drillRes',C.ok,C.total,mmss(sec))+' · '+t('calcAvg',avg)+(nl>old?' 🎉 '+t('calcUp',nl):nl<old?' '+t('calcDown',nl):'');
+  itemDone(C.total>0&&pct>=.6);setBtns({next:true});
+}
+/* his calculation trend: today vs his first days, for the coach card */
+function calcTrend(){var h=(S.drill.calc&&S.drill.calc.h)||[];if(!h.length)return null;var by={};h.forEach(function(r){var o=by[r[0]]||(by[r[0]]={ok:0,n:0,s:0,c:0});o.ok+=r[1];o.n+=r[2];o.s+=r[3]*r[2];o.c+=r[2]});
+  var ds=Object.keys(by).sort(),f=by[ds[0]],l=by[ds[ds.length-1]];return {lvl:calcLvl(),days:ds.length,first:Math.round(f.s/Math.max(1,f.c)),last:Math.round(l.s/Math.max(1,l.c)),pct:Math.round(l.ok/Math.max(1,l.n)*100)}}
 /* "Finish": first tap ends the running drill (shows its result), otherwise it ends the session with a summary */
 $('bFinish').onclick=function(){closeItemTime();
   if(!cur||!$('trEnd').hidden){go(X.back||'home');return}
@@ -1344,6 +1437,7 @@ $('bFinish').onclick=function(){closeItemTime();
   if(cur.drill&&cur.drill.n<cur.drill.total){cur.drill.total=cur.drill.n;B.onTap=null;B.onMove=null;drillEnd();return}
   if(cur.def&&!cur.def.done){cur.def.total=cur.def.n;defEnd();return}
   if(cur.game&&!cur.game.done){cur.game.total=cur.game.n;gameEnd();return}
+  if(cur.calc&&!cur.calc.done){cur.calc.total=cur.calc.n;calcEnd();return}
   var done=X.i+(cur.answered?1:0);anOff();$('trBody').hidden=true;$('trEnd').hidden=false;
   $('trEndT').textContent=t('sessStopT');$('trEndS').textContent=t('sessSum',X.ok,done)+(X.src==='today'&&done<X.items.length?' '+t('sessResume'):'');
   if(X.src==='today'&&S.daily){X.i=done;saveDaily()}
@@ -1694,7 +1788,9 @@ function mergeProgress(R){
   Object.keys(R.appCards||{}).forEach(function(k){var c=R.appCards[k];if(!S.cards[k]&&(c.kind==='mine'?isMistake(c.s0,c.s1):isPunish(c.s0,c.s1)))S.cards[k]=c});
   Object.keys(R.games||{}).forEach(function(k){if(!S.games[k])S.games[k]=R.games[k]});
   Object.keys(R.cards||{}).forEach(function(k){var c=S.cards[k],r=R.cards[k];if(c&&newer(r,c)){c.box=r.box;c.due=r.due;c.reps=r.reps;c.lapses=r.lapses;c.last=r.last||0}});
-  Object.keys(R.drill||{}).forEach(function(k){var a=S.drill[k],r=R.drill[k];if(!a||r.best>a.best||(r.best===a.best&&r.bestT&&r.bestT<a.bestT))S.drill[k]=r});
+  Object.keys(R.drill||{}).forEach(function(k){var a=S.drill[k],r=R.drill[k];
+    if(k==='calc'&&a){var seen={},h=(a.h||[]).concat(r.h||[]).filter(function(x){var key=x.join('|');if(seen[key])return false;seen[key]=1;return true});if((r.at||0)>(a.at||0)){a.lvl=r.lvl;a.at=r.at}a.h=h.slice(-60);a.tot=Math.max(a.tot||0,r.tot||0);a.runs=Math.max(a.runs||0,r.runs||0);a.best=Math.max(a.best||0,r.best||0);return}
+    if(!a||r.best>a.best||(r.best===a.best&&r.bestT&&r.bestT<a.bestT))S.drill[k]=r});
   ['rep','ideas','puz','tech','quiz','plan'].forEach(function(f){S[f]=S[f]||{};Object.keys(R[f]||{}).forEach(function(k){var a=S[f][k],r=R[f][k];if(!a||newer(r,a))S[f][k]=r})});
   Object.keys(R.seenLesson||{}).forEach(function(k){S.seenLesson[k]=1});
   var seen={};S.log=(S.log||[]).concat(R.log||[]).filter(function(e){var k=e[0]+e[1];if(seen[k])return false;seen[k]=1;return true}).sort(function(a,b){return a[0]-b[0]}).slice(-4000);
