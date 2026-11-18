@@ -1,6 +1,7 @@
 <title>Gimnasio Mental</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<style>html,body,button{touch-action:manipulation}</style><style>
+<style>html,body,button{touch-action:manipulation}.angleq{font-size:1.08em;font-weight:600;background:rgba(15,123,95,.08);border-left:3px solid #0F7B5F;padding:8px 12px;border-radius:8px}
+</style><style>
 /* Layout: one calm column. Header with streak + language switch, tabs, then the session card that walks Recall → Connect → Apply. */
 :root{
   --bg:#F4F7F5; --surface:#FFFFFF; --ink:#16231E; --muted:#56655E; --faint:#8A9892; --line:#DCE5E0;
@@ -528,7 +529,7 @@ var T={
   sStreak:'días seguidos',tKnow:'Saberes',b4:'Descubrir',discQ:'Una lección corta para hablar de cualquier tema. Mañana te pregunto lo clave.',pick:'O elige otro tema:',gen:'Preparando la lección…',genErr:'No pude preparar la lección ahora. Inténtalo más tarde o salta este bloque.',noSample:'Este bloque necesita a Claude: abre la página desde la app de Claude.',talkL:'Para sacarlo en una conversación:',perspL:'Dos miradas',keyL:'Lo clave (lo repasarás)',finish:'Terminar sesión',knowHelp:'Las lecciones que has descubierto. Sus ideas clave entran en tus repasos.',noKnow:'Aún no has descubierto ninguna lección.',factQ:'Responde sin mirar.',sLearned:'conceptos vistos',sMastered:'dominados',sAcc:'aciertos al aplicar',tToday:'Hoy',tLib:'Conceptos',tJournal:'Diario',tSet:'Ajustes',
   b1:'Recordar',b2:'Conectar',b3:'Aplicar',min:'≈ 2-3 min',start:'Empezar sesión',startSub:'Tres ideas para recordar y un ejercicio. Respuestas cortas, con tus palabras.',
   todayPlan:'Hoy (unos 10 min): recordar {k}{nw} y {x}.',newC:'Concepto nuevo',review:'Repaso',
-  recallQ:'Explícalo con tus palabras y da un ejemplo tuyo, sin mirar. El ejemplo lo inventas tú, de tu vida o de algo que conozcas: no hace falta buscar nada.',recallPh:'Escribe aquí lo que recuerdas…',reveal:'Ver la respuesta',
+  recallQ:'Explícalo con tus palabras y da un ejemplo tuyo, sin mirar. El ejemplo lo inventas tú, de tu vida o de algo que conozcas: no hace falta buscar nada.',recallPh:'Escribe aquí lo que recuerdas…',qWait:'Tu profesor está preparando una pregunta nueva sobre este concepto…',reveal:'Ver la respuesta',
   rate0:'No lo sabía',rate1:'Más o menos',rate2:'Lo sabía',gotIt:'Entendido',newHelp:'Léelo con calma y piensa en un ejemplo de tu vida. Mañana te lo pregunto.',
   feedback:'Opinión de Claude',fbWait:'Claude está leyendo…',fbErr:'No pude obtener la opinión ahora. Sigue sin ella.',
   connQ:'¿Cómo se relacionan estas dos ideas? Busca un caso real donde aparezcan juntas, o donde una explique a la otra.',connPh:'Por ejemplo: "Cuando juego ajedrez, …"',save:'Guardar y seguir',skip:'Saltar',
@@ -543,7 +544,7 @@ var T={
   sStreak:'day streak',tKnow:'Knowledge',b4:'Discover',discQ:'A short lesson so you can talk about anything. Tomorrow I\'ll quiz you on the key points.',pick:'Or pick another topic:',gen:'Preparing the lesson…',genErr:'Couldn\'t prepare the lesson right now. Try later or skip this block.',noSample:'This block needs Claude: open the page from the Claude app.',talkL:'To bring it up in conversation:',perspL:'Two views',keyL:'Key points (you\'ll review these)',finish:'Finish session',knowHelp:'Lessons you\'ve discovered. Their key points go into your reviews.',noKnow:'No lessons discovered yet.',factQ:'Answer without looking.',sLearned:'concepts seen',sMastered:'mastered',sAcc:'apply accuracy',tToday:'Today',tLib:'Concepts',tJournal:'Journal',tSet:'Settings',
   b1:'Recall',b2:'Connect',b3:'Apply',min:'≈ 2-3 min',start:'Start session',startSub:'Three ideas to recall and one exercise. Short answers, in your own words.',
   todayPlan:'Today (about 10 min): recall {k}{nw} and {x}.',newC:'New concept',review:'Review',
-  recallQ:'Explain it in your own words and give your own example, without looking. Make the example up yourself, from your life or something you know: no need to look anything up.',recallPh:'Write what you remember…',reveal:'Show answer',
+  recallQ:'Explain it in your own words and give your own example, without looking. Make the example up yourself, from your life or something you know: no need to look anything up.',recallPh:'Write what you remember…',qWait:'Your teacher is preparing a new question about this concept…',reveal:'Show answer',
   rate0:'Didn\'t know',rate1:'Sort of',rate2:'Knew it',gotIt:'Got it',newHelp:'Read it slowly and think of an example from your own life. I\'ll ask you tomorrow.',
   feedback:'Claude\'s take',fbWait:'Claude is reading…',fbErr:'Couldn\'t get feedback right now. Keep going without it.',
   connQ:'How are these two ideas related? Find a real case where they show up together, or where one explains the other.',connPh:'For example: "When I play chess, …"',save:'Save and continue',skip:'Skip',
@@ -573,7 +574,7 @@ function dbWrite(){if(!DB)return;if(dbBusy){dbAgain=true;return}dbBusy=true;var 
   DB.doc(DBPATH).set({s:JSON.stringify(c),at:Date.now()}).catch(function(){}).then(function(){dbBusy=false;if(dbAgain){dbAgain=false;dbWrite()}})}
 /* progress follows him on any device: Firebase /progress/mente (public, like the chess app). Every write = read, merge, write. */
 var OPEN_URL='',cloudT=null,cloudBusy=false;
-function mergeIn(R){if(!R||!R.cards)return;if(R.planDate&&R.planDate>=(S.planDate||'')&&R.planSig){S.planDate=R.planDate;S.planText=R.planText;S.planSig=R.planSig}var cl={};(S.coachLog||[]).forEach(function(x){cl[x.d+x.text]=1});S.coachLog=(S.coachLog||[]).concat((R.coachLog||[]).filter(function(x){return !cl[x.d+x.text]})).slice(-20);S.notes=S.notes||{};Object.keys(R.notes||{}).forEach(function(k){var a=S.notes[k]||[],seen={};a.forEach(function(x){seen[x.d+x.n]=1});(R.notes[k]||[]).forEach(function(x){if(!seen[x.d+x.n])a.push(x)});S.notes[k]=a.sort(function(x,y){return x.d<y.d?-1:1}).slice(-6)});if(!cur&&R.cur&&R.curDate===today()){cur=R.cur;S.cur=R.cur;S.curDate=R.curDate}
+function mergeIn(R){if(!R||!R.cards)return;S.qh=S.qh||{};Object.keys(R.qh||{}).forEach(function(k){var u=(S.qh[k]||[]).slice();(R.qh[k]||[]).forEach(function(q){if(u.indexOf(q)<0)u.push(q)});S.qh[k]=u.slice(-6)});if(R.planDate&&R.planDate>=(S.planDate||'')&&R.planSig){S.planDate=R.planDate;S.planText=R.planText;S.planSig=R.planSig}var cl={};(S.coachLog||[]).forEach(function(x){cl[x.d+x.text]=1});S.coachLog=(S.coachLog||[]).concat((R.coachLog||[]).filter(function(x){return !cl[x.d+x.text]})).slice(-20);S.notes=S.notes||{};Object.keys(R.notes||{}).forEach(function(k){var a=S.notes[k]||[],seen={};a.forEach(function(x){seen[x.d+x.n]=1});(R.notes[k]||[]).forEach(function(x){if(!seen[x.d+x.n])a.push(x)});S.notes[k]=a.sort(function(x,y){return x.d<y.d?-1:1}).slice(-6)});if(!cur&&R.cur&&R.curDate===today()){cur=R.cur;S.cur=R.cur;S.curDate=R.curDate}
   Object.keys(R.cards).forEach(function(k){var a=S.cards[k],r=R.cards[k];if(!a||(r.reps||0)>(a.reps||0)||((r.reps||0)===(a.reps||0)&&r.due>a.due))S.cards[k]=r});
   Object.keys(R.cases||{}).forEach(function(k){var a=S.cases[k],r=R.cases[k];if(!a||(r.n||0)>(a.n||0))S.cases[k]=r});
   var js={};S.journal.forEach(function(e){js[e.date+e.text]=1});(R.journal||[]).forEach(function(e){if(!js[e.date+e.text]){S.journal.push(e);js[e.date+e.text]=1}});S.journal.sort(function(a,b){return a.date<b.date?1:-1});
@@ -703,7 +704,7 @@ function render(){try{render0()}catch(e){var st=$('stage');if(st)st.innerHTML+='
 function render0(){keepCur();ONSTART=!cur;
   stats();steps();var st=$('stage');
   if(!cur){var n=Math.min(1,S.npd,unseen().length),r=Math.min(3-n,dueToday().length),tb=todayBlock(),x=L()==='en'?{2:'one connection',3:'one real-life case',4:'one short lesson'}[tb]:{2:'una conexión',3:'un caso real',4:'una lección corta'}[tb];
-    var VTAG='<p class="small" style="opacity:.6">v12</p>';
+    var VTAG='<p class="small" style="opacity:.6">v13</p>';
     var dbNote=!READY?'<p class="small">⏳ '+(L()==='en'?'Loading your saved progress… you can start now anyway.':'Cargando tu progreso guardado… puedes empezar ya si quieres.')+'</p>':DBST&&DBST!=='ok'?'<p class="small">⚠ '+(L()==='en'?'Could not load your saved progress ('+esc(DBST)+'). You can still practice; it will be saved.':'No pude cargar tu progreso guardado ('+esc(DBST)+'). Puedes practicar igual; se guardará.')+'</p>':'';
     planToday();st.innerHTML='<h2>'+t('start')+'</h2>'+(S.planDate===today()&&S.planText&&S.planSig===planSig()?'<div class="plan"><b>🧑‍🏫 '+t('planT')+'</b><p>'+esc(S.planText)+'</p></div>':sample?'<p class="small">'+t('planWait')+'</p>':'')+dbNote+'<p class="small">'+t('startSub')+'</p><p>'+t('todayPlan',{k:(r+n===1?(L()==='en'?'one idea':'una idea'):(r+n)+(L()==='en'?' ideas':' ideas')),nw:(n?(r+n===1?(L()==='en'?' (new)':' (nueva)'):(L()==='en'?', one of them new':', una de ellas nueva')):''),x:x})+'</p><div class="row"><button class="btn primary" id="go">'+t('start')+'</button></div>'+VTAG;
     $('go').onclick=function(){if(!READY)goReady('timeout');newSession();cur.block=1;if(!cur.items.length)cur.block=cur.plan[1];render()};return}
@@ -723,6 +724,25 @@ function askClaude(prompt){
   .catch(function(e){cur.fb={wait:false,text:t('fbErr')};render()});
 }
 function langLine(){return L()==='en'?'Reply in English. If the learner wrote in English and made a real grammar or word-choice error, add one line at the end starting with "English fix:" with the single most useful correction (American English).':'Responde en español. Si el estudiante escribió en inglés y cometió un error real de gramática o vocabulario, agrega al final una línea "English fix:" con la corrección más útil (inglés americano).'}
+/* Reviews from a new angle each time (Nov 17: "I'm seeing the same question as yesterday"): Claude writes one fresh question per review
+   (why/how, a prediction, a situation to explain, a contrast with a common mistake), never one of the last ones asked (S.qh). Kept in cur.aq
+   so leaving and coming back shows the same question; without Claude it falls back to "explain it in your own words". */
+var AQ_FLY={};
+function angleQ(id){
+  if(!sample||!CONCEPTS[id])return null;cur.aq=cur.aq||{};var o=cur.aq[id];if(o&&o.q)return o;if(o&&o.fail)return null;if(AQ_FLY[id]&&o)return o;
+  o=cur.aq[id]={wait:true};AQ_FLY[id]=1;var c=CONCEPTS[id],prev=((S.qh||{})[id]||[]).slice(-5),es=L()!=='en';
+  var p=(es?'Eres un profesor exigente. Concepto que Brayan ya estudió: "'+c.n.es+'". Definición: '+c.d.es+' Ejemplo: '+c.x.es+
+      '\nEscribe UNA pregunta corta (máximo 25 palabras) que compruebe si de verdad entiende este concepto, desde un ángulo nuevo: un porqué o un cómo, una predicción ("¿qué pasaría si…?"), una situación concreta para explicar, o un error común para corregir. Que se pueda responder pensando, sin buscar nada. No des la respuesta ni pistas. No pidas un ejemplo salvo que la pregunta sea "da un ejemplo de…". Puedes nombrar el concepto.'+
+      (prev.length?'\nNo repitas ni se parezca a estas preguntas anteriores: '+prev.map(function(x){return '"'+x+'"'}).join(' | '):'')
+     :'You are a demanding teacher. Concept Brayan already studied: "'+c.n.en+'". Definition: '+c.d.en+' Example: '+c.x.en+
+      '\nWrite ONE short question (max 25 words) that checks whether he really understands this concept, from a new angle: a why or how, a prediction ("what would happen if…?"), a concrete situation to explain, or a common mistake to correct. Answerable by thinking, without looking anything up. Do not give the answer or hints. Do not ask for an example unless the question is "give an example of…". You may name the concept.'+
+      (prev.length?'\nDo not repeat or resemble these earlier questions: '+prev.map(function(x){return '"'+x+'"'}).join(' | '):''))+rules()+
+      (es?'\nDevuelve SOLO JSON: {"q": "la pregunta"}':'\nReturn ONLY JSON: {"q": "the question"}');
+  var done=false,fin=function(q){if(done)return;done=true;if(q){o.q=q;o.wait=false;S.qh=S.qh||{};var h=S.qh[id]=(S.qh[id]||[]).concat([q]).slice(-6);}else{o.wait=false;o.fail=true}keepCur();if(cur.items&&cur.items[cur.i]&&cur.items[cur.i].id===id&&cur.block===1&&!cur.revealed)render()};
+  setTimeout(function(){fin(null)},12000);
+  sample.json(p,{modelTier:'default',cache:false}).then(function(j){var q=j&&String(j.q||'').trim();fin(q&&q.length>8?q.slice(0,240):null)},function(){fin(null)});
+  return o;
+}
 function renderRecall(st){
   var it=cur.items[cur.i];if(isFact(it.id))return renderFact(st,it);var c=CONCEPTS[it.id];
   var h=head('b1',(cur.i+1)+' / '+cur.items.length)+'<div class="row">'+areaTag(it.id)+' <span class="small">'+(it.kind==='new'?t('newC'):t('review'))+'</span></div><div class="concept">'+esc(c.n[L()])+'</div>';
@@ -732,19 +752,21 @@ function renderRecall(st){
     chatTeach('n:'+it.id,'Concepto NUEVO para Brayan: '+c.n.es+' / '+c.n.en+'. Definición: '+c.d[L()]+' Ejemplo de referencia: '+c.x[L()]+'\nLo que recuerdas de él en general:\n'+memory(),
       L()==='en'?'Teach me this concept like a great teacher: explain it simply in 3-4 sentences, give one vivid everyday example (different from the reference), connect it to something I already know if possible. Keep it short and do not ask me any question.':'Enséñame este concepto como un gran profesor: explícalo simple en 3-4 frases, dame un ejemplo cotidiano y vívido (distinto al de referencia), conéctalo con algo que ya sepa si se puede. Que sea corto y no me hagas ninguna pregunta.');return;
   }
-  h+='<p>'+t('recallQ')+'</p><textarea id="rt" placeholder="'+esc(t('recallPh'))+'" aria-label="'+esc(t('recallQ'))+'">'+esc(cur.text)+'</textarea>';
+  var nx=cur.items[cur.i+1];if(nx&&nx.kind!=='new'&&!isFact(nx.id))angleQ(nx.id);
+  var aq=angleQ(it.id),qtx=aq&&aq.q?aq.q:t('recallQ'),waitQ=aq&&aq.wait&&!cur.revealed;
+  h+=(waitQ?'<p class="small">'+t('qWait')+'</p>':'<p'+(aq&&aq.q?' class="angleq"':'')+'>'+esc(qtx)+'</p>')+'<textarea id="rt"'+(waitQ?' disabled':'')+' placeholder="'+esc(t('recallPh'))+'" aria-label="'+esc(qtx)+'">'+esc(cur.text)+'</textarea>';
   if(!cur.revealed){h+='<div class="row"><button class="btn primary" id="rv" disabled>'+t('reveal')+'</button><button class="btn" id="dk">'+t('dontKnow')+'</button></div><p class="small">'+t('writeFirst')+'</p>';st.innerHTML=h;
     var rvb=$('rv');rvb.disabled=cur.text.trim().length<12;
     $('rt').oninput=function(e){cur.text=e.target.value;rvb.disabled=cur.text.trim().length<12};$('rv').onclick=function(){cur.text=$('rt').value;cur.revealed=true;render()};
     $('dk').onclick=function(){cur.text='';cur.revealed=true;cur.dk=true;render()};return}
-  h+=defBox(it.id)+keyHits(c.d[L()],cur.text,c.n[L()])+'<div id="chat" class="chat"></div>';
-  chatOpen('r:'+it.id,'Concepto: '+c.n.es+' / '+c.n.en+'. Definición: '+c.d[L()]+' Ejemplo: '+c.x[L()]+'\nRespuesta de Brayan de memoria: "'+(cur.text||'(no supo)')+'"',cur.text.trim()?(L()==='en'?'Judge my answer: what I got right, the most important thing missing or wrong, and whether my example fits.':'Evalúa mi respuesta: qué acerté, lo más importante que falta o está mal, y si mi ejemplo encaja.'):null);
+  h+=defBox(it.id)+(aq&&aq.q?'':keyHits(c.d[L()],cur.text,c.n[L()]))+'<div id="chat" class="chat"></div>';
+  chatOpen('r:'+it.id,'Concepto: '+c.n.es+' / '+c.n.en+'. Definición: '+c.d[L()]+' Ejemplo: '+c.x[L()]+'\nPregunta que se le hizo: "'+qtx+'"\nRespuesta de Brayan de memoria: "'+(cur.text||'(no supo)')+'"',cur.text.trim()?(L()==='en'?'Judge my answer to that exact question: what is right, the most important thing missing or wrong. Comment on an example only if the question asked for one.':'Evalúa mi respuesta a esa pregunta exacta: qué está bien, lo más importante que falta o está mal. Comenta un ejemplo solo si la pregunta lo pedía.'):null);
   h+='<div class="row">'+''+
      '<button class="btn rate-0" data-r="0">'+t('rate0')+'</button><button class="btn rate-1" data-r="1">'+t('rate1')+'</button><button class="btn rate-2" data-r="2">'+t('rate2')+'</button></div>';
   st.innerHTML=h;$('rt').oninput=function(e){cur.text=e.target.value};
   var sb=st.querySelector('[data-r="'+(cur.sug==null?1:cur.sug)+'"]');if(sb)sb.classList.add('sugg');
   if($('fb'))$('fb').onclick=function(){askClaude('You are a concise, honest tutor. Concept: "'+c.n.en+'". Reference definition: '+c.d.en+' Example: '+c.x.en+'\nThe learner explained it from memory:\n"""'+cur.text+'"""\nIn 2-4 short sentences: say what they got right, the single most important thing missing or wrong, and whether their own example fits. No praise filler. '+langLine())};
-  st.querySelectorAll('[data-r]').forEach(function(b){b.onclick=function(){var r=+b.getAttribute('data-r');logAnswer({k:'recall',id:it.id,q:c.n.es,a:cur.text,hits:cur.hits||'',rate:r});grade(it.id,r);nextItem()}});
+  st.querySelectorAll('[data-r]').forEach(function(b){b.onclick=function(){var r=+b.getAttribute('data-r');logAnswer({k:'recall',id:it.id,q:(aq&&aq.q?c.n.es+' — '+aq.q:c.n.es),a:cur.text,hits:cur.hits||'',rate:r});grade(it.id,r);nextItem()}});
 }
 /* key words of the answer and which of them his own text mentions (accents and case ignored, first 5 letters) */
 var STOP=('porque cuando aunque entonces donde mientras siempre ninguna ninguno nuestro nuestra puede pueden tiene tienen hacer hacen sobre entre desde hasta otros otras todos todas mucho muchos menos parte forma manera cosas because without through another between their there these those which while where would could should about other every always never often being makes things something').split(' ');
