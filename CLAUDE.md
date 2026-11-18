@@ -108,6 +108,8 @@ Regenerating `datos.json` offline (needs `brew install stockfish` + a venv with 
 
 Findings (Nov 2026; 2,478 games): quick losses mostly from openings he dropped (1…e5, Scotch Gambit). Repertoire traps he fell for are encoded as trap lines (Caro Advance Bg5/…e6??, London …Nh5/g4?, Englund, Fantasy …Bg4?). Vs Queen's Gambit as Black he scored badly → Slav lines.
 
+**Hand-added line (Nov 17)**: London line 19 `vs …Bd6, …cxd4 y …Qb6` (kind `trap`, from his loss that day: 7.Ngf3 Bxf4 exf4, then Nxd4 trades, …Qb6, Qc2? Qxd4, Nf3? Qxf4) — 3.Nf3 order (1.d4 e6 2.Bf4 d5 transposes to a line expecting Nf3), Bg3 vs …Bd6, recapture exd4, and 10.Bxd6! vs …Qb6 (+7). Added directly to `repertorio.js` (appended: line ids are `op:index`, so never insert lines before existing ones) — re-add it if `rep.py`/`mylines.py` regenerate the file.
+
 Ideas not done yet: more key ideas drawn from his own middlegame blunders.
 
 ## Gotchas that have bitten before
