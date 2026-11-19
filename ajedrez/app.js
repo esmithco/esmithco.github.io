@@ -67,7 +67,7 @@ function boot(){connectFromLink();
   var raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
   if(raw){try{S=JSON.parse(raw)}catch(e){S=blank()}}
   upgrade();applyRule();
-  fetch('datos.json?v=9',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
+  fetch('datos.json?v=10',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
     DATA.stats=D.stats||{};
     if(!S.base||S.base<(D.base||0)){mergeBase(D);save()}
   }).catch(function(){}).then(function(){route();clStatus();cloudPull();
@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=62;
+var APP_VER=63;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -500,14 +500,15 @@ var WK=['calc','hang','forkd','lines','matek'],WALIAS={missfree:'hang',misstac:'
 function weakL(k){var l=WEAKL[k];if(!l)return null;l.t={es:TXT.es['wt_'+k],en:TXT.en['wt_'+k]};l.body={es:[TXT.es['wb_'+k]],en:[TXT.en['wb_'+k]]};return l}
 function cardWk(c){var th=cardTheme(c);return th?(WALIAS[th]||th):null}
 function weakCards(k){return cardsOf('mine').filter(function(c){return cardWk(c)===k})}
+function weakAll(k){return judgeCards().filter(function(c){return cardWk(c)===k})}
 function weakRank(){
   var t30=now()/1000-30*86400,sc={};WK.forEach(function(k){sc[k]=0});
-  cardsOf('mine').forEach(function(c){var k=cardWk(c);if(!k||sc[k]==null)return;sc[k]+=((c.date||0)>=t30?3:1)});
+  judgeCards().forEach(function(c){var k=cardWk(c);if(!k||sc[k]==null)return;sc[k]+=((c.date||0)>=t30?3:1)});
   var to=Object.keys(S.games).map(function(k){return S.games[k]}).filter(function(g){return (g.date||0)>=t30&&g.r==='L'&&g.how==='timeout'}).length;
   sc.calc=Math.max(sc.calc,to*3+1);   /* slow calculation shows up as losses on time */
   return WK.slice().sort(function(a,b){return sc[b]-sc[a]}).map(function(k){return {k:k,score:sc[k],timeouts:k==='calc'?to:0}});
 }
-function weakProg(k){var l=WEAKL[k],n=l?l.p.length:0,ok=l?l.p.filter(function(p){var s=S.puz[p.id];return s&&s.box>=1}).length:0,cs=k==='calc'?[]:weakCards(k),cf=cs.filter(function(c){return c.last===1}).length;
+function weakProg(k){var l=WEAKL[k],n=l?l.p.length:0,ok=l?l.p.filter(function(p){var s=S.puz[p.id];return s&&s.box>=1}).length:0,cs=k==='calc'?[]:weakAll(k),cf=cs.filter(function(c){return c.last===1}).length;
   return {n:n,ok:ok,cards:cs.length,cfix:cf}}
 /* bank puzzles for a theme: due reviews first, then new ones near his level (target rating rises as he solves more of the theme) */
 function weakPuz(k,max){var l=WEAKL[k];if(!l)return [];var pr=weakProg(k),tgt=950+Math.min(850,pr.ok*6);
@@ -822,7 +823,7 @@ function loadLine(op,i,played){
   cur.rep={op:op,i:i,l:l,ply:0,err:0,side:o.side,book:true,hist:[],end:Math.max(l.moves.length,16),map:bookMap(op),reply:null,replyFen:null};
   setBoard(new Chess().fen(),o.side==='b');setBar(null,false);
   var k=l.kind==='trap'?'trap':l.kind==='punish'?'punish':'rep'
-  $('prompt').innerHTML='<div class="op">'+kindPill(k,esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div>'+(l.kind==='trap'?t('pRepTrap'):l.kind==='punish'?t('pRepPunish'):t('pRep'))+' <span class="small">'+t('pRepFree')+'</span>';
+  $('prompt').innerHTML='<div class="op">'+kindPill(k,esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div>'+(l.kind==='trap'?t('pRepTrap'):l.kind==='punish'?t('pRepPunish'):t('pRep'))+' <span class="small">'+t('pRepFree')+'</span>'+(planOf(op,i)?'<p class="small og">🧭 '+esc(tt(planOf(op,i).goal))+'</p>':'');
   setBtns({hint:true,show:true});B.onMove=onRepMove;repStep();
 }
 /* new line: watch it first, move by move with its notes, then play it */
@@ -840,6 +841,7 @@ function demoShow(){
   $('fb').className='feedback';$('fb').innerHTML=D.ply>0?'<span class="mono">'+esc(l.moves[D.ply-1])+'</span>'+(n?' — <span class="'+who+'n">'+esc(tt(n))+'</span>':''):'';
   $('bDemoPrev').disabled=D.ply===0;$('bDemoNext').disabled=D.ply>=l.moves.length;
   $('bDemoPlay').classList.toggle('primary',D.ply>=l.moves.length);
+  if(D.ply>=l.moves.length&&planOf(D.op,D.i))showWhy(['<b>'+t('opNow')+'</b>'+planBox(planOf(D.op,D.i),true)]);else $('why').hidden=true;
 }
 $('bDemoPrev').onclick=function(){if(cur&&cur.demo&&cur.demo.ply>0){cur.demo.ply--;demoShow()}};
 $('bDemoNext').onclick=function(){if(cur&&cur.demo&&cur.demo.ply<cur.demo.l.moves.length){cur.demo.ply++;demoShow()}};
@@ -923,10 +925,15 @@ function repMistake(mv,fen0,good,a,sAfter,drop){
 function repHint(color){var R=cur.rep,f=B.chess.fen();
   if(R.book){var a=arrowFor(f,R.l.moves[R.ply],color);if(a){B.marks[a.from]='hint';B.arrows=color==='#0E9488'?[a]:[];drawBoard()}return}
   analyse(f,700).then(function(r){if(r&&r.pv[0]&&cur&&cur.rep===R){var a=arrowFor(f,r.pv[0],color);if(a){B.marks[a.from]='hint';B.arrows=color==='#0E9488'?[a]:[];drawBoard()}}})}
+/* opening plans (planes_aperturas.js): the idea behind each setup, shown in Repertorio, in the line prompt and when a line is finished */
+function planOf(op,i){var o=window.OPLAN&&OPLAN[op];if(!o)return null;return o.groups.filter(function(g){return g.g.indexOf(i)>=0})[0]||null}
+function planBox(g,open){if(!g)return '';var li=function(a){return '<ul>'+tt(a).map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul>'};
+  return '<div class="oplan"><b>🧭 '+esc(tt(g.t))+'</b><p class="og">'+esc(tt(g.goal))+'</p><details'+(open?' open':'')+'><summary>'+t('opPlanS')+'</summary><p class="ol">'+t('opPlan')+'</p>'+li(g.plan)+'<p class="ol">'+t('opWatch')+'</p>'+li(g.watch)+'<p class="ol">'+t('opAvoid')+'</p><p>'+esc(tt(g.avoid))+'</p></details></div>'}
 function repFinish(){
   var R=cur.rep,st=repState(lineId(R.op,R.i));gradeObj(st,R.err===0);
   $('line').innerHTML=moveLine(R.hist);
   $('fb').className='feedback good';$('fb').innerHTML=(R.err?t('repDone'):t('repDoneClean'))+' '+t('repErrs',R.err);
+  var pg=planOf(R.op,R.i);if(pg)showWhy(['<b>'+t('opNow')+'</b>'+planBox(pg,true)]);
   cur.fen=B.chess.fen();cur.anPath=function(){return {start:INIT,moves:R.hist,base:R.hist.length}};itemDone(R.err===0);
 }
 
@@ -982,13 +989,14 @@ function renderRep(op){
     return '<button class="lrow rrow" data-i="'+x.i+'"><span class="dotst '+(!st?'new':st.box>=3?'ok':lineDue(x)?'due':'')+'"></span><span class="thumb" data-thumb="'+x.i+'">'+miniBoard(e.fen,REP[x.op].side==='b',e.last)+'</span><span class="lname">'+kind+esc(tt(x.l.name))+
       (sub?'<span class="small">'+sub+'</span>':'')+'</span><span class="small">'+lab+'</span></button>'};
   var gm=ls.filter(function(x){return x.l.kind==='game'}),bk=ls.filter(function(x){return x.l.kind!=='game'});
-  $('repList').innerHTML=(gm.length?'<h3 class="rgroup">'+t('repFromGames')+'</h3><p class="small">'+t('repFromGamesD')+'</p>'+gm.map(row).join(''):'')+'<h3 class="rgroup">'+t('repBook')+'</h3>'+bk.map(row).join('');
+  var OP=window.OPLAN&&OPLAN[repTab],ov=OP?'<details class="oplanall"><summary>🧭 '+t('opHow',esc(tt(REP[repTab].name)))+'</summary><p>'+esc(tt(OP.idea))+'</p>'+OP.groups.map(function(g){return planBox(g,false)}).join('')+'</details>':'';
+  $('repList').innerHTML=ov+(gm.length?'<h3 class="rgroup">'+t('repFromGames')+'</h3><p class="small">'+t('repFromGamesD')+'</p>'+gm.map(row).join(''):'')+'<h3 class="rgroup">'+t('repBook')+'</h3>'+bk.map(row).join('');
   $('repList').querySelectorAll('.lrow').forEach(function(b){b.onclick=function(ev){var i=+b.getAttribute('data-i');
     { /* tap a line: open a bigger preview right under it, with the moves and a button to practise it */
       var nx=b.nextElementSibling;if(nx&&nx.classList.contains('rprev')){nx.remove();return}
       $('repList').querySelectorAll('.rprev').forEach(function(x){x.remove()});
       var l=REP[repTab].lines[i],e=lineEnd(l),d=document.createElement('div');d.className='rprev';
-      d.innerHTML=miniBoard(e.fen,REP[repTab].side==='b',e.last,'mini big')+'<p class="small mono">'+esc(l.moves.join(' '))+'</p><button class="btn primary" type="button">'+t('repPlayThis')+'</button>';
+      d.innerHTML=miniBoard(e.fen,REP[repTab].side==='b',e.last,'mini big')+'<p class="small mono">'+esc(l.moves.join(' '))+'</p>'+planBox(planOf(repTab,i),false)+'<button class="btn primary" type="button">'+t('repPlayThis')+'</button>';
       d.querySelector('button').onclick=function(){startSession([{t:'line',op:repTab,i:i}],'rep')};b.after(d);d.scrollIntoView({block:'nearest',behavior:'smooth'})}}});
   $('bRepGo').textContent=t('repPractice',tt(REP[repTab].name));$('bRepQuiz').textContent=t('bNameQuiz');
 }
@@ -1846,7 +1854,7 @@ $('bPgn').onclick=function(){
 $('bBackup').onclick=function(){var tx=JSON.stringify(S);$('iBackup').value=tx;
   try{navigator.clipboard.writeText(tx).then(function(){$('bkStatus').textContent=t('bkCopied')},function(){$('iBackup').select();$('bkStatus').textContent=t('bkSelect')})}catch(e){$('iBackup').select()}};
 $('bRestore').onclick=function(){try{var o=JSON.parse($('iBackup').value);if(!o.cards||!o.games)throw 0;S=o;upgrade();save();$('bkStatus').textContent=t('bkRestored')}catch(e){$('bkStatus').textContent=t('bkBad')}};
-$('bBase').onclick=function(){fetch('datos.json?v=9',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(D){DATA.stats=D.stats||{};mergeBase(D);save();$('bkStatus').textContent=t('bkLoaded')}).catch(function(){$('bkStatus').textContent=t('bkNone')})};
+$('bBase').onclick=function(){fetch('datos.json?v=10',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(D){DATA.stats=D.stats||{};mergeBase(D);save();$('bkStatus').textContent=t('bkLoaded')}).catch(function(){$('bkStatus').textContent=t('bkNone')})};
 var armed=false;
 $('bReset').onclick=function(){if(!armed){armed=true;$('bReset').textContent=t('bkResetSure');setTimeout(function(){armed=false;$('bReset').textContent=t('bkReset')},4000);return}
   S=blank();save();armed=false;$('bReset').textContent=t('bkReset');$('bkStatus').textContent=t('bkWiped')};
