@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=65;
+var APP_VER=66;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -798,7 +798,8 @@ function guideRender(){
     if(m)st=guideStep(c0,m,anChess(AN.i),col,prevTo)}
   var n=AN.moves.length-AN.base,k=AN.i-AN.base;
   if(st){B.badges=st.badges;B.rings=st.rings;var res=AN.i>=AN.moves.length?guideResult(col):'';
-    h='<div class="gtxt '+st.who+'"><span class="gic">'+st.ic+'</span><span><small>'+t(st.who==='me'?'gYou':'gOpp')+'</small>'+esc(st.txt)+(res?'<b class="gres">'+esc(res)+'</b>':'')+'</span></div>'}
+    var pf=anChess(AN.i-1).fen().split(' '),mvTag=pf[5]+(pf[1]==='w'?'. ':'… ')+(m?m.san:'');
+    h='<div class="gtxt '+st.who+'"><span class="gic">'+st.ic+'</span><span><small>'+t(st.who==='me'?'gYou':'gOpp')+' <b class="gsan mono">'+esc(mvTag)+'</b></small>'+esc(st.txt)+(res?'<b class="gres">'+esc(res)+'</b>':'')+'</span></div>'}
   else if(AN.i>=AN.base&&cur.gk&&CONCEPT[cur.gk])h='<div class="gtxt"><span class="gic">📘</span><span><b>'+esc(tt(CONCEPT[cur.gk].t))+'</b> — '+esc(tt(CONCEPT[cur.gk].habit))+'<small class="gsub">'+esc(t('gStart'))+'</small></span></div>';
   else h='<div class="gtxt"><span class="gic">▶</span><span>'+esc(AN.i<AN.base?t('gBefore'):t('gStart'))+'</span></div>';
   h+='<div class="gnav"><button class="btn" id="gPrev" type="button"'+(AN.i<=0?' disabled':'')+'>◀</button><span class="small">'+(n>0&&k>=0?k+' / '+n:'')+'</span><button class="btn primary" id="gNext" type="button"'+(AN.i>=AN.moves.length?' disabled':'')+'>▶</button>'+
