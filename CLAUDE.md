@@ -130,6 +130,8 @@ Criteria (same offline and in-app; `isMistake`/`isPunish` in app.js, `is_mistake
 
 **Bigger board on phones (Nov 19)**: the eval bar is a thin horizontal line under the board (`--p` CSS variable set in `setBar`, fill = White's share, reversed when flipped); the board may use up to `100svh − 290px`.
 
+**Phones (Nov 19, later)**: the "Juegas con BLANCAS/NEGRAS" pill is hidden on phones (he said the board orientation already shows it; desktop keeps it). The eval line is 16 px, dark slate with a white→light-gray fill, a violet edge where they meet, and a 12 px number.
+
 Regenerating `datos.json` offline (needs `brew install stockfish` + a venv with `pip install chess`; run from a scratch dir, **not** the repo): `tools/fetch.py` (all games via curl — Chess.com needs a User-Agent; python.org Python lacks certs) → `analyse.py` (depth 12 on every opening position, 7 processes, ~10 min) → `deep.py` (depth 16 PVs + null-move threats for selected positions) → `rep.py` → `build.py` → copy `datos.json` + `repertorio.js` into `ajedrez/`.
 
 Findings (Nov 2026; 2,478 games): quick losses mostly from openings he dropped (1…e5, Scotch Gambit). Repertoire traps he fell for are encoded as trap lines (Caro Advance Bg5/…e6??, London …Nh5/g4?, Englund, Fantasy …Bg4?). Vs Queen's Gambit as Black he scored badly → Slav lines.

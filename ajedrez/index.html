@@ -340,6 +340,15 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
   .bwrap{margin-left:18px}
   #boardwrap{max-width:min(100%,calc(100svh - 290px))!important}
 }
+/* Nov 19: no "Juegas con…" pill on phones (the board already shows it); thicker, clearer eval line with a bigger number */
+@media (max-width:979px){
+  #sideBadge{display:none!important}
+  .evalbar{flex:0 0 16px!important;height:16px;border-radius:8px;background:#334155;border:1px solid #94a3b8;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+  .evalbar .fill{background:linear-gradient(180deg,#ffffff,#e2e8f0);border-right:2px solid #7C3AED}
+  .evalbar.flip .fill{border-right:0;border-left:2px solid #7C3AED}
+  .evalbar .txt{font-size:12px;padding:2px 7px;border-radius:7px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .boardwrap{gap:22px!important}
+}
 </style>
 </head>
 <body>
@@ -505,6 +514,6 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 <script src="fundamentos.js?v=10"></script>
 <script src="planes.js?v=2"></script>
 <script src="debiles.js?v=2"></script>
-<script src="app.js?v=77"></script>
+<script src="app.js?v=78"></script>
 </body>
 </html>
