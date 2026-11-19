@@ -11,6 +11,12 @@ G = {  # key: (lichess themes any-of, extra filter, size)
  'lines': ({'pin', 'skewer', 'discoveredAttack', 'xRayAttack'}, None, 450),
  'matek': ({'mateIn2', 'mateIn3', 'backRankMate', 'kingsideAttack', 'attackingF2F7'}, 'queen', 700),
  'calc':  ({'advantage', 'crushing', 'mateIn2', 'mateIn3', 'mateIn4', 'quietMove', 'intermezzo', 'sacrifice'}, 'long', 600),
+ # drill banks (Nov 19: Flash showed the same mate again and again): short, easy positions for Flash / Rush / Defense / Game mode
+ 'd_mate1': ({'mateIn1'}, 'easy', 700),
+ 'd_hang':  ({'hangingPiece'}, 'easy', 700),
+ 'd_fork':  ({'fork'}, 'easy', 400),
+ 'd_back':  ({'backRankMate'}, 'easy', 400),
+ 'd_mate2': ({'mateIn2'}, 'easy', 400),
 }
 pools = {k: [] for k in G}
 p = subprocess.Popen(['zstd', '-dc', 'lichess_db_puzzle.csv.zst'], stdout=subprocess.PIPE)
@@ -21,9 +27,11 @@ for r in rd:
     rating, pop, plays = int(rating), int(pop), int(plays)
     if pid in skip or rating < 850 or rating > 1900 or pop < 85 or plays < 800: continue
     th = set(themes.split()); mv = moves.split()
-    if 'mateIn1' in th or 'veryLong' in th or len(mv) > 8: continue
+    if 'veryLong' in th or len(mv) > 8: continue
     for k, (want, extra, n) in G.items():
         if not (th & want): continue
+        if extra != 'easy' and 'mateIn1' in th: continue
+        if extra == 'easy' and (rating > 1500 or len(mv) > 4): continue
         if extra == 'long' and len(mv) not in (4, 6, 8): continue
         pools[k].append((pid, fen, mv, rating))
 p.kill()
