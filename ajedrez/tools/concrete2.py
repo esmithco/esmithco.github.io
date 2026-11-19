@@ -18,8 +18,10 @@ for c in D['cards'].values():
     b=chess.Board()
     for m in c['line']:b.push_san(m)
     col=b.turn;vis=c.get('vis')
-    if c['kind']=='punish' or vis=='win':ok=delta(b,c.get('pvBest',[]),col)>=1
-    else:ok=delta(b,[c['played']]+c.get('pvBad',[]),col)<=-1
+    # Nov 19 (2nd pass): 'a mistake should be a clear mistake, a punish a real punishment' — at least 2 points (more than a pawn) or mate
+    T=int(sys.argv[2]) if len(sys.argv)>2 else 1
+    if c['kind']=='punish' or vis=='win':ok=delta(b,c.get('pvBest',[]),col)>=T
+    else:ok=delta(b,[c['played']]+c.get('pvBad',[]),col)<=-T
     if not ok:
         c['hide']=True;c['jo']=c['kind']=='mine';out[c['kind']]+=1
 D['base']+=1;json.dump(D,open(f,'w'),separators=(',',':'));print('removed',out,'base',D['base'])
