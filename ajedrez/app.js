@@ -67,7 +67,7 @@ function boot(){connectFromLink();
   var raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
   if(raw){try{S=JSON.parse(raw)}catch(e){S=blank()}}
   upgrade();applyRule();
-  fetch('datos.json?v=11',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
+  fetch('datos.json?v=12',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(D){
     DATA.stats=D.stats||{};
     if(!S.base||S.base<(D.base||0)){mergeBase(D);save()}
   }).catch(function(){}).then(function(){route();clStatus();cloudPull();
@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=79;
+var APP_VER=80;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -766,7 +766,7 @@ function cardResult(ok,san,sAfter,pvAfter){
   showWhy(w);
   cur.badLine=c.kind==='mine'&&c.pvBad?[c.played].concat(c.pvBad.slice(0,6)):(!ok&&pvAfter?[san].concat(pvAfter.slice(0,6)):null);
   /* Nov 19: show only the start of the good line (3 plies) so the idea is clear; long engine lines confused him */
-  cur.goodLine=c.pvBest?c.pvBest.slice(0,3):[best];
+  cur.goodLine=c.pvBest?c.pvBest.slice(0,c.kind==='punish'?6:3):[best];   /* punish: show it until the material is actually won */
   /* your own idea (not the game move, not the best): its line too, so you can see why it is (or isn't) as good */
   cur.yourLine=san!=='—'&&san!==best&&san!==(cur.badLine&&cur.badLine[0])&&pvAfter&&pvAfter.length?[san].concat(pvAfter.slice(0,6)):null;
   itemDone(ok);
@@ -774,8 +774,10 @@ function cardResult(ok,san,sAfter,pvAfter){
   $('bBad').textContent=t('bBadLine',cur.badLine?cur.badLine[0]:'');if(cur.yourLine)$('bYours').textContent=t('bYourLine',san);
   /* load the line he needs to see right away, so the coach bubble above the board can walk him through it with ▶ */
   /* Nov 19 fix: open the line AFTER his move so the board keeps what he played (it used to jump back to the position before it) */
-  var auto=ok?(san!=='—'&&san!==best&&pvAfter&&pvAfter.length?[san].concat(pvAfter.slice(0,6)):cur.goodLine):(san===c.played?cur.badLine:(cur.yourLine||cur.badLine));
+  var auto=ok?(san!=='—'&&san!==best&&pvAfter&&pvAfter.length?[san].concat(pvAfter.slice(0,6)):cur.goodLine):(c.kind==='punish'?null:(san===c.played?cur.badLine:(cur.yourLine||cur.badLine)));
   if(auto&&auto.length>1&&san!=='—'&&auto[0]===san){try{showLine(auto);AN.i=Math.min(AN.moves.length,AN.base+1);anRender()}catch(e){}}
+  /* punish missed: the lesson is HOW to punish — walk him through the winning line from the exercise position */
+  else if(!ok&&c.kind==='punish'&&cur.goodLine&&cur.goodLine.length>1){try{cur.punMiss=true;showLine(cur.goodLine);AN.i=AN.base;anRender()}catch(e){}}
 }
 function showWhy(list){if(!list.length)return;$('why').hidden=false;var body='<ul>'+list.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>';
   /* phones: folded, the coach bubble above the board is the main explanation */
@@ -831,6 +833,7 @@ function guideRender(){
   if(st){B.badges=st.badges;B.rings=st.rings;var res=AN.i>=AN.moves.length?guideResult(col):'';
     var pf=anChess(AN.i-1).fen().split(' '),mvTag=pf[5]+(pf[1]==='w'?'. ':'… ')+(m?m.san:'');
     h='<div class="gtxt '+st.who+'"><span class="gic">'+st.ic+'</span><span><small>'+t(st.who==='me'?'gYou':'gOpp')+' <b class="gsan mono">'+esc(mvTag)+'</b></small>'+esc(st.txt)+(res?'<b class="gres">'+esc(res)+'</b>':'')+'</span></div>'}
+  else if(AN.i===AN.base&&cur.punMiss)h='<div class="gtxt"><span class="gic">⚔</span><span><b>'+esc(t('gHowPunish'))+'</b><small class="gsub">'+esc(t('gStart'))+'</small></span></div>';
   else if(AN.i>=AN.base&&cur.gk&&CONCEPT[cur.gk])h='<div class="gtxt"><span class="gic">📘</span><span><b>'+esc(tt(CONCEPT[cur.gk].t))+'</b> — '+esc(tt(CONCEPT[cur.gk].habit))+'<small class="gsub">'+esc(t('gStart'))+'</small></span></div>';
   else h='<div class="gtxt"><span class="gic">▶</span><span>'+esc(AN.i<AN.base?t('gBefore'):t('gStart'))+'</span></div>';
   h+='<div class="gnav"><button class="btn" id="gPrev" type="button"'+(AN.i<=0?' disabled':'')+'>◀</button><span class="small">'+(n>0&&k>=0?k+' / '+n:'')+'</span><button class="btn primary" id="gNext" type="button"'+(AN.i>=AN.moves.length?' disabled':'')+'>▶</button>'+
@@ -2010,7 +2013,7 @@ $('bPgn').onclick=function(){
 $('bBackup').onclick=function(){var tx=JSON.stringify(S);$('iBackup').value=tx;
   try{navigator.clipboard.writeText(tx).then(function(){$('bkStatus').textContent=t('bkCopied')},function(){$('iBackup').select();$('bkStatus').textContent=t('bkSelect')})}catch(e){$('iBackup').select()}};
 $('bRestore').onclick=function(){try{var o=JSON.parse($('iBackup').value);if(!o.cards||!o.games)throw 0;S=o;upgrade();save();$('bkStatus').textContent=t('bkRestored')}catch(e){$('bkStatus').textContent=t('bkBad')}};
-$('bBase').onclick=function(){fetch('datos.json?v=11',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(D){DATA.stats=D.stats||{};mergeBase(D);save();$('bkStatus').textContent=t('bkLoaded')}).catch(function(){$('bkStatus').textContent=t('bkNone')})};
+$('bBase').onclick=function(){fetch('datos.json?v=12',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(D){DATA.stats=D.stats||{};mergeBase(D);save();$('bkStatus').textContent=t('bkLoaded')}).catch(function(){$('bkStatus').textContent=t('bkNone')})};
 var armed=false;
 $('bReset').onclick=function(){if(!armed){armed=true;$('bReset').textContent=t('bkResetSure');setTimeout(function(){armed=false;$('bReset').textContent=t('bkReset')},4000);return}
   S=blank();save();armed=false;$('bReset').textContent=t('bkReset');$('bkStatus').textContent=t('bkWiped')};
