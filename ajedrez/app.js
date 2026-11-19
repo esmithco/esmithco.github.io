@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=72;
+var APP_VER=73;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -520,8 +520,8 @@ function weakRank(){
 function weakProg(k){var l=WEAKL[k],n=l?l.p.length:0,ok=l?l.p.filter(function(p){var s=S.puz[p.id];return s&&s.box>=1}).length:0,cs=k==='calc'?[]:weakAll(k),cf=cs.filter(function(c){return c.last===1}).length;
   return {n:n,ok:ok,cards:cs.length,cfix:cf}}
 /* bank puzzles for a theme: due reviews first, then new ones near his level (target rating rises as he solves more of the theme) */
-function weakPuz(k,max){var l=WEAKL[k];if(!l)return [];var pr=weakProg(k),tgt=950+Math.min(850,pr.ok*6);
-  var due=l.p.filter(function(p){var s=S.puz[p.id];return s&&(s.due||0)<=now()&&s.box<4}),fresh=l.p.filter(function(p){return !S.puz[p.id]}).sort(function(a,b){return Math.abs(a.r-tgt)-Math.abs(b.r-tgt)});
+function weakPuz(k,max){var l=WEAKL[k];if(!l)return [];var pr=weakProg(k),tgt=1050+Math.min(400,pr.ok*4),cap=1550+Math.min(150,pr.ok);
+  var due=l.p.filter(function(p){var s=S.puz[p.id];return s&&(s.due||0)<=now()&&s.box<4}),fresh=l.p.filter(function(p){return !S.puz[p.id]&&p.r<=cap}).sort(function(a,b){return Math.abs(a.r-tgt)-Math.abs(b.r-tgt)+(Math.random()-.5)*120});
   return due.slice(0,Math.ceil(max/2)).concat(fresh).slice(0,max).sort(function(a,b){return a.r-b.r}).map(function(p){return {t:'puz',l:'w_'+k,id:p.id}})}
 function weakCardItems(k,max){var sn=S.seen||{},rec=now()-20*36e5;return weakCards(k).filter(function(c){return (c.last!==1||(c.due||0)<=now())&&(c.due||0)<=now()+6*36e5&&(sn[c.id]||0)<rec}).sort(function(a,b){return (a.last===1?1:0)-(b.last===1?1:0)||Math.random()-.5}).slice(0,max).map(function(c){return {t:'card',id:c.id}})}
 function weakTheme(k){
@@ -642,7 +642,7 @@ var X={items:[],i:0,src:'',ok:0,back:'home'};
 var cur=null,timers=[];
 function later(f,ms){var id=setTimeout(f,ms);timers.push(id);return id}
 function stopTimers(){if(typeof stopBar==='function')stopBar();timers.forEach(clearTimeout);timers=[]}
-function startSession(items,src,from){X.snap=progSnap();X.items=items.slice();X.i=from||0;X.src=src;X.ok=0;X.back=src==='today'?'home':src==='ideas'?'learn':src.split(':')[0];cur=null;go('train')}
+function startSession(items,src,from){X.endless=false;X.snap=progSnap();X.items=items.slice();X.i=from||0;X.src=src;X.ok=0;X.back=src==='today'?'home':src==='ideas'?'learn':src.split(':')[0];cur=null;go('train')}
 /* when he leaves an exercise, store the whole time spent on it (answer + reading), so the daily plan fits his real pace */
 function closeItemTime(){if(cur&&cur.logI!=null&&S.log&&S.log[cur.logI]&&cur.t0){S.log[cur.logI][3]=Math.min(300,Math.round((now()-cur.t0)/1000));S.log[cur.logI][4]=1;cur.logI=null;save()}}
 function renderItem(){
@@ -673,6 +673,7 @@ function itemDone(ok){
   $('trBody').classList.add('answered');cur.answered=true;B.locked=true;B.onTap=null;if(ok&&cur.first)X.ok++;
   if(cur.it.t!=='theory'){S.log=S.log||[];S.log.push([now(),cur.it.t,ok&&cur.first?1:0,Math.min(600,Math.round((now()-(cur.t0||now()))/1000)),0,cur.it.t==='drill'?cur.it.f+':'+(cur.it.n||0):'']);if(S.log.length>4000)S.log=S.log.slice(-4000);cur.logI=S.log.length-1;save()}
   if(X.src==='today'&&ok&&cur.first&&S.daily)S.daily.ok=(S.daily.ok||0)+1;
+  if(X.endless&&ok&&cur.first&&X.ok>0&&X.ok%10===0)$('fb').insertAdjacentHTML('beforeend',' <span class="cheer">🎉 '+t('cheer10',X.ok)+'</span>');
   setBtns({next:true});
   if(cur.anPath){var p=cur.anPath();if(p){var arr=B.arrows;anSet(p.start,p.moves,p.i==null?p.moves.length:p.i,p.base);if(p.keepArrows){B.arrows=arr;drawBoard()}B.onMove=anMove}}
   $('bNext').focus({preventScroll:true});
@@ -1130,10 +1131,12 @@ $('bRepGo').onclick=function(){
 };
 
 /* ---------- mistakes / punish: straight into 10 exercises, no lists ---------- */
+/* Nov 19: the tiles run through the WHOLE list — due cards first, then the rest (not seen in the last 20 h, shuffled), then the recent ones.
+   He stops with ✕ whenever he wants; every 10 right answers a small 🎉 note. */
 function quickSession(kind){
-  var due=dueList(kind,true);if(due.length<10)due=due.concat(dueList(kind,false).filter(function(c){return due.indexOf(c)<0}));
-  if(kind==='punish')due.sort(function(a,b){return ((b.mat>=1)-(a.mat>=1))});
-  startSession(due.slice(0,10).map(function(c){return {t:'card',id:c.id}}),kind);X.back='home';
+  var due=dueList(kind,false),sn=S.seen||{},rec=now()-20*36e5;
+  var rest=cardsOf(kind).filter(function(c){return due.indexOf(c)<0}).map(function(c){return {c:c,k:((sn[c.id]||0)>rec?10:0)+Math.random()}}).sort(function(a,b){return a.k-b.k}).map(function(x){return x.c});
+  startSession(due.concat(rest).map(function(c){return {t:'card',id:c.id}}),kind);X.back='home';X.endless=true;
 }
 
 /* ---------- fundamentals: coordinates, notation, concept quiz ---------- */
@@ -1372,7 +1375,7 @@ function timerBar(ms,cb){var el=$('tmr');if(!el){later(cb,ms);return}var t0=now(
     if(ck){var sc=left*ms/1000;ck.textContent=sc>=10?'0:'+Math.floor(sc):'0:0'+sc.toFixed(1);ck.classList.toggle('low',sc<5)}if(left<=0){cb();return}later(tick,100)})()}
 /* Rush */
 function loadRush(){
-  var pool=puzPool(['hanging','mate1','fork','backrank','pin'],1350).concat(puzPool(['mate2'],1300)).sort(function(){return Math.random()-.5});
+  var pool=puzPool(['hanging','mate1','fork','backrank','pin'],1350).concat(puzPool(['mate2'],1300)).sort(function(a,b){return a.k-b.k});
   if(cur.it&&cur.it.n)pool=pool.slice(0,cur.it.n+3);
   cur.rush={max:(cur.it&&cur.it.n)||99,pool:pool,n:0,ok:0,lives:3,sec:rushSec(),missed:[],times:[]};setBar(null,false);setBtns({});rushNext();
 }
@@ -1525,7 +1528,8 @@ function defEnd(){dclkStop();
    He picks his moves from 4 choices (the wrong ones are other checks/captures) and reads the replies as text, then checks it on the board.
    Level = how many of his moves (2-4) and puzzle rating; goes up at >=80%, down at <=40%. Every second position is an attack AGAINST him
    (his last move allowed it): he picks the ATTACKER's moves — mostly queen + another piece — so he learns to see them coming. */
-var CALC=[null,{len:4,r:1200,st:2},{len:4,r:1550,st:2},{len:6,r:1350,st:3},{len:6,r:1750,st:3},{len:8,r:1900,st:4}];
+/* Nov 19: he is ~1400 — puzzles stay near his level (at most ~+200) */
+var CALC=[null,{len:4,r:1250,st:2},{len:4,r:1450,st:2},{len:6,r:1350,st:3},{len:6,r:1500,st:3},{len:8,r:1600,st:4}];
 var CALC_ATT=['mate2','mate3','backrank','anastasia','arabian','smothered','doublecheck','attraction','deflection','fork','discovered'];
 function calcLvl(){var s=S.drill.calc||(S.drill.calc={best:0,bestT:0,runs:0});return Math.max(1,Math.min(5,s.lvl||1))}
 function calcPool(lvl,att){
