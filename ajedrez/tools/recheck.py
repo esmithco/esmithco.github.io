@@ -23,8 +23,11 @@ def work(c):
     try:
         b=chess.Board()
         for m in c['line']:b.push_san(m)
-        r=e.analyse(b,chess.engine.Limit(depth=18),multipv=4)
+        r=e.analyse(b,chess.engine.Limit(depth=18),multipv=5)
         s0=r[0]['score'].pov(b.turn).score(mate_score=10000);best=b.san(r[0]['pv'][0])
+        sc=[i['score'].pov(b.turn).score(mate_score=10000) for i in r]
+        ngood=sum(1 for x in sc if s0-x<=80)   # moves about as good as the best (Nov 19: 'the correct move is not really different from another')
+        gap2=s0-sc[1] if len(sc)>1 else 999
         alts=[b.san(i['pv'][0]) for i in r[1:] if s0-i['score'].pov(b.turn).score(mate_score=10000)<=35]
         out={'id':c['id'],'best':best,'pvBest':sanl(b,r[0]['pv']),'alts':alts}
         if c['kind']=='mine':
@@ -37,12 +40,14 @@ def work(c):
             mat_bad=concrete(b,[c['played']]+out['pvBad'],b.turn,-1)
             mat_best=concrete(b,out['pvBest'],b.turn,+1)
             clear=(s0-s1)>=150 and (mat_bad if v=='lose' else mat_best)
-            out.update(vis=v,keep=bool(mistake and v!='deep' and clear),drop=round(d))
+            k=bool(mistake and v!='deep' and clear)
+            # several moves are about as good: 'find the best move' teaches nothing, but 'was HIS move a mistake?' still does (judge drill only)
+            out.update(vis=v,keep=k and ngood<=2,jo=k and ngood>2,ngood=ngood,drop=round(d))
         else:
             # punish: position after the opponent's mistake, his move to find
             s1=s0;out.update(s1=s1)
             v=vis_punish(b,out['pvBest'])
-            out.update(vis=v,keep=bool(v!='deep' and s1>=150 and concrete(b,out['pvBest'],b.turn,+1)))
+            out.update(vis=v,ngood=ngood,keep=bool(v!='deep' and s1>=150 and gap2>=150 and concrete(b,out['pvBest'],b.turn,+1)))   # punish: the winning move must be clearly the only one
         return out
     except Exception as ex:
         return {'id':c['id'],'keep':False,'err':str(ex)}
@@ -53,7 +58,7 @@ if __name__=='__main__':
     cards=[c for c in D['cards'].values()]
     app=[c for c in p['appCards'].values() if c['id'] not in D['cards']]
     for c in app:c=c
-    allc=cards+app
+    allc=app if '--new' in sys.argv else cards+app   # --new: only cards his phone created since the last run
     with Pool(7) as pool:res=pool.map(work,allc,chunksize=3)
     R={r['id']:r for r in res}
     kept={'mine':0,'punish':0};tot={'mine':0,'punish':0}
@@ -62,8 +67,9 @@ if __name__=='__main__':
         if r.get('err'):print('ERR',c['id'][:40],r['err']);continue
         c.update({k:v for k,v in r.items() if k not in('id','keep','err')})
         c['hide']=not r['keep']
+        c['jo']=bool(r.get('jo'))
         if c['id'] not in D['cards']:c=dict(c);c.pop('box',None);c.pop('due',None);c.pop('reps',None);c.pop('lapses',None);c['src']='app';D['cards'][c['id']]=c
         if r['keep']:kept[c['kind']]+=1
     D['base']+=1
     json.dump(D,open('/Users/esmith/Desktop/Files/Projects/esmithco.github.io/ajedrez/datos.json','w'),separators=(',',':'))
-    print('total',tot,'kept',kept,'base',D['base'])
+    print('total',tot,'kept',kept,'judge-only',sum(1 for c in allc if R[c['id']].get('jo')),'base',D['base'])
