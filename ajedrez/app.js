@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=68;
+var APP_VER=69;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -546,8 +546,8 @@ function courseProg(){var n=0,ok=0;CURSO.lessons.forEach(function(l){n++;if(less
   CURSO.tech.forEach(function(x){n++;var s=S.tech[x.id];if(s&&s.box>=2)ok++});
   STRAT.filter(function(x){return plansOf(x.id).length}).forEach(function(x){n++;if(planProg(x.id).pct>=.6)ok++});return {ok:ok,n:n}}
 function courseItems(){
-  var cl=curLesson(),it=lessonItems(cl,6),dd=new Date().getDate();
-  var cs=curStrat();if(cs)it=it.concat(stratItems(cs.id,2).slice(0,S.seenLesson['s_'+cs.id]?1:2));
+  var cl=curLesson(),it=lessonItems(cl,4),dd=new Date().getDate();   /* a small bite: ~6 items, ~5 minutes */
+  var cs=curStrat();if(cs&&!(dd%2))it=it.concat(stratItems(cs.id,1).slice(0,S.seenLesson['s_'+cs.id]?1:2));
   var tx=CURSO.tech.filter(function(x){var s=S.tech[x.id];return !s||s.box<2})[0];if(tx&&dd%2)it.push({t:'play',id:tx.id});
   var idea=IDEAS.filter(function(x){return !S.ideas[x.id]})[0],vq=VOCAB.filter(function(q){var s=S.quiz[q.id];return !s||(s.due||0)<=now()})[0];
   if(dd%2&&vq)it.push({t:'quiz',id:vq.id});else if(idea)it.push({t:'idea',id:idea.id});else if(vq)it.push({t:'quiz',id:vq.id});
@@ -1145,7 +1145,7 @@ function fundItems(id){
 }
 function loadFTheory(f){
   S.seenLesson['f_'+f.id]=1;save();setBar(null,false);$('boardwrap').hidden=true;
-  $('prompt').innerHTML='<div class="op">'+kindPill('idea',t('unitFund'))+'</div><h3 class="ideaT">'+esc(tt(f.t))+'</h3><ul class="ideaB">'+tt(f.body).map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul><p class="small">'+t('theoryGo')+'</p>';
+  $('prompt').innerHTML=theoryHtml(kindPill('idea',t('unitFund')),tt(f.t),f.body);
   setBtns({next:true});cur.answered=true;
 }
 function loadQuiz(q){
@@ -1254,7 +1254,7 @@ function stratItems(id,max){
 }
 function loadSTheory(x){
   S.seenLesson['s_'+x.id]=1;save();setBar(null,false);var ex=plansOf(x.id)[0];if(ex){var me=new Chess(ex.fen).turn();animExample(ex.fen,(ex.pv||[ex.best]).slice(0,4),me==='b',me)}else $('boardwrap').hidden=true;
-  $('prompt').innerHTML='<div class="op">'+kindPill('idea',t('unitStrat'))+'</div><h3 class="ideaT">'+esc(tt(x.t))+'</h3><ul class="ideaB">'+tt(x.body).map(function(y){return '<li>'+esc(y)+'</li>'}).join('')+'</ul><p class="small">'+t('theoryGo')+'</p>';
+  $('prompt').innerHTML=theoryHtml(kindPill('idea',t('unitStrat')),tt(x.t),x.body);
   setBtns({next:true});cur.answered=true;
 }
 function loadPlan(tag,k){
@@ -1735,10 +1735,12 @@ function animExample(start,moves,flip,me){
     var d=describe(before,mv,c,mv.color===me,legal,null);exCap('<b class="mono">'+esc(mv.san)+'</b>'+(mv.color!==me?' <span class="small">('+t('stOpp')+')</span>':'')+(d?' — '+esFix(d):''));i++;later(step,1800)}
   reset();
 }
+/* theory = one idea, big (Nov 19, "think of me as a lazy kid"): the first sentence; the rest folded under "Más" */
+function theoryHtml(pill,title,body){var b=tt(body);return '<div class="op">'+pill+'</div><h3 class="ideaT">'+esc(title)+'</h3><p class="idea1">💡 '+esc(b[0]||'')+'</p>'+(b.length>1?'<details class="fold"><summary>'+t('moreT')+'</summary><ul class="ideaB">'+b.slice(1).map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul></details>':'')}
 function loadTheory(l){
   S.seenLesson[l.id]=1;save();setBar(null,false);
   var p=l.p[0];var c=new Chess(p.fen);c.move(p.m[0],{sloppy:true});var me=c.turn();animExample(p.fen,p.m,me==='b',me);
-  $('prompt').innerHTML='<div class="op">'+kindPill('idea',esc(tt(lessonUnit(l))))+'</div><h3 class="ideaT">'+esc(tt(l.t))+'</h3><ul class="ideaB">'+tt(l.body).map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul><p class="small">'+t('theoryGo')+'</p>';
+  $('prompt').innerHTML=theoryHtml(kindPill('idea',esc(tt(lessonUnit(l)))),tt(l.t),l.body);
   setBtns({next:true});cur.answered=true;
 }
 function lessonUnit(l){return CURSO.units.filter(function(u){return u.id===l.unit})[0].t}
