@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=67;
+var APP_VER=68;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -428,11 +428,14 @@ function buildToday(n){
      punish cards (forcing lines for him; the biggest backlog), Game mode, his own mistakes; openings and concepts only every other day.
      Coordinates/notation/flash are dropped from the daily (he has them; still in Aprender). Weak themes stay on the weak-spots screen. */
   var po=(n-1)*2;
-  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},C(pun[po]),{t:'drill',f:'defend',n:2},{t:'drill',f:'game',n:3},C(mine[o]),C(pun[po+1])].concat(g1.slice(-1),[
-      dd%2?L(pickL[n>1?1:0]||pickL[0]):r1,C(mine[o+1]),C(pun[po+2]),extra]).filter(Boolean);
-  while(it.length>5&&estSec(it)>660)it.splice(it.length-1,1);
+  /* Nov 19: he wants the notation drill back in the daily ("it's good for me, I like it"): notation every day + coordinates or square names
+     rotating; the course lesson puzzle moved to its own home button (courseItems) */
+  var bas=dd%2?'coord':'sqname';
+  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},{t:'drill',f:'nota',n:3},C(pun[po]),{t:'drill',f:'defend',n:2},{t:'drill',f:'game',n:3},C(mine[o]),C(pun[po+1]),{t:'drill',f:bas,n:5},
+      dd%2?L(pickL[n>1?1:0]||pickL[0]):r1,C(mine[o+1]),C(pun[po+2]),extra].filter(Boolean);
+  while(it.length>5&&estSec(it)>720)it.splice(it.length-1,1);
   while(it.length&&it[it.length-1].t==='theory')it.pop();
-  S.daily={v:10,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
+  S.daily={v:11,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
 }
 /* how long things take him: median of his last logged times per type, defaults otherwise */
 var EST={drill:75,line:80,puz:60,card:90,plan:60,quiz:25,idea:60,name:25,theory:40,ftheory:40,stheory:40,play:150};
@@ -445,7 +448,7 @@ function estOne(it){
   return a.length>=4?med(a):(EST[it.t]||60);
 }
 function estSec(items){return items.reduce(function(a,x){return a+estOne(x)},0)}
-function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<10&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
+function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<11&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
 
 /* ---------- routing / screens ---------- */
 var SCREENS=['home','train','rep','learn','progress','data','weak'],LISTS={mine:1,punish:1},TABS={weak:'weakScrT',home:'navToday',rep:'navRep',learn:'navLearn',progress:'navProg',data:'tData'};
@@ -535,6 +538,25 @@ function renderWeak(){
   var top=R.filter(function(x){return x.k!=='calc'})[0],pr=top?weakProg(top.k):null;$('weakBar').style.width=(pr?Math.round(pr.ok/Math.max(1,pr.n)*100):0)+'%';
   b.onclick=function(){go('weak')};
 }
+/* ---------- Course (Nov 19, "something like weak spots, but to go through Aprender, which I don't usually open") ----------
+   One button on home: ~10 items that walk through Aprender in order — the current course lesson (theory the first time + puzzles),
+   one strategy position, every other day an endgame technique, and a concept (key idea or commentator word). Same S.puz / S.plan /
+   S.tech / S.quiz state as everywhere, so what he solves here counts in Aprender and the other way round. */
+function courseProg(){var n=0,ok=0;CURSO.lessons.forEach(function(l){n++;if(lessonProg(l).pct>=.6)ok++});
+  CURSO.tech.forEach(function(x){n++;var s=S.tech[x.id];if(s&&s.box>=2)ok++});
+  STRAT.filter(function(x){return plansOf(x.id).length}).forEach(function(x){n++;if(planProg(x.id).pct>=.6)ok++});return {ok:ok,n:n}}
+function courseItems(){
+  var cl=curLesson(),it=lessonItems(cl,6),dd=new Date().getDate();
+  var cs=curStrat();if(cs)it=it.concat(stratItems(cs.id,2).slice(0,S.seenLesson['s_'+cs.id]?1:2));
+  var tx=CURSO.tech.filter(function(x){var s=S.tech[x.id];return !s||s.box<2})[0];if(tx&&dd%2)it.push({t:'play',id:tx.id});
+  var idea=IDEAS.filter(function(x){return !S.ideas[x.id]})[0],vq=VOCAB.filter(function(q){var s=S.quiz[q.id];return !s||(s.due||0)<=now()})[0];
+  if(dd%2&&vq)it.push({t:'quiz',id:vq.id});else if(idea)it.push({t:'idea',id:idea.id});else if(vq)it.push({t:'quiz',id:vq.id});
+  return it;
+}
+function renderCourse(){var b=$('bCourse');if(!b)return;var cl=curLesson(),p=lessonProg(cl),cp=courseProg();
+  $('courseSub').textContent=t('courseSub',tt(cl.t),p.ok,p.n,cp.ok,cp.n);$('courseBar').style.width=Math.round(cp.ok/Math.max(1,cp.n)*100)+'%';
+  b.onclick=function(){startSession(courseItems(),'learn');X.back='home'};
+}
 function renderWeakScr(){
   var el=$('weakList');if(!el)return;var R=weakRank();
   $('bWeakGo').onclick=function(){startSession(weakItems().items,'weak')};
@@ -553,6 +575,7 @@ function renderCrit(){
 }
 function renderHome(){
   try{renderWeak()}catch(e){}
+  try{renderCourse()}catch(e){}
   var d=dailyNow(),n=d.items.length;
   var sn=d.n||1;$('hToday').textContent=sn>1?t('todayExtra'):t('today');
   $('hTodaySub').textContent=d.done?t(sn>1?'todayDone2':'todayDone'):(sn>1?t('todayExtraSub')+' ':'')+t('todaySub',n,Math.max(3,Math.round(estSec(d.items.slice(d.idx||0))/60)));

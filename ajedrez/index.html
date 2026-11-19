@@ -314,6 +314,8 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
   .wrap:has(#s-train:not([hidden])) .topbar .close{width:34px;height:34px}
   #s-train .trhead{padding-left:44px;min-height:36px}
 }
+.weakbtn.course{background:linear-gradient(135deg,rgba(14,148,136,.14),rgba(37,99,235,.10))}.weakbtn.course .bar2 span{background:#0E9488}
+#s-home .weakbtn{margin:0}
 </style>
 </head>
 <body>
@@ -337,6 +339,7 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
       <div class="streak" id="hStreak"></div>
     </div>
     <button class="weakbtn" id="bWeak" type="button"><span class="wi">💪</span><span class="wt"><b data-t="weakBtn"></b><small id="weakSub"></small><span class="bar2"><span id="weakBar"></span></span></span><span class="go">›</span></button>
+    <button class="weakbtn course" id="bCourse" type="button"><span class="wi">📚</span><span class="wt"><b data-t="courseBtn"></b><small id="courseSub"></small><span class="bar2"><span id="courseBar"></span></span></span><span class="go">›</span></button>
     <div class="tiles">
       <button class="tile" data-go="mine" style="--tc:var(--c-mist)"><span class="ti">🎯</span><b data-t="tMine"></b><em id="tMineN"></em></button>
       <button class="tile" data-go="punish" style="--tc:var(--good)"><span class="ti">⚔️</span><b data-t="tPun"></b><em id="tPunN"></em></button>
@@ -471,7 +474,7 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
   <button data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg><span data-t="navProg"></span></button>
 </nav>
 <script src="chess.js"></script>
-<script src="textos.js?v=54"></script>
+<script src="textos.js?v=55"></script>
 <script src="conceptos.js?v=1"></script>
 <script src="repertorio.js?v=8"></script>
 <script src="planes_aperturas.js?v=1"></script>
@@ -480,6 +483,6 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 <script src="fundamentos.js?v=10"></script>
 <script src="planes.js?v=2"></script>
 <script src="debiles.js?v=1"></script>
-<script src="app.js?v=67"></script>
+<script src="app.js?v=68"></script>
 </body>
 </html>
