@@ -330,6 +330,16 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 /* buttons under the board: centered */
 .tright>.row,.anbar .annav{justify-content:center}
 #choices:not(.grid){justify-content:center}
+/* Nov 19: on phones the eval bar is a thin line under the board, so the board gets that width */
+@media (max-width:979px){
+  .boardwrap{flex-direction:column;gap:20px!important;margin-bottom:6px}
+  .evalbar{order:2;width:100%!important;flex:0 0 8px!important;height:8px;flex-direction:row!important;justify-content:flex-start;border-radius:4px;margin-top:2px;margin-left:18px;width:calc(100% - 18px)!important}
+  .evalbar.flip{flex-direction:row-reverse!important}
+  .evalbar .fill{height:100%!important;width:var(--p,50%);transition:width .5s ease}
+  .evalbar .txt{transform:translate(-50%,-50%);top:50%;font-size:9px;padding:1px 4px}
+  .bwrap{margin-left:18px}
+  #boardwrap{max-width:min(100%,calc(100svh - 290px))!important}
+}
 </style>
 </head>
 <body>
@@ -495,6 +505,6 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 <script src="fundamentos.js?v=10"></script>
 <script src="planes.js?v=2"></script>
 <script src="debiles.js?v=2"></script>
-<script src="app.js?v=76"></script>
+<script src="app.js?v=77"></script>
 </body>
 </html>

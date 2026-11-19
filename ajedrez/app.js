@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=76;
+var APP_VER=77;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -195,7 +195,7 @@ var barCp=null;
 function setBar(cpW,on){
   var el=$('evalbar');el.hidden=on===false;if(on===false)return;
   var p=cpW==null?50:wp(cpW);el.classList.toggle('flip',B.flip);
-  $('evfill').style.height=p+'%';$('evtxt').textContent=cpW==null?'…':evalTxt(B.flip?-cpW:cpW);
+  $('evfill').style.height=p+'%';el.style.setProperty('--p',p+'%');$('evtxt').textContent=cpW==null?'…':evalTxt(B.flip?-cpW:cpW);
   el.classList.remove('pulse');if(barCp!=null&&cpW!=null&&Math.abs(wp(cpW)-wp(barCp))>=10){void el.offsetWidth;el.classList.add('pulse')}
   barCp=cpW;
 }

@@ -128,6 +128,8 @@ Criteria (same offline and in-app; `isMistake`/`isPunish` in app.js, `is_mistake
 
 **Calmer home (Nov 19, "too colorful")**: the *Práctica de hoy* card is now white with a violet left border, smaller title (1.25rem) and a violet button (CSS block "calmer, smaller today card", overrides the old gradient). Button rows under the board are centered.
 
+**Bigger board on phones (Nov 19)**: the eval bar is a thin horizontal line under the board (`--p` CSS variable set in `setBar`, fill = White's share, reversed when flipped); the board may use up to `100svh − 290px`.
+
 Regenerating `datos.json` offline (needs `brew install stockfish` + a venv with `pip install chess`; run from a scratch dir, **not** the repo): `tools/fetch.py` (all games via curl — Chess.com needs a User-Agent; python.org Python lacks certs) → `analyse.py` (depth 12 on every opening position, 7 processes, ~10 min) → `deep.py` (depth 16 PVs + null-move threats for selected positions) → `rep.py` → `build.py` → copy `datos.json` + `repertorio.js` into `ajedrez/`.
 
 Findings (Nov 2026; 2,478 games): quick losses mostly from openings he dropped (1…e5, Scotch Gambit). Repertoire traps he fell for are encoded as trap lines (Caro Advance Bg5/…e6??, London …Nh5/g4?, Englund, Fantasy …Bg4?). Vs Queen's Gambit as Black he scored badly → Slav lines.
