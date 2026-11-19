@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=64;
+var APP_VER=65;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -140,7 +140,7 @@ function drawBoard(){
   for(var vr=0;vr<8;vr++)for(var vf=0;vf<8;vf++){
     var f=B.flip?7-vf:vf,r=B.flip?vr:7-vr,n='abcdefgh'[f]+(r+1);var pc=B.chess?B.chess.get(n):null;
     var cls='sq '+((f+r)%2?'l':'d')+(B.marks[n]?' '+B.marks[n]:'')+(B.sel===n?' sel':'')+(B.drag&&B.drag.from===n?' drag-from':'');
-    var inner=pc?piece(pc):'';
+    var inner=pc?piece(pc):'';if(B.rings&&B.rings[n])cls+=' gring-'+B.rings[n];if(B.badges&&B.badges[n])inner+='<span class="gbadge">'+B.badges[n]+'</span>';
     if(HINTS&&B.targets.indexOf(n)>=0)inner+=pc?'<span class="ring"></span>':'<span class="dot"></span>';
     if(vr===7)inner+='<span class="cf">'+'abcdefgh'[f]+'</span>';if(vf===0)inner+='<span class="cr">'+(r+1)+'</span>';
     h+='<div class="'+cls+'" data-sq="'+n+'">'+inner+'</div>';
@@ -186,7 +186,7 @@ function endDrag(e){if(!B.drag)return;var d=B.drag;B.drag=null;var to=e&&e.type=
   if(to===d.from&&d.wasSel&&!d.moved){B.sel=null;B.targets=[]}drawBoard()}
 boardEl.addEventListener('pointerup',endDrag);boardEl.addEventListener('pointercancel',endDrag);
 function setBoard(fen,flip,lastSan,prevFen){
-  B.chess=new Chess(fen);B.flip=flip;B.sel=null;B.targets=[];B.marks={};B.arrows=[];B.drag=null;B.onTap=null;
+  B.chess=new Chess(fen);B.flip=flip;B.sel=null;B.targets=[];B.marks={};B.arrows=[];B.drag=null;B.onTap=null;B.badges={};B.rings={};
   if(lastSan&&prevFen){var m=new Chess(prevFen).move(lastSan,{sloppy:true});if(m){B.marks[m.from]='last';B.marks[m.to]='last'}}
   drawBoard();
 }
@@ -345,7 +345,7 @@ function teachWin(fen0,pv,col){
 function esFix(x){return LANG==='es'?x.replace(/\bde el /g,'del ').replace(/\ba el /g,'al '):x}
 function fold(title,html){return html?'<details class="fold"><summary>'+title+'</summary>'+html+'</details>':''}
 function teachBox(o,lead){
-  if(!o||!CONCEPT[o.k])return '';var C=CONCEPT[o.k],x=esFix(o.txt.charAt(0).toUpperCase()+o.txt.slice(1));
+  if(!o||!CONCEPT[o.k])return '';if(cur&&!cur.gk)cur.gk=o.k;var C=CONCEPT[o.k],x=esFix(o.txt.charAt(0).toUpperCase()+o.txt.slice(1));
   S.cseen=S.cseen||{};var n=S.cseen[o.k]=(S.cseen[o.k]||0)+1,rule='<b>'+t('tRule')+':</b> '+esc(tt(C.rule));
   return '<div class="teach"><div class="teachT">📘 '+esc(tt(C.t))+'</div><p>'+(lead?lead+' ':'')+x+'</p>'+(n<=2?'<p class="small">'+rule+'</p>':'')+'<p class="small"><b>'+t('tHabit')+':</b> '+esc(tt(C.habit))+'</p>'+(n>2?'<details class="fold"><summary>'+t('tRule')+'</summary><p class="small">'+esc(tt(C.rule))+'</p></details>':'')+'</div>';
 }
@@ -624,7 +624,7 @@ function closeItemTime(){if(cur&&cur.logI!=null&&S.log&&S.log[cur.logI]&&cur.t0)
 function renderItem(){
   closeItemTime();stopTimers();dclkStop();window.scrollTo(0,0);anOff();$('demoBar').hidden=true;boardEl.classList.remove('nopieces');
   if(X.i>=X.items.length){endSession();return}
-  var it=X.items[X.i];cur={it:it,answered:false,first:true,t0:now()};$('bPrevEx').disabled=X.i===0;
+  $('trBody').classList.remove('answered');  var it=X.items[X.i];cur={it:it,answered:false,first:true,t0:now()};$('bPrevEx').disabled=X.i===0;
   $('trCount').textContent=(X.i+1)+'/'+X.items.length;$('trProg').style.width=(X.i/X.items.length*100)+'%';
   ['fb','why','choices','note'].forEach(function(id){$(id).innerHTML='';$(id).className=id==='fb'?'feedback':id;$(id).hidden=id!=='fb'});
   $('line').textContent='';$('trEnd').hidden=true;$('trBody').hidden=false;$('boardwrap').hidden=false;$('choices').classList.remove('grid');boardEl.classList.remove('nocoords');B.onMove=null;
@@ -645,7 +645,7 @@ function skip(){X.i++;saveDaily();renderItem()}
 function saveDaily(){if(X.src==='today'&&S.daily){S.daily.idx=X.i;if(X.i>=S.daily.items.length&&!S.daily.done){S.daily.done=true;
   S.days=S.days||{};S.days[S.daily.date||today()]=1;syncStreak()}save()}}
 function itemDone(ok){
-  cur.answered=true;B.locked=true;B.onTap=null;if(ok&&cur.first)X.ok++;
+  $('trBody').classList.add('answered');cur.answered=true;B.locked=true;B.onTap=null;if(ok&&cur.first)X.ok++;
   if(cur.it.t!=='theory'){S.log=S.log||[];S.log.push([now(),cur.it.t,ok&&cur.first?1:0,Math.min(600,Math.round((now()-(cur.t0||now()))/1000)),0,cur.it.t==='drill'?cur.it.f+':'+(cur.it.n||0):'']);if(S.log.length>4000)S.log=S.log.slice(-4000);cur.logI=S.log.length-1;save()}
   if(X.src==='today'&&ok&&cur.first&&S.daily)S.daily.ok=(S.daily.ok||0)+1;
   setBtns({next:true});
@@ -743,14 +743,71 @@ function cardResult(ok,san,sAfter,pvAfter){
   itemDone(ok);
   setBtns({next:true,bad:!!cur.badLine,good:true,yours:!!cur.yourLine});
   $('bBad').textContent=t('bBadLine',cur.badLine?cur.badLine[0]:'');if(cur.yourLine)$('bYours').textContent=t('bYourLine',san);
+  /* load the line he needs to see right away, so the coach bubble above the board can walk him through it with ▶ */
+  var auto=ok?cur.goodLine:(san===c.played?cur.badLine:(cur.yourLine||cur.badLine));if(auto&&auto.length>1){try{showLine(auto)}catch(e){}}
 }
-function showWhy(list){if(!list.length)return;$('why').hidden=false;$('why').innerHTML='<h3>'+t('why')+'</h3><ul>'+list.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>'}
+function showWhy(list){if(!list.length)return;$('why').hidden=false;var body='<ul>'+list.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>';
+  /* phones: folded, the coach bubble above the board is the main explanation */
+  $('why').innerHTML=window.innerWidth<980?'<details><summary>📖 '+t('gReadAll')+'</summary>'+body+'</details>':'<h3>'+t('why')+'</h3>'+body;if(AN.on)guideRender()}
 /* ---------- analysis board: step through any line yourself (◀ ▶), and after answering move freely with live engine ---------- */
 var INIT=new Chess().fen();
 var AN={on:false,start:INIT,moves:[],i:0,base:0,tok:0,ev:{},good:{}};
 function anSet(start,moves,i,base){AN.known=moves.length;AN.on=true;AN.start=start;AN.moves=moves.slice();AN.i=Math.max(0,Math.min(i,AN.moves.length));AN.base=base==null?AN.i:base;$('anBar').hidden=false;$('line').hidden=true;anRender()}
-function anOff(){AN.on=false;AN.tok++;$('anBar').hidden=true;$('anStory').innerHTML='';$('line').hidden=false;$('anEval').innerHTML=''}
+function anOff(){AN.on=false;AN.tok++;$('anBar').hidden=true;if($('guide'))$('guide').hidden=true;B.badges={};B.rings={};$('anStory').innerHTML='';$('line').hidden=false;$('anEval').innerHTML=''}
 function anChess(n){var c=new Chess(AN.start);for(var k=0;k<n&&k<AN.moves.length;k++){if(!c.move(AN.moves[k],{sloppy:true}))break}return c}
+/* ---------- Coach bubble (Nov 19, "too much text, square names and numbers; I don't see text that is elsewhere; show it on the board") ----------
+   After he answers, a bubble right above the board explains the line one move at a time, in one short sentence with an icon,
+   with no square names or move notation: rings and badges on the board show WHERE. Big ◀ ▶ in the bubble step through the line
+   (it drives the analysis bar). The long written explanation stays below, folded on phones. */
+var GN={es:{p:'peón',n:'caballo',b:'alfil',r:'torre',q:'dama',k:'rey'},en:{p:'pawn',n:'knight',b:'bishop',r:'rook',q:'queen',k:'king'}};
+function gPc(type,mine){var es=LANG==='es';return (mine?(es?'tu ':'your '):(es?'su ':'their '))+GN[es?'es':'en'][type]}
+function kingSq(c,col){var o=null;c.board().forEach(function(r){r.forEach(function(p){if(p&&p.type==='k'&&p.color===col)o=p.square})});return o}
+function guideStep(c0,m,c1,col,prevTo){
+  var mine=m.color===col,me=mine,parts=[],ic='',badges={},rings={},bad=mine?'g':'r',good=mine?'g':'r';
+  var ofMe=function(type){return gPc(type,!mine)};   /* the captured/attacked piece belongs to the other side */
+  if(c1.in_checkmate()){var ks=kingSq(c1,c1.turn());if(ks){badges[ks]='#';rings[ks]='r'}return {ic:'♚',txt:t(mine?'gMateMe':'gMateOpp'),badges:badges,rings:rings}}
+  if(m.captured){badges[m.to]='💰';
+    if(prevTo===m.to){ic='↩';parts.push(t(mine?'gRecapMe':'gRecapOpp',ofMe(m.captured)))}
+    else if(!canTake(c1,m.to)){ic='💰';parts.push(t(mine?'gFreeMe':'gFreeOpp',ofMe(m.captured)))}
+    else{ic='⚖';parts.push(t(mine?'gTakeMe':'gTakeOpp',ofMe(m.captured)))}}
+  if(m.promotion){ic=ic||'⭐';parts.push(t('gPromo'))}
+  var chk=c1.in_check();
+  var tg=[];try{var x=new Chess(flipTurn(c1.fen(),m.color));x.moves({square:m.to,verbose:true}).forEach(function(a){if(!a.captured||a.captured==='k')return;
+    x.move(a.san);var def=canTake(x,a.to);x.undo();if(VAL[a.captured]>=3&&(VAL[a.captured]>VAL[m.piece]||!def))tg.push({sq:a.to,type:a.captured})})}catch(e){}
+  if(chk){var ks2=kingSq(c1,c1.turn());if(ks2){rings[ks2]='r';badges[ks2]='+'}}
+  if((tg.length>=2)||(chk&&tg.length>=1)){ic='⚔';var A=chk?'k':tg[0].type,Bt=chk?tg[0].type:tg[1].type;tg.forEach(function(o){rings[o.sq]=mine?'g':'r'});badges[m.to]='⚔';
+    parts.push(t('gFork',gPc(m.piece,mine),ofMe(A),ofMe(Bt)))}
+  else{if(chk){ic=ic||'✚';parts.push(t(mine?'gCheckMe':'gCheckOpp'))}
+    if(tg.length===1){ic=ic||'👀';rings[tg[0].sq]=mine?'g':'r';parts.push(t('gAtt',gPc(m.piece,mine),ofMe(tg[0].type)))}}
+  if(!parts.length||(parts.length===1&&m.captured)){var lt=lineTactic(c1,m.to);if(lt){ic=ic||'📌';rings[lt.a.sq]=mine?'g':'r';rings[lt.b.sq]=mine?'g':'r';badges[m.to]=lt.k==='pin'?'📌':'➶';
+    parts.push(t(lt.k==='pin'?'gPin':'gSkewer',gPc(m.piece,mine),ofMe(lt.a.p.type),ofMe(lt.b.p.type)))}}
+  if(!chk&&!m.captured){try{var y=new Chess(flipTurn(c1.fen(),m.color));if(y.moves().some(function(z){y.move(z);var mt=y.in_checkmate();y.undo();return mt})){ic=ic||'⚠';parts.push(t(mine?'gMateThrMe':'gMateThrOpp'))}}catch(e){}}
+  if(!parts.length){ic='·';parts.push(t(mine?'gQuietMe':'gQuietOpp',gPc(m.piece,mine)))}
+  var s=parts.slice(0,2).join(LANG==='es'?' y ':' and ');s=s.charAt(0).toUpperCase()+s.slice(1)+'.';
+  return {ic:ic,txt:s,badges:badges,rings:rings,who:mine?'me':'op'};
+}
+/* what the line wins or loses from the exercise position to here */
+function guideResult(col){var a=anChess(AN.base),b=anChess(AN.i);if(b.in_checkmate())return '';var d=bal(b,col)-bal(a,col);
+  return d>=1?t('gResWin',matTxt(d)):d<=-1?t('gResLose',matTxt(d)):''}
+function guideRender(){
+  var el=$('guide');if(!el)return;
+  if(!AN.on||!cur||!cur.answered||!AN.moves.length){el.hidden=true;B.badges={};B.rings={};return}
+  var col=B.flip?'b':'w',h='',st=null;B.badges={};B.rings={};
+  if(AN.i>0&&AN.i>AN.base){var c0=anChess(AN.i-1),hist=anChess(AN.i).history({verbose:true}),m=hist[hist.length-1],prevTo=null;
+    if(AN.i-2>=0){var hp=anChess(AN.i-1).history({verbose:true}),pm=hp[hp.length-1];if(pm&&pm.captured)prevTo=pm.to}
+    if(m)st=guideStep(c0,m,anChess(AN.i),col,prevTo)}
+  var n=AN.moves.length-AN.base,k=AN.i-AN.base;
+  if(st){B.badges=st.badges;B.rings=st.rings;var res=AN.i>=AN.moves.length?guideResult(col):'';
+    h='<div class="gtxt '+st.who+'"><span class="gic">'+st.ic+'</span><span><small>'+t(st.who==='me'?'gYou':'gOpp')+'</small>'+esc(st.txt)+(res?'<b class="gres">'+esc(res)+'</b>':'')+'</span></div>'}
+  else if(AN.i>=AN.base&&cur.gk&&CONCEPT[cur.gk])h='<div class="gtxt"><span class="gic">📘</span><span><b>'+esc(tt(CONCEPT[cur.gk].t))+'</b> — '+esc(tt(CONCEPT[cur.gk].habit))+'<small class="gsub">'+esc(t('gStart'))+'</small></span></div>';
+  else h='<div class="gtxt"><span class="gic">▶</span><span>'+esc(AN.i<AN.base?t('gBefore'):t('gStart'))+'</span></div>';
+  h+='<div class="gnav"><button class="btn" id="gPrev" type="button"'+(AN.i<=0?' disabled':'')+'>◀</button><span class="small">'+(n>0&&k>=0?k+' / '+n:'')+'</span><button class="btn primary" id="gNext" type="button"'+(AN.i>=AN.moves.length?' disabled':'')+'>▶</button>'+
+     ($('why')&&!$('why').hidden&&$('why').innerHTML?'<button class="btn" id="gRead" type="button">📖 '+t('gRead')+'</button>':'')+'</div>';
+  el.innerHTML=h;el.hidden=false;
+  $('gPrev').onclick=function(){$('anPrev').click()};$('gNext').onclick=function(){$('anNext').click()};
+  if($('gRead'))$('gRead').onclick=function(){var w=$('why'),d=w.querySelector('details');if(d)d.open=true;w.scrollIntoView({behavior:'smooth',block:'start'})};
+  drawBoard();
+}
 function anRender(keepArrows){
   var c=anChess(AN.i),arr=keepArrows?B.arrows:[];B.chess=c;B.sel=null;B.targets=[];B.marks={};B.arrows=arr;B.drag=null;
   var h=c.history({verbose:true}),last=h[h.length-1];if(last){B.marks[last.from]='last';B.marks[last.to]='last'}
@@ -759,6 +816,7 @@ function anRender(keepArrows){
   $('anFirst').disabled=$('anPrev').disabled=AN.i===0;$('anNext').disabled=$('anLast').disabled=AN.i>=AN.moves.length;
   $('anBase').hidden=AN.i===AN.base||AN.base>AN.moves.length;
   if(cur&&cur.answered)anEval();else $('anEval').innerHTML=AN.i!==AN.base?t('anBack'):'';
+  guideRender();
 }
 function anList(){
   var c=new Chess(AN.start),p=AN.start.split(' '),num=+p[5],o='';
@@ -1334,11 +1392,11 @@ function defNext(){
 }
 /* shared pause after an answer: pieces stay, analysis bar on, threat/answer arrows, "Next ▶" */
 function pauseReview(fen,moves,ok,html,arrows,next,why){
-  dclkPause();cur.answered=true;if(why){$('why').innerHTML='';showWhy([why])}else{$('why').hidden=true}anSet(fen,moves,Math.min(1,moves.length),0);B.onMove=anMove;
+  dclkPause();cur.answered=true;$('trBody').classList.add('answered');if(why){$('why').innerHTML='';showWhy([why])}else{$('why').hidden=true}anSet(fen,moves,Math.min(1,moves.length),0);B.onMove=anMove;
   if(arrows&&arrows.length){B.arrows=arrows;drawBoard()}
   $('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=html+' <span class="small">'+t('flashReview')+'</span>';
   var ch=$('choices');ch.hidden=false;ch.classList.remove('grid');ch.innerHTML='<button class="btn primary" id="bPauseNext">'+t('flashNextR')+'</button>';
-  $('bPauseNext').onclick=function(){anOff();cur.answered=false;B.onMove=null;B.arrows=[];$('why').hidden=true;next();dclkResume()};
+  $('bPauseNext').onclick=function(){anOff();cur.answered=false;$('trBody').classList.remove('answered');B.onMove=null;B.arrows=[];$('why').hidden=true;next();dclkResume()};
 }
 /* Game mode: no hints at all. A mix of positions — a threat against you, a tactic for you, or nothing special (a quiet move from his own games).
    He is told nothing; he has to find out what is going on, like in a real game. */
