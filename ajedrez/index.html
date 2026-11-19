@@ -320,6 +320,16 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 .cheer{display:inline-block;margin-top:4px;background:#FEF3C7;color:#92400E;border-radius:8px;padding:3px 8px;font-weight:700}
 /* Nov 19: no move-list box ("I don't see that, I don't need it"): the coach bubble has ◀ ▶ and the board has the arrows */
 #anMoves,#anFirst,#anPrev,#anNext,#anLast,#anStory,#anTip,#anEval{display:none!important}.anbar{background:none!important;border:0!important;padding:0!important;box-shadow:none!important}.anbar .annav{margin:0}
+/* Nov 19: calmer, smaller "today" card (he found it too colorful) */
+#s-home .hero{background:var(--surface)!important;color:var(--ink);border:1px solid var(--line);border-left:5px solid #7C3AED;box-shadow:0 2px 8px rgba(23,32,51,.06);padding:14px 16px;gap:6px;border-radius:16px}
+#s-home .hero h2{color:var(--ink);font-size:1.25rem}
+#s-home .hero p{color:#4b5563;opacity:1;font-size:.9rem}#s-home .hero p.small{color:#6b7280!important}
+#s-home .hero .progress{background:rgba(124,58,237,.12)}#s-home .hero .progress span{background:#7C3AED}
+#s-home .hero .btn{background:#7C3AED;color:#fff;border-color:#7C3AED;padding:10px 16px;font-size:.95rem}
+#s-home .hero .streak{color:#92400E}
+/* buttons under the board: centered */
+.tright>.row,.anbar .annav{justify-content:center}
+#choices:not(.grid){justify-content:center}
 </style>
 </head>
 <body>
@@ -485,6 +495,6 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 <script src="fundamentos.js?v=10"></script>
 <script src="planes.js?v=2"></script>
 <script src="debiles.js?v=2"></script>
-<script src="app.js?v=75"></script>
+<script src="app.js?v=76"></script>
 </body>
 </html>
