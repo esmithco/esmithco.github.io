@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=78;
+var APP_VER=79;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -432,11 +432,11 @@ function buildToday(n){
   /* Nov 19: he wants the notation drill back in the daily ("it's good for me, I like it"): notation every day + coordinates or square names
      rotating; the course lesson puzzle moved to its own home button (courseItems) */
   var bas=dd%2?'coord':'sqname';
-  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},{t:'drill',f:'nota',n:3},C(pun[po]),{t:'drill',f:'defend',n:2},{t:'drill',f:'game',n:3},C(mine[o]),C(pun[po+1]),{t:'drill',f:bas,n:5},
+  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},{t:'drill',f:'nota',n:3},C(pun[po]),{t:'drill',f:'defend',n:2},{t:'drill',f:'game',n:3},window.CONV?{t:'drill',f:'conv',n:2}:null,C(mine[o]),C(pun[po+1]),{t:'drill',f:bas,n:5},
       dd%2?L(pickL[n>1?1:0]||pickL[0]):r1,C(mine[o+1]),C(pun[po+2]),extra].filter(Boolean);
   while(it.length>5&&estSec(it)>720)it.splice(it.length-1,1);
   while(it.length&&it[it.length-1].t==='theory')it.pop();
-  S.daily={v:11,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
+  S.daily={v:12,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
 }
 /* how long things take him: median of his last logged times per type, defaults otherwise */
 var EST={drill:75,line:80,puz:60,card:90,plan:60,quiz:25,idea:60,name:25,theory:40,ftheory:40,stheory:40,play:150};
@@ -444,12 +444,12 @@ function estOne(it){
   var med=function(a){a=a.slice(-15).map(function(e){return Math.min(240,e[3])}).sort(function(x,y){return x-y});return a[Math.floor(a.length/2)]};
   var full=(S.log||[]).filter(function(e){return e[4]===1});
   if(it.t==='drill'){var key=it.f+':'+(it.n||0),d=full.filter(function(e){return e[5]===key});if(d.length>=2)return med(d);
-    var per={judge:40,calc:55,game:25,defend:22,flash:15,rush:12,coord:5,sqname:5,nota:10}[it.f]||8;return 10+per*(it.n||8)}
+    var per={conv:30,judge:40,calc:55,game:25,defend:22,flash:15,rush:12,coord:5,sqname:5,nota:10}[it.f]||8;return 10+per*(it.n||8)}
   var a=full.filter(function(e){return e[1]===it.t});
   return a.length>=4?med(a):(EST[it.t]||60);
 }
 function estSec(items){return items.reduce(function(a,x){return a+estOne(x)},0)}
-function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<11&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
+function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<12&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
 
 /* ---------- routing / screens ---------- */
 var SCREENS=['home','train','rep','learn','progress','data','weak'],LISTS={mine:1,punish:1},TABS={weak:'weakScrT',home:'navToday',rep:'navRep',learn:'navLearn',progress:'navProg',data:'tData'};
@@ -529,7 +529,7 @@ function weakTheme(k){
   var c=weakCardItems(k,4),p=weakPuz(k,10-c.length),o=[],i=0,j=0;while(i<c.length||j<p.length){if(j<p.length)o.push(p[j++]);if(j<p.length)o.push(p[j++]);if(i<c.length)o.push(c[i++])}return o}
 function weakItems(){
   var R=weakRank().filter(function(x){return x.k!=='calc'}),a=R[0]&&R[0].k,b=R[1]&&R[1].k;
-  var it=[S.seenLesson.f_judge?null:{t:'ftheory',f:'judge'},{t:'drill',f:'judge',n:4}];
+  var it=[S.seenLesson.f_conv?null:{t:'ftheory',f:'conv'},window.CONV?{t:'drill',f:'conv',n:3}:null,S.seenLesson.f_judge?null:{t:'ftheory',f:'judge'},{t:'drill',f:'judge',n:3}];
   if(a){it=it.concat(weakCardItems(a,2),weakPuz(a,4))}if(b){it=it.concat(weakCardItems(b,1),weakPuz(b,2))}
   return {items:it.filter(Boolean)};
 }
@@ -561,10 +561,11 @@ function renderCourse(){var b=$('bCourse');if(!b)return;var cl=curLesson(),p=les
 function renderWeakScr(){
   var el=$('weakList');if(!el)return;var R=weakRank();
   $('bWeakGo').onclick=function(){startSession(weakItems().items,'weak')};
-  var js=S.drill.judge;el.innerHTML='<button class="crow critrow" id="bJudge" type="button"><span class="ci">🤔</span><span class="ct"><b>'+t('jT')+'</b><small>'+t('jRow')+(js&&js.tot?' · '+t('jTot',js.tot):'')+'</small></span><span class="go">›</span></button>'+R.map(function(o,i){var k=o.k,pr=weakProg(k),sub,pct;
+  var js=S.drill.judge,cs=S.drill.conv,thrown=(window.CONV||[]).filter(function(r){return r[4]}).length;el.innerHTML=(window.CONV?'<button class="crow critrow" id="bConv" type="button"><span class="ci">🏁</span><span class="ct"><b>'+t('cvT')+'</b><small>'+t('cvRow',thrown)+(cs&&cs.tot?' · '+t('jTot',cs.tot):'')+'</small></span><span class="go">›</span></button>':'')+'<button class="crow critrow" id="bJudge" type="button"><span class="ci">🤔</span><span class="ct"><b>'+t('jT')+'</b><small>'+t('jRow')+(js&&js.tot?' · '+t('jTot',js.tot):'')+'</small></span><span class="go">›</span></button>'+R.map(function(o,i){var k=o.k,pr=weakProg(k),sub,pct;
     if(k==='calc'){var ct=calcTrend();sub=t('calcLvl',calcLvl())+(ct?' · '+t('calcAvg',ct.last):'')+(o.timeouts?' · '+t('wTimeouts',o.timeouts):'');pct=(calcLvl()-1)/4*100}
     else{sub=t('wSub',pr.cards,pr.ok,pr.n);pct=Math.round(pr.ok/Math.max(1,pr.n)*100)}
     return '<button class="crow critrow" data-wk="'+k+'" type="button"><span class="ci">'+(i+1)+'</span><span class="ct"><b>'+esc(t('wt_'+k))+'</b><small>'+sub+'</small><span class="bar2"><span style="width:'+pct+'%"></span></span></span><span class="go">›</span></button>'}).join('');
+  if($('bConv'))$('bConv').onclick=function(){startSession([S.seenLesson.f_conv?null:{t:'ftheory',f:'conv'},{t:'drill',f:'conv',n:8}].filter(Boolean),'weak')};
   $('bJudge').onclick=function(){startSession([S.seenLesson.f_judge?null:{t:'ftheory',f:'judge'},{t:'drill',f:'judge',n:8}].filter(Boolean),'weak')};
   el.querySelectorAll('[data-wk]').forEach(function(x){x.onclick=function(){var k=x.getAttribute('data-wk');startSession(weakTheme(k),'weak')}});
 }
@@ -659,7 +660,7 @@ function renderItem(){
   else if(it.t==='puz'){var lp=lessonById(it.l),pp=lp&&lp.p.filter(function(x){return x.id===it.id})[0];if(!pp){skip();return}loadPuz(lp,pp)}
   else if(it.t==='ftheory'){var ff=fundById(it.f);if(!ff){skip();return}loadFTheory(ff)}
   else if(it.t==='quiz'){var qq=quizById(it.id);if(!qq){skip();return}loadQuiz(qq)}
-  else if(it.t==='drill'){if(it.f==='flash')loadFlash();else if(it.f==='rush')loadRush();else if(it.f==='defend')loadDefend();else if(it.f==='game')loadGame();else if(it.f==='calc')loadCalc();else if(it.f==='judge')loadJudge();else loadDrill(it.f)}
+  else if(it.t==='drill'){if(it.f==='flash')loadFlash();else if(it.f==='rush')loadRush();else if(it.f==='defend')loadDefend();else if(it.f==='game')loadGame();else if(it.f==='calc')loadCalc();else if(it.f==='judge')loadJudge();else if(it.f==='conv')loadConv();else loadDrill(it.f)}
   else if(it.t==='stheory'){var sx=stratById(it.s);if(!sx){skip();return}loadSTheory(sx)}
   else if(it.t==='plan'){loadPlan(it.s,it.k)}
   else if(it.t==='play'){var tx=techById(it.id);if(!tx){skip();return}loadPlay(tx)}
@@ -1148,7 +1149,7 @@ function fundItems(id){
   var o=[];if(!S.seenLesson['f_'+id])o.push({t:'ftheory',f:id});
   if(id==='quiz'){var qs=QUIZ.filter(function(q){var s=S.quiz[q.id];return !s||(s.due||0)<=now()});if(qs.length<3)qs=QUIZ.slice();
     return o.concat(qs.slice(0,8).map(function(q){return {t:'quiz',id:q.id}}))}
-  if(id==='flash'||id==='rush'||id==='defend'||id==='game'||id==='calc'||id==='judge')return o.concat([{t:'drill',f:id}]);
+  if(id==='flash'||id==='rush'||id==='defend'||id==='game'||id==='calc'||id==='judge'||id==='conv')return o.concat([{t:'drill',f:id}]);
   return o.concat([{t:'drill',f:id},{t:'drill',f:id},{t:'drill',f:id}]);
 }
 function loadFTheory(f){
@@ -1238,7 +1239,7 @@ function drillEnd(){dclkStop();
 VOCAB.forEach(function(q){if(q.id.indexOf('v_')!==0)q.id='v_'+q.id});
 var OPTC=['#2563EB','#E8730C','#7C3AED'];
 /* progress that the daily also feeds: every solved position counts toward its drill / lesson in Aprender */
-var GOAL={coord:100,sqname:100,nota:40,flash:40,rush:60,defend:40,game:50,calc:100,judge:80};
+var GOAL={coord:100,sqname:100,nota:40,flash:40,rush:60,defend:40,game:50,calc:100,judge:80,conv:60};
 function addTot(id,n){var s=S.drill[id]||(S.drill[id]={best:0,bestT:0,runs:0});s.tot=(s.tot||0)+(n||0)}
 function markPuz(p,ok){if(!ok||!p)return;var s=S.puz[p.id]||(S.puz[p.id]={box:0,due:0});if(!s.box||(s.due||0)<=now())gradeObj(s,true)}
 function progSnap(){var o={};
@@ -1662,6 +1663,34 @@ function judgeEnd(){dclkStop();
   anOff();B.locked=true;B.onMove=null;$('choices').hidden=true;J.done=true;
   $('fb').className='feedback '+(J.ok>=J.total*.7?'good':'bad');$('fb').innerHTML=t('drillRes',J.ok,J.total,mmss(sec))+(better&&J.ok?' 🏆 '+t('newBest'):'');itemDone(J.total>0&&J.ok>=J.total*.7);setBtns({next:true});
 }
+/* "Remata" (Nov 19): of 225 games where he reached +5, he lost 55 and drew 21 (33 losses on time). Positions = winning moments from his own
+   games (conv.js), the ones where he threw it away first. 25 s per position: any move that keeps him >= +3 is right (simple and safe beats
+   brilliant). Positions not seen in the last 7 days first. */
+function loadConv(){
+  var N=(cur.it&&cur.it.n)||6,sn=S.seen||{},wk=now()-7*864e5,rows=(window.CONV||[]).map(function(r){return {r:r,k:((sn['cv:'+r[0]]||0)>wk?10:0)+(r[4]?0:2)+Math.random()*3}}).sort(function(a,b){return a.k-b.k}).slice(0,N).map(function(x){return x.r});
+  cur.conv={list:rows,n:0,ok:0,total:rows.length,t0:now()};setBar(null,false);setBtns({});convNext();
+}
+function convNext(){
+  var C=cur.conv;if(C.n>=C.total){convEnd();return}
+  var r=C.list[C.n],fen=r[0],me=new Chess(fen).turn();seenPuz('cv:'+fen);anOff();cur.answered=false;$('trBody').classList.remove('answered');$('fb').innerHTML='';$('fb').className='feedback';$('choices').hidden=true;
+  setBoard(fen,me==='b');setBar(r[1]*(me==='w'?1:-1));
+  $('prompt').innerHTML='<div class="op">'+kindPill('idea',t('cvT'))+' <span class="counter">'+(C.n+1)+'/'+C.total+' · ✓ '+C.ok+'</span></div><div class="bigq">'+t('cvQ')+'</div>';
+  B.locked=false;B.onMove=function(mv){B.locked=true;B.onMove=null;C.n++;dclkPause();
+    var fin=function(ok,after,pv){if(ok)C.ok++;var ba=arrowFor(fen,r[2],'#0E9488');
+      pauseReview(fen,[mv.san].concat(pv||[]).slice(0,6),ok,ok?'✓ '+t('cvOk',evalTxt(after)):'✗ '+t('cvBad',evalTxt(after),'<b class="mono">'+esc(r[2])+'</b>'),ok||!ba?[]:[ba],convNext,
+        ok?'':fold(t('stBest',esc(r[2])),story(fen,r[3].split(' '),me,5)))};
+    if(mv.san===r[2]){fin(true,r[1],r[3].split(' ').slice(1));return}
+    if((r[6]||[]).indexOf(mv.san)>=0){fin(true,300,null);return}
+    $('fb').className='feedback';$('fb').textContent=t('thinking');
+    analyse(B.chess.fen(),1200).then(function(a){var mine=a?-a.s:0;fin(mine>=300,mine,a&&a.pv?a.pv.slice(0,5):null)});
+  };
+  var myPos=C.n;dclkStart(25,function(){if(!cur||cur.conv!==C||C.n!==myPos||cur.answered)return;B.locked=true;B.onMove=null;C.n++;var ba=arrowFor(fen,r[2],'#0E9488');
+    pauseReview(fen,r[3].split(' '),false,'⏱ '+t('cvTime','<b class="mono">'+esc(r[2])+'</b>'),ba?[ba]:[],convNext,'')});
+}
+function convEnd(){dclkStop();
+  var C=cur.conv,sec=Math.round((now()-C.t0)/1000),s=S.drill.conv||(S.drill.conv={best:0,bestT:0,runs:0});s.runs++;addTot('conv',C.ok);if(C.ok>s.best){s.best=C.ok;s.bestT=sec}save();
+  anOff();B.locked=true;B.onMove=null;C.done=true;$('fb').className='feedback '+(C.ok>=C.total*.7?'good':'bad');$('fb').innerHTML=t('drillRes',C.ok,C.total,mmss(sec));itemDone(C.total>0&&C.ok>=C.total*.7);setBtns({next:true});
+}
 /* "Finish": first tap ends the running drill (shows its result), otherwise it ends the session with a summary */
 $('bFinish').onclick=function(){closeItemTime();
   if(!cur||!$('trEnd').hidden){go(X.back||'home');return}
@@ -1673,6 +1702,7 @@ $('bFinish').onclick=function(){closeItemTime();
   if(cur.game&&!cur.game.done){cur.game.total=cur.game.n;gameEnd();return}
   if(cur.calc&&!cur.calc.done){cur.calc.total=cur.calc.n;calcEnd();return}
   if(cur.judge&&!cur.judge.done){cur.judge.total=cur.judge.n;judgeEnd();return}
+  if(cur.conv&&!cur.conv.done){cur.conv.total=cur.conv.n;convEnd();return}
   var done=X.i+(cur.answered?1:0);anOff();$('trBody').hidden=true;$('trEnd').hidden=false;
   $('trEndT').textContent=t('sessStopT');$('trEndS').textContent=t('sessSum',X.ok,done)+(X.src==='today'&&done<X.items.length?' '+t('sessResume'):'');
   if(X.src==='today'&&S.daily){X.i=done;saveDaily()}
