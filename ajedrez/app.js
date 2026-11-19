@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=70;
+var APP_VER=71;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -770,7 +770,9 @@ function cardResult(ok,san,sAfter,pvAfter){
   setBtns({next:true,bad:!!cur.badLine,good:true,yours:!!cur.yourLine});
   $('bBad').textContent=t('bBadLine',cur.badLine?cur.badLine[0]:'');if(cur.yourLine)$('bYours').textContent=t('bYourLine',san);
   /* load the line he needs to see right away, so the coach bubble above the board can walk him through it with ▶ */
-  var auto=ok?cur.goodLine:(san===c.played?cur.badLine:(cur.yourLine||cur.badLine));if(auto&&auto.length>1){try{showLine(auto)}catch(e){}}
+  /* Nov 19 fix: open the line AFTER his move so the board keeps what he played (it used to jump back to the position before it) */
+  var auto=ok?(san!=='—'&&san!==best&&pvAfter&&pvAfter.length?[san].concat(pvAfter.slice(0,6)):cur.goodLine):(san===c.played?cur.badLine:(cur.yourLine||cur.badLine));
+  if(auto&&auto.length>1&&san!=='—'&&auto[0]===san){try{showLine(auto);AN.i=Math.min(AN.moves.length,AN.base+1);anRender()}catch(e){}}
 }
 function showWhy(list){if(!list.length)return;$('why').hidden=false;var body='<ul>'+list.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>';
   /* phones: folded, the coach bubble above the board is the main explanation */
