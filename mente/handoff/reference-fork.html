@@ -1,0 +1,735 @@
+<title>Gimnasio Mental</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one calm column. Header with streak + language switch, tabs, then the session card that walks Recall → Connect → Apply. */
+:root{
+  --bg:#F4F7F5; --surface:#FFFFFF; --ink:#16231E; --muted:#56655E; --faint:#8A9892; --line:#DCE5E0;
+  --accent:#0F7B5F; --accent-soft:#E3F3EC; --accent-ink:#FFFFFF;
+  --good:#0F7B5F; --bad:#C2410C; --warn:#B7791F;
+  --a-m:#2F5FE0; --a-p:#7C3AED; --a-e:#B7791F; --a-s:#C2410C; --a-l:#0E7490; --a-c:#4D7C0F;
+  --f-display:Georgia, "Times New Roman", serif;
+  --f-body:ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1613; --surface:#17211D; --ink:#E4EEE9; --muted:#9AAEA5; --faint:#6E827A; --line:#26332E;
+  --accent:#4FD1A5; --accent-soft:#163128; --accent-ink:#06221A;
+  --good:#4FD1A5; --bad:#F08C6A; --warn:#E6B54A;
+  --a-m:#7EA2FF; --a-p:#B794F6; --a-e:#E6B54A; --a-s:#F08C6A; --a-l:#5FC4DA; --a-c:#9AD35A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1613; --surface:#17211D; --ink:#E4EEE9; --muted:#9AAEA5; --faint:#6E827A; --line:#26332E;
+  --accent:#4FD1A5; --accent-soft:#163128; --accent-ink:#06221A;
+  --good:#4FD1A5; --bad:#F08C6A; --warn:#E6B54A;
+  --a-m:#7EA2FF; --a-p:#B794F6; --a-e:#E6B54A; --a-s:#F08C6A; --a-l:#5FC4DA; --a-c:#9AD35A; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+.wrap{max-width:620px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.eyebrow{font:600 .7rem var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+h1{font-family:var(--f-display);font-weight:700;font-size:2.2rem;letter-spacing:-.04em;line-height:1;margin:0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.35rem;letter-spacing:-.02em;margin:0;text-wrap:balance}
+h3{font-size:1rem;margin:0}
+.sub{color:var(--muted);margin:8px 0 0;max-width:52ch}
+.lang{display:flex;border:1px solid var(--line);border-radius:99px;overflow:hidden;flex:none}
+.lang button{appearance:none;border:0;background:transparent;color:var(--muted);font:600 .8rem var(--f-mono);padding:6px 11px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
+.stat b{display:block;font:700 1.35rem var(--f-display);font-variant-numeric:tabular-nums}
+.stat span{font-size:.75rem;color:var(--muted)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;padding:9px 12px;font:600 .92rem var(--f-body);color:var(--muted);cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.steps{display:flex;gap:6px}
+.steps span{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.steps span.on{background:var(--accent)} .steps span.done{background:var(--accent);opacity:.45}
+.blockhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.kicker{font:600 .72rem var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.area{display:inline-block;font:600 .7rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1px solid currentColor}
+.area.m{color:var(--a-m)} .area.p{color:var(--a-p)} .area.e{color:var(--a-e)} .area.s{color:var(--a-s)} .area.l{color:var(--a-l)} .area.c{color:var(--a-c)}
+.concept{font-family:var(--f-display);font-size:1.6rem;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.def{background:var(--accent-soft);border-radius:12px;padding:12px 14px}
+.def p{margin:0} .def p+p{margin-top:8px}
+.note{background:var(--accent-soft);border-radius:12px;padding:10px 12px}
+.def .ex{color:var(--muted);font-size:.95rem}
+.pair{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.pair .c{background:var(--accent-soft);border-radius:12px;padding:12px;min-width:0}
+.pair .c b{display:block;font-family:var(--f-display);font-size:1.1rem;margin-top:4px}
+.pair .plus{font:700 1.4rem var(--f-display);color:var(--faint)}
+.scenario{font-size:1.05rem}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.choice{appearance:none;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:11px 12px;font:600 .92rem var(--f-body);cursor:pointer}
+.choice:hover:not(:disabled){border-color:var(--accent)}
+.choice.ok{border-color:var(--good);background:var(--accent-soft)}
+.choice.no{border-color:var(--bad);color:var(--bad)}
+.choice:disabled{cursor:default}
+textarea{width:100%;min-height:96px;resize:vertical;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font:400 .98rem/1.45 var(--f-body)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 .9rem var(--f-body);padding:9px 14px;border-radius:10px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.rate-0{border-color:var(--bad);color:var(--bad)} .btn.rate-1{border-color:var(--warn);color:var(--warn)} .btn.rate-2{border-color:var(--good);color:var(--good)}
+.btn:disabled{opacity:.45;cursor:default}
+.fb{border-left:3px solid var(--accent);padding:6px 0 6px 12px;color:var(--ink);white-space:pre-wrap}
+.fb.wait{color:var(--muted)}
+.why{border-left:3px solid var(--line);padding:4px 0 4px 12px;color:var(--muted)}
+.result{font-weight:700} .result.ok{color:var(--good)} .result.no{color:var(--bad)}
+.small{font-size:.85rem;color:var(--muted)}
+.lib{display:flex;flex-direction:column;gap:18px}
+.libgroup{display:flex;flex-direction:column;gap:6px}
+.libitem{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}
+.libitem .nm{font-weight:600}
+.libitem .dd{grid-column:1/-1;color:var(--muted);font-size:.92rem}
+.dots{display:flex;gap:3px}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--accent)}
+.entry{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.entry .meta{font:600 .72rem var(--f-mono);color:var(--muted);letter-spacing:.04em}
+.lesson{font-size:1.02rem;white-space:pre-wrap}
+.persp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.persp div{background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:.93rem}
+.talk{border-left:3px solid var(--accent);padding:4px 0 4px 12px;font-style:italic}
+.topics{display:flex;flex-wrap:wrap;gap:6px}
+.topics .btn{padding:6px 10px;font-size:.82rem}
+.problem{font-size:2.2rem;font-weight:700;text-align:center;padding:10px 0;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.ans{flex:1;min-width:0;font-size:1.6rem;text-align:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font-variant-numeric:tabular-nums}
+.timebar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}.timebar span{display:block;height:100%;background:var(--accent);transition:width .25s linear}
+.calcfb{min-height:1.6em;text-align:center}
+.calcstats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.chart{margin:0}.chart svg{width:100%;height:auto;display:block}
+.chart .ax{stroke:var(--line);stroke-width:1}.chart .grid{stroke:var(--line);stroke-dasharray:3 4}.chart .ln{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.chart .pt{fill:var(--accent)}.chart .lbl{fill:var(--muted);font:11px var(--f-mono)}
+.lvls{display:flex;flex-direction:column;gap:6px}.lvl{display:flex;justify-content:space-between;gap:10px;font-size:.92rem}
+.mono{font-family:var(--f-mono)}
+.syl{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:2px}
+.syl li.done{color:var(--muted)}
+.syl li.now{font-weight:700}
+.linkbtn{appearance:none;border:0;background:none;color:inherit;font:inherit;padding:2px 0;cursor:pointer;text-align:left}
+.linkbtn:hover{color:var(--accent)}
+.empty{color:var(--muted);text-align:center;padding:22px 8px}
+.done-hero{text-align:center;padding:10px 0}
+.done-hero .big{font:700 3rem var(--f-display);color:var(--accent);line-height:1}
+@media (max-width:480px){.problem{font-size:1.8rem}.calcstats{grid-template-columns:repeat(3,minmax(0,1fr))}.persp{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.choices{grid-template-columns:1fr}.pair{grid-template-columns:1fr}.pair .plus{text-align:center}h1{font-size:1.9rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow" data-t="eyebrow"></p>
+      <h1 data-t="title"></h1>
+      <p class="sub" data-t="subtitle"></p>
+    </div>
+    <div class="lang" role="group" aria-label="Idioma / Language">
+      <button id="lEs" aria-pressed="true">ES</button><button id="lEn" aria-pressed="false">EN</button>
+    </div>
+  </header>
+
+  <section class="stats" aria-live="polite">
+    <div class="stat"><b id="sStreak">0</b><span data-t="sStreak"></span></div>
+    <div class="stat"><b id="sLearned">0</b><span data-t="sLearned"></span></div>
+    <div class="stat"><b id="sMastered">0</b><span data-t="sMastered"></span></div>
+    <div class="stat"><b id="sAcc">–</b><span data-t="sAcc"></span></div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-p="p-today" data-t="tToday"></button>
+    <button class="tab" role="tab" aria-selected="false" data-p="p-lib" data-t="tLib"></button>
+    <button class="tab" role="tab" aria-selected="false" data-p="p-pure" data-t="tPure"></button>
+    <button class="tab" role="tab" aria-selected="false" data-p="p-know" data-t="tKnow"></button>
+    <button class="tab" role="tab" aria-selected="false" data-p="p-journal" data-t="tJournal"></button>
+    <button class="tab" role="tab" aria-selected="false" data-p="p-set" data-t="tSet"></button>
+  </nav>
+
+  <section class="panel" id="p-today">
+    <div class="steps" id="steps"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="card" id="stage"></div>
+  </section>
+
+  <section class="panel" id="p-lib" hidden>
+    <p class="small" data-t="libHelp"></p>
+    <div class="lib" id="lib"></div>
+  </section>
+
+  <section class="panel" id="p-pure" hidden>
+    <div id="pure" class="panel"></div>
+    <div id="calcProg" class="card"></div>
+  </section>
+
+  <section class="panel" id="p-know" hidden>
+    <p class="small" data-t="knowHelp"></p>
+    <div id="know" class="panel"></div>
+  </section>
+
+  <section class="panel" id="p-journal" hidden>
+    <p class="small" data-t="journalHelp"></p>
+    <div id="journal" class="panel"></div>
+  </section>
+
+  <section class="panel" id="p-set" hidden>
+    <div class="card">
+      <h3 data-t="newPerDay"></h3>
+      <div class="row" id="npd"></div>
+      <p class="small" data-t="newPerDayHelp"></p>
+    </div>
+    <div class="card">
+      <h3 data-t="backup"></h3>
+      <p class="small" data-t="backupHelp"></p>
+      <div class="row"><button class="btn" id="bCopy" data-t="copy"></button><button class="btn" id="bRestore" data-t="restore"></button><button class="btn" id="bReset" data-t="reset"></button></div>
+      <textarea id="iBackup" aria-label="Backup"></textarea>
+      <div class="small" id="bkMsg"></div>
+    </div>
+    <div class="card">
+      <h3 data-t="howTitle"></h3>
+      <p class="small" data-t="howText"></p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ---------------- content ---------------- */
+var AREAS={m:{es:'Matemáticas',en:'Math'},p:{es:'Probabilidad y estadística',en:'Probability & statistics'},e:{es:'Economía y decisiones',en:'Economics & decisions'},s:{es:'Psicología y sesgos',en:'Psychology & biases'},l:{es:'Lógica y argumentos',en:'Logic & arguments'},c:{es:'Sistemas y ciencia',en:'Systems & science'}};
+var C=[
+ ['exp','m','Crecimiento exponencial','Exponential growth','Algo crece en proporción a su tamaño actual, así que se duplica en tiempos iguales. Regla del 72: años para duplicar ≈ 72 ÷ % de crecimiento anual.','Something grows in proportion to its current size, so it doubles in equal time steps. Rule of 72: years to double ≈ 72 ÷ annual growth rate in %.','Al 8% anual, un ahorro se duplica en unos 9 años.','At 8% a year, savings double in about 9 years.'],
+ ['log','m','Pensamiento logarítmico','Logarithmic thinking','Cuando las cantidades varían en órdenes de magnitud, compara proporciones, no diferencias: de 10 a 100 es el mismo salto que de 100 a 1.000.','When quantities span orders of magnitude, compare ratios, not differences: 10 to 100 is the same jump as 100 to 1,000.','Un sismo de magnitud 7 tiene 10 veces la amplitud de uno de 6.','A magnitude 7 earthquake has 10 times the amplitude of a 6.'],
+ ['fermi','m','Estimación de Fermi','Fermi estimation','Parte una pregunta "imposible" en factores que sí puedes estimar y multiplícalos; los errores de cada factor tienden a compensarse.','Break an "impossible" question into factors you can estimate and multiply them; errors in each factor tend to cancel out.','¿Cuántas motos hay en Bogotá? Hogares × fracción con moto × motos por hogar.','How many motorcycles are in Bogotá? Households × share with a bike × bikes per household.'],
+ ['invariant','m','Invariantes','Invariants','Busca una cantidad que no cambia aunque el sistema cambie; suele resolver problemas que parecen complicados.','Look for a quantity that stays the same while everything else changes; it often cracks problems that look complicated.','Un tablero sin dos esquinas opuestas no se cubre con dominós: cada ficha tapa una blanca y una negra, y faltan dos del mismo color.','A chessboard missing two opposite corners can\'t be tiled with dominoes: each tile covers one light and one dark square, and both missing squares share a color.'],
+ ['pigeon','m','Principio del palomar','Pigeonhole principle','Si repartes n+1 objetos en n cajas, al menos una caja tiene dos o más.','If you put n+1 items into n boxes, at least one box holds two or more.','En un grupo de 367 personas, dos cumplen años el mismo día con total seguridad.','In any group of 367 people, two share a birthday, guaranteed.'],
+ ['extreme','m','Casos extremos','Extreme cases','Prueba una idea con valores límite (0, 1, muy grande) para ver si sigue teniendo sentido; es la forma más rápida de detectar una fórmula mala.','Test an idea with boundary values (0, 1, huge) to see if it still makes sense; it\'s the fastest way to catch a broken formula.','Si una fórmula de descuento da precio negativo al 100% de descuento, está mal.','If a discount formula gives a negative price at 100% off, it\'s wrong.'],
+ ['nonlin','m','No linealidad','Nonlinearity','El efecto no es proporcional a la causa: hay umbrales, saturación y rendimientos decrecientes.','Effects aren\'t proportional to causes: there are thresholds, saturation and diminishing returns.','Dormir 5 horas no te deja al 60%: el rendimiento cae mucho más.','Sleeping 5 hours doesn\'t leave you at 60%: performance drops far more.'],
+ ['network','m','Redes y nodos clave','Networks and hubs','Muchos sistemas son nodos y conexiones; los nodos muy conectados dominan cómo se propaga algo.','Many systems are nodes and links; highly connected hubs dominate how things spread.','Un rumor se riega rápido si llega a la persona que habla con todos.','A rumor spreads fast once it reaches the person who talks to everyone.'],
+ ['base','p','Tasa base','Base rate','Antes de mirar la evidencia, pregunta qué tan común es el caso en general; ignorarlo es la falacia de la tasa base.','Before looking at the evidence, ask how common the thing is in general; ignoring that is the base-rate fallacy.','Con una enfermedad de 1 en 10.000, casi todos los positivos de una prueba "99% precisa" son falsos.','With a 1-in-10,000 disease, almost every positive from a "99% accurate" test is false.'],
+ ['bayes','p','Actualización bayesiana','Bayesian updating','Tu nueva creencia = la previa ajustada por cuánto más probable es la evidencia si la hipótesis es cierta que si no lo es.','Your new belief = your prior, adjusted by how much more likely the evidence is if the hypothesis is true than if it isn\'t.','Un colega puntual llega tarde: es más probable un imprevisto que descuido.','A punctual coworker is late: an incident is likelier than carelessness.'],
+ ['regress','p','Regresión a la media','Regression to the mean','Tras un resultado extremo suele venir uno más normal, por puro azar, aunque nada haya cambiado.','An extreme result is usually followed by a more ordinary one, by chance alone, even if nothing changed.','Después de tu peor semana en ajedrez, la siguiente suele ser mejor, entrenes o no.','After your worst chess week, the next one is usually better, whether you train or not.'],
+ ['lln','p','Ley de los grandes números','Law of large numbers','Con muchas observaciones el promedio se acerca al valor real; con pocas, domina el azar.','With many observations the average approaches the true value; with few, luck dominates.','5 partidas no dicen nada de una apertura; 200 sí.','5 games tell you nothing about an opening; 200 do.'],
+ ['corr','p','Correlación no es causalidad','Correlation isn\'t causation','Dos cosas que se mueven juntas pueden tener una causa común, ir al revés o ser casualidad.','Two things moving together may share a hidden cause, run the other way, or be coincidence.','Helados y ahogamientos suben juntos porque ambos dependen del calor.','Ice cream sales and drownings rise together because both follow hot weather.'],
+ ['surv','p','Sesgo de supervivencia','Survivorship bias','Solo ves los casos que pasaron el filtro; los que fracasaron no aparecen en los datos.','You only see the cases that made it through the filter; the failures never show up in the data.','En la II Guerra se reforzaron los aviones donde los que volvían NO tenían agujeros.','In WWII, planes were armored where returning planes had NO holes.'],
+ ['selection','p','Sesgo de selección','Selection bias','La muestra no representa a la población porque la forma de elegirla está ligada al resultado.','The sample doesn\'t represent the population because how it was chosen is tied to the outcome.','Una encuesta en Instagram sobre cuánto usa la gente Instagram.','An Instagram poll about how much people use Instagram.'],
+ ['ev','p','Valor esperado','Expected value','Promedio de los resultados posibles ponderados por su probabilidad; guía las decisiones que se repiten.','The average of possible outcomes weighted by their probabilities; it guides decisions you make repeatedly.','10% de ganar 1.000.000 vale en promedio 100.000.','A 10% shot at 1,000,000 is worth 100,000 on average.'],
+ ['var','p','Varianza y riesgo','Variance and risk','Dos opciones con el mismo promedio pueden tener riesgos muy distintos; importa la dispersión, no solo la media.','Two options with the same average can carry very different risk; the spread matters, not just the mean.','Sueldo fijo vs comisiones con el mismo promedio anual.','A fixed salary vs commissions with the same yearly average.'],
+ ['fat','p','Colas pesadas','Fat tails','En algunos fenómenos los extremos son mucho más frecuentes de lo que predice la curva normal y dominan el total.','In some phenomena extremes are far more common than the normal curve predicts, and they dominate the total.','Unas pocas películas o libros concentran la mayoría de las ventas.','A few films or books make most of the sales.'],
+ ['simpson','p','Paradoja de Simpson','Simpson\'s paradox','Una tendencia que aparece en cada grupo puede invertirse al juntarlos, por cómo se reparten los casos.','A trend that shows up in every group can reverse when the groups are combined, because of how cases are distributed.','Un hospital mejor con graves y con leves puede verse peor en total si atiende muchos más graves.','A hospital better for both severe and mild cases can look worse overall if it treats far more severe ones.'],
+ ['opp','e','Costo de oportunidad','Opportunity cost','El verdadero costo de algo es la mejor alternativa a la que renuncias por elegirlo.','The real cost of anything is the best alternative you give up to get it.','Un trabajo extra el sábado cuesta también las horas de estudio que pierdes.','Saturday overtime also costs the study hours you lose.'],
+ ['marg','e','Pensamiento marginal','Marginal thinking','Decide mirando el beneficio y el costo de una unidad más, no el total.','Decide by looking at the benefit and cost of one more unit, not the total.','La quinta hora de estudio rinde menos que la primera.','Your fifth hour of study yields less than your first.'],
+ ['sunk','e','Costo hundido','Sunk cost','Lo ya gastado no se recupera, así que no debería pesar al decidir si seguir.','What\'s already spent is gone, so it shouldn\'t weigh on whether to continue.','Seguir viendo una película mala porque ya pagaste la entrada.','Sitting through a bad movie because you already paid.'],
+ ['incent','e','Incentivos','Incentives','La gente responde a lo que se premia y se castiga; para predecir conductas, mira los incentivos.','People respond to what gets rewarded and punished; to predict behavior, look at the incentives.','Pagar por líneas de código produce código innecesariamente largo.','Paying per line of code produces needlessly long code.'],
+ ['second','e','Efectos de segundo orden','Second-order effects','Pregunta "¿y después qué?": las consecuencias de las consecuencias suelen ser las importantes.','Ask "and then what?": the consequences of the consequences are often what matters.','Ampliar una vía atrae más carros y vuelve el trancón.','Widening a road attracts more cars and the traffic jam returns.'],
+ ['compadv','e','Ventaja comparativa','Comparative advantage','Conviene especializarse en lo que haces con menor costo de oportunidad, aunque otro sea mejor en todo.','It pays to specialize in what you do at the lowest opportunity cost, even if someone else is better at everything.','Un abogado que digita rápido igual contrata un asistente: su hora vale más en casos.','A lawyer who types fast still hires an assistant: their hour is worth more on cases.'],
+ ['goodhart','e','Ley de Goodhart','Goodhart\'s law','Cuando una medida se convierte en meta, deja de ser una buena medida.','When a measure becomes a target, it stops being a good measure.','Premiar llamadas cortas en un call center produce llamadas cortas sin resolver.','Rewarding short calls in a call center produces short, unresolved calls.'],
+ ['confirm','s','Sesgo de confirmación','Confirmation bias','Buscamos y recordamos lo que confirma lo que ya creemos, e ignoramos lo que lo contradice.','We seek and remember what confirms what we already believe, and ignore what contradicts it.','Revisar solo las partidas que ganaste con tu apertura favorita.','Reviewing only the games you won with your favorite opening.'],
+ ['anchor','s','Anclaje','Anchoring','El primer número que oímos arrastra nuestras estimaciones, aunque sea arbitrario.','The first number we hear drags our estimates toward it, even if it\'s arbitrary.','En una negociación salarial, la primera cifra marca toda la discusión.','In a salary negotiation, the first number frames the whole discussion.'],
+ ['avail','s','Heurística de disponibilidad','Availability heuristic','Juzgamos qué tan frecuente es algo por lo fácil que nos viene un ejemplo a la mente.','We judge how common something is by how easily an example comes to mind.','Tras ver noticias de un accidente aéreo, volar parece más peligroso que manejar.','After plane-crash news, flying feels more dangerous than driving.'],
+ ['overconf','s','Exceso de confianza','Overconfidence','Creemos saber y predecir mejor de lo que realmente lo hacemos; los proyectos casi siempre tardan más de lo planeado.','We think we know and predict better than we do; projects almost always take longer than planned.','"Esto me toma dos semanas", y toma cuatro, otra vez.','"This will take two weeks," and it takes four, again.'],
+ ['loss','s','Aversión a la pérdida','Loss aversion','Perder algo duele más o menos el doble de lo que alegra ganar lo mismo.','Losing something hurts roughly twice as much as gaining the same thing feels good.','No vender una acción que cayó para no "hacer real" la pérdida.','Holding a falling stock so the loss doesn\'t "become real."'],
+ ['framing','s','Efecto de encuadre','Framing effect','La misma información presentada de otra forma cambia la decisión.','The same information presented differently changes the decision.','"90% de supervivencia" convence más que "10% de mortalidad".','"90% survival" persuades more than "10% mortality."'],
+ ['hindsight','s','Sesgo retrospectivo','Hindsight bias','Cuando ya conocemos el resultado, creemos que era predecible desde el principio.','Once we know the outcome, we believe it was predictable all along.','"Era obvio que íbamos a perder", dicho después del partido.','"It was obvious we\'d lose," said after the match.'],
+ ['falsif','l','Falsabilidad','Falsifiability','Una afirmación útil dice qué observación la demostraría falsa; si nada puede refutarla, no informa nada.','A useful claim states what observation would prove it wrong; if nothing could refute it, it tells you nothing.','"Esta semana tendrás retos y oportunidades" nunca falla, por eso no sirve.','"This week brings challenges and opportunities" can\'t fail, so it\'s useless.'],
+ ['occam','l','Navaja de Occam','Occam\'s razor','Entre explicaciones que encajan igual, prefiere la que necesita menos suposiciones.','Among explanations that fit equally well, prefer the one with fewer assumptions.','El wifi se cae con el microondas: interferencia, no hackers.','Wi-Fi drops when the microwave runs: interference, not hackers.'],
+ ['necsuf','l','Necesario vs suficiente','Necessary vs sufficient','Necesario: sin eso no ocurre. Suficiente: con eso basta. Confundirlos lleva a falsas expectativas.','Necessary: without it, it won\'t happen. Sufficient: it\'s enough on its own. Mixing them up creates false expectations.','Saber Python es necesario para ciencia de datos, no suficiente para que te contraten.','Knowing Python is necessary for data science, not sufficient to get hired.'],
+ ['converse','l','Afirmar el consecuente','Affirming the consequent','"Si A, entonces B" y "pasó B" no prueban A: B puede tener otras causas.','"If A then B" plus "B happened" doesn\'t prove A: B may have other causes.','Si llueve, la calle se moja; la calle está mojada, pero pudo ser el riego.','If it rains, the street gets wet; the street is wet, but it could be the sprinklers.'],
+ ['strawman','l','Hombre de paja','Straw man','Refutar una versión débil del argumento contrario en vez del argumento real. Lo opuesto: hombre de acero.','Refuting a weak version of the other side\'s argument instead of the real one. The opposite: steelmanning.','"Quieres trabajo remoto, o sea que no quieres trabajar."','"You want remote work, so you don\'t want to work."'],
+ ['invert','l','Inversión','Inversion','Piensa al revés: ¿qué garantizaría el fracaso? Luego evita eso.','Think backwards: what would guarantee failure? Then avoid that.','Para mejorar en ajedrez: ¿qué me hace perder rápido? Comer peones envenenados.','To get better at chess: what makes me lose fast? Grabbing poisoned pawns.'],
+ ['feedback','c','Ciclos de retroalimentación','Feedback loops','Positivos: el efecto se amplifica a sí mismo. Negativos: el sistema se corrige y se estabiliza.','Positive loops amplify themselves; negative loops correct and stabilize the system.','Un video con vistas recibe más recomendaciones y más vistas.','A video with views gets recommended more, and gets more views.'],
+ ['bottleneck','c','Cuello de botella','Bottleneck','El rendimiento total lo limita la parte más lenta; mejorar las demás no ayuda.','Total throughput is limited by the slowest step; improving the others doesn\'t help.','Si la lectura de datos toma 2 h de 3, optimizar lo demás casi no cambia nada.','If reading data takes 2 of 3 hours, optimizing the rest barely matters.'],
+ ['emerg','c','Emergencia','Emergence','Propiedades del conjunto que no tiene ninguna parte por separado y que surgen de reglas simples.','Properties of the whole that no single part has, arising from simple rules.','Un trancón aparece sin que ningún conductor lo cause.','A traffic jam appears without any single driver causing it.'],
+ ['entropy','c','Entropía','Entropy','En un sistema aislado el desorden tiende a aumentar; por analogía, todo lo ordenado necesita mantenimiento.','In an isolated system disorder tends to increase; by analogy, anything orderly needs upkeep.','Un código o una casa sin mantenimiento se degradan solos.','Code or a house without upkeep degrades on its own.'],
+ ['pareto','c','Principio de Pareto (80/20)','Pareto principle (80/20)','En muchos sistemas una minoría de causas produce la mayoría de los efectos.','In many systems a minority of causes produces most of the effects.','3 de 50 tipos de error generan el 80% de los tickets.','3 of 50 error types cause 80% of the tickets.'],
+ ['control','c','Grupo de control','Control group','Para saber si algo funciona, compáralo con un grupo parecido que no lo recibió; sin eso no sabes qué lo causó.','To know if something works, compare against a similar group that didn\'t get it; otherwise you can\'t tell what caused the change.','Los estudios de ajedrez en colegios mostraron efecto solo cuando no había un buen grupo de control.','School chess studies showed effects only when there was no proper control group.']
+];
+var CONCEPTS={};C.forEach(function(r,i){CONCEPTS[r[0]]={id:r[0],area:r[1],n:{es:r[2],en:r[3]},d:{es:r[4],en:r[5]},x:{es:r[6],en:r[7]},order:i}});
+var K=[
+ ['k1','regress','Un gerente nota que los agentes con peor rendimiento en enero, a los que regañó, mejoraron en febrero. Concluye que regañar funciona.','A manager notices that January\'s worst-performing agents, whom he scolded, improved in February. He concludes scolding works.','Los resultados extremos vuelven a la media solos. Para saber si el regaño sirvió, necesitaría comparar con agentes igual de malos a los que no regañó.','Extreme results drift back to the mean on their own. To know if scolding worked, he\'d need equally bad agents who weren\'t scolded.'],
+ ['k2','base','Una prueba detecta fraude con 95% de precisión. Solo 1 de cada 1.000 transacciones es fraude. Una sale positiva: ¿es casi seguro fraude?','A test catches fraud with 95% accuracy. Only 1 in 1,000 transactions is fraud. One flags positive: is it almost certainly fraud?','De 1.000 transacciones, ~50 salen positivas por error y solo 1 es fraude real: la probabilidad es cerca del 2%.','Out of 1,000 transactions, ~50 flag falsely and only 1 is real fraud: the chance is about 2%.'],
+ ['k3','surv','Un libro estudia 10 empresas exitosas, ve que todas tenían líderes muy arriesgados y concluye que arriesgar lleva al éxito.','A book studies 10 successful companies, sees they all had risk-loving leaders, and concludes risk leads to success.','No mira las muchas empresas con líderes arriesgados que quebraron y por eso no aparecen.','It ignores the many risk-loving companies that went bust and therefore aren\'t in the sample.'],
+ ['k4','sunk','Llevas dos años en una carrera que ya no te gusta y piensas: "no puedo cambiar, ya invertí mucho".','You\'re two years into a degree you no longer like and think: "I can\'t switch, I\'ve invested too much."','Esos dos años ya se gastaron pase lo que pase. La pregunta útil es qué camino es mejor desde hoy.','Those two years are spent either way. The useful question is which path is better from today.'],
+ ['k5','goodhart','Un call center premia a quien tenga el menor tiempo promedio por llamada. Pronto los agentes cuelgan rápido sin resolver nada.','A call center rewards the lowest average call time. Soon agents hang up fast without solving anything.','La medida (duración) se volvió la meta y dejó de reflejar lo que importaba: resolver el problema del cliente.','The measure (duration) became the target and stopped reflecting what mattered: solving the customer\'s problem.'],
+ ['k6','corr','Un estudio encuentra que quienes toman café viven más. El titular dice: "El café alarga la vida".','A study finds coffee drinkers live longer. The headline: "Coffee extends your life."','Puede haber una causa común (por ejemplo, quienes están sanos y tienen rutinas toman más café). Correlación no prueba causa.','There could be a common cause (e.g., healthier people with routines drink more coffee). Correlation doesn\'t prove cause.'],
+ ['k7','lln','Ganaste 4 de 5 partidas con una apertura nueva y decides que es tu mejor apertura.','You won 4 of 5 games with a new opening and decide it\'s your best one.','Cinco partidas son muy pocas: el azar y los rivales dominan. Hacen falta muchas más para concluir algo.','Five games are far too few: luck and opponents dominate. You need many more to conclude anything.'],
+ ['k8','anchor','En una negociación de sueldo, la empresa dice primero una cifra baja y toda la conversación gira alrededor de ella.','In a salary negotiation, the company names a low number first and the whole conversation revolves around it.','El primer número actúa como ancla. Prepara tu propia cifra con datos y dila tú primero.','The first number acts as an anchor. Prepare your own figure from data and say it first.'],
+ ['k9','avail','Después de ver muchas noticias de robos de motos, crees que es el delito más común de la ciudad.','After seeing lots of news about motorcycle theft, you think it\'s the city\'s most common crime.','Lo que aparece en noticias es fácil de recordar, no necesariamente frecuente. Mira las estadísticas.','What shows up in the news is easy to recall, not necessarily frequent. Check the statistics.'],
+ ['k10','opp','Aceptas un trabajo extra los sábados sin pensar que esas horas eran tu tiempo para estudiar y cambiar de carrera.','You take Saturday overtime without considering those were your hours to study for a career change.','El costo real no es solo el cansancio: es el avance que dejas de hacer en tu meta principal.','The real cost isn\'t just tiredness: it\'s the progress you give up on your main goal.'],
+ ['k11','exp','Un amigo dice que un ahorro al 10% anual se duplica en unos 7 años.','A friend says savings at 10% a year double in about 7 years.','Regla del 72: 72 ÷ 10 ≈ 7,2 años. El interés compuesto crece sobre lo ya ganado.','Rule of 72: 72 ÷ 10 ≈ 7.2 years. Compound interest grows on what\'s already earned.'],
+ ['k12','incent','Una ciudad paga por cada cola de rata entregada para controlar la plaga. La gente empieza a criar ratas.','A city pays for every rat tail turned in to control a plague. People start breeding rats.','El incentivo premiaba colas, no menos ratas. La gente optimiza lo que se paga.','The incentive rewarded tails, not fewer rats. People optimize whatever gets paid.'],
+ ['k13','second','Se amplía una avenida para reducir el tráfico; en dos años está igual de congestionada porque más gente decide ir en carro.','A road is widened to cut traffic; two years later it\'s just as jammed because more people choose to drive.','El efecto directo (más espacio) provocó uno de segundo orden (más demanda) que lo anuló.','The direct effect (more space) triggered a second-order one (more demand) that canceled it out.'],
+ ['k14','confirm','Crees que tu apertura es buena y solo repasas las partidas que ganaste con ella.','You believe your opening is good and only review the games you won with it.','Estás buscando pruebas a favor. Lo útil es revisar justo las derrotas.','You\'re collecting supporting evidence. The useful thing is to review the losses.'],
+ ['k15','bottleneck','Un proceso ETL tarda 3 horas; 2 h 40 min se van en un solo paso de lectura. El equipo optimiza las transformaciones, que tardan 10 minutos.','An ETL job takes 3 hours; 2 h 40 min is a single read step. The team optimizes the transformations, which take 10 minutes.','El paso lento limita todo. Optimizar lo que ya es rápido apenas cambia el total.','The slow step limits everything. Optimizing what\'s already fast barely changes the total.'],
+ ['k16','pigeon','En tu empresa hay 400 empleados. Alguien asegura que al menos dos cumplen años el mismo día.','Your company has 400 employees. Someone claims at least two share a birthday.','Hay 366 fechas posibles y 400 personas: es imposible que todas sean distintas.','There are 366 possible dates and 400 people: they can\'t all be different.'],
+ ['k17','fermi','En una entrevista te preguntan cuántas motos hay en Bogotá y no tienes ningún dato.','In an interview you\'re asked how many motorcycles are in Bogotá and you have no data.','Descomponlo: personas → hogares → fracción con moto → total. Lo que evalúan es tu razonamiento.','Decompose it: people → households → share with a bike → total. They\'re grading your reasoning.'],
+ ['k18','ev','Te ofrecen elegir: 10% de probabilidad de ganar $1.000.000 o $150.000 seguros.','You can choose: a 10% chance at $1,000,000 or $150,000 for sure.','La apuesta vale en promedio $100.000, menos que los $150.000 seguros.','The gamble is worth $100,000 on average, less than the sure $150,000.'],
+ ['k19','var','Dos inversiones rinden lo mismo en promedio, pero una a veces cae 40% en un año. Necesitas el dinero en 12 meses.','Two investments return the same on average, but one sometimes drops 40% in a year. You need the money in 12 months.','Con un plazo corto, la dispersión importa más que el promedio: una mala racha no alcanza a recuperarse.','With a short horizon, spread matters more than the average: a bad year has no time to recover.'],
+ ['k20','simpson','El hospital A tiene peor supervivencia total que B, pero mejor en pacientes graves y en leves. A recibe muchos más casos graves.','Hospital A has worse overall survival than B, but better for both severe and mild patients. A gets far more severe cases.','Al juntar los grupos, la mezcla de casos invierte la tendencia. Hay que comparar dentro de cada grupo.','Combining the groups, the case mix flips the trend. You have to compare within each group.'],
+ ['k21','hindsight','Después de que la Selección pierde, todos dicen: "era obvio que iba a perder".','After the national team loses, everyone says: "It was obvious they\'d lose."','Antes del partido nadie estaba tan seguro. Conocer el resultado cambia el recuerdo.','Before the match no one was that sure. Knowing the outcome rewrites the memory.'],
+ ['k22','loss','No vendes una acción que bajó 30% porque venderla "haría real la pérdida", aunque ya no confías en ella.','You won\'t sell a stock that fell 30% because selling would "make the loss real," even though you no longer trust it.','La pérdida ya ocurrió. Te frena el dolor de perder, no un análisis.','The loss already happened. The pain of losing is stopping you, not analysis.'],
+ ['k23','framing','La gente acepta más una cirugía con "90% de supervivencia" que una con "10% de mortalidad".','People accept surgery with "90% survival" more readily than one with "10% mortality."','Son el mismo dato; solo cambia el marco.','It\'s the same fact; only the frame changed.'],
+ ['k24','converse','"Los buenos programadores usan Linux. Mi amigo usa Linux, así que es buen programador."','"Good programmers use Linux. My friend uses Linux, so he\'s a good programmer."','Mucha gente usa Linux sin ser buen programador. B no prueba A.','Plenty of people use Linux without being good programmers. B doesn\'t prove A.'],
+ ['k25','necsuf','Python es requisito para el cargo de científico de datos. Lo aprendes y esperas que te contraten automáticamente.','Python is required for the data scientist role. You learn it and expect to be hired automatically.','Python es necesario, no suficiente: también cuentan estadística, proyectos y comunicación.','Python is necessary, not sufficient: statistics, projects and communication count too.'],
+ ['k26','control','Un colegio introduce ajedrez y las notas de matemáticas suben. Concluyen que el ajedrez lo causó.','A school introduces chess and math grades rise. They conclude chess caused it.','Sin un grupo comparable sin ajedrez, la subida pudo venir de otra cosa (nuevo profesor, motivación).','Without a comparable no-chess group, the rise could come from something else (a new teacher, motivation).'],
+ ['k27','feedback','Un video recibe vistas, el algoritmo lo recomienda más, recibe más vistas, y así sucesivamente.','A video gets views, the algorithm recommends it more, it gets more views, and so on.','Es un ciclo de retroalimentación positiva: el resultado alimenta su propia causa.','It\'s a positive feedback loop: the result feeds its own cause.'],
+ ['k28','pareto','Al revisar los errores de un sistema, ves que el 80% de los tickets vienen de 3 de 50 tipos de fallo.','Reviewing a system\'s errors, you see 80% of tickets come from 3 of 50 failure types.','Pocas causas, mucho efecto: arregla esos 3 primero.','Few causes, most of the effect: fix those 3 first.'],
+ ['k29','extreme','Para revisar una fórmula de precio con descuento, pruebas qué pasa con 0% y con 100% de descuento.','To check a discount price formula, you try what happens at 0% and 100% off.','Los valores límite revelan errores que los casos normales esconden.','Boundary values expose bugs that ordinary cases hide.'],
+ ['k30','invariant','¿Se puede cubrir con 31 dominós un tablero de ajedrez sin las esquinas a1 y h8? Cuentas casillas blancas y negras.','Can 31 dominoes cover a chessboard missing the a1 and h8 corners? You count light and dark squares.','Cada dominó tapa una de cada color, siempre. Faltan dos casillas oscuras, así que es imposible.','Every domino covers one of each color, always. Two dark squares are missing, so it\'s impossible.'],
+ ['k31','overconf','Estimas que un proyecto tomará "seguro" dos semanas. Tus últimos 5 proyectos tomaron el doble de lo estimado.','You\'re "sure" a project will take two weeks. Your last 5 projects took twice the estimate.','Tu historial es la mejor estimación: usa la tasa real de tus proyectos anteriores.','Your track record is the best estimate: use the actual rate from past projects.'],
+ ['k32','marg','Decides si estudiar una hora más comparando lo que aprenderías en esa hora con lo cansado que estarás mañana.','You decide whether to study one more hour by comparing what you\'d learn in that hour with how tired you\'ll be tomorrow.','Comparas el beneficio y el costo de una unidad adicional, no del total del día.','You compare the benefit and cost of one extra unit, not of the whole day.'],
+ ['k33','occam','El wifi se cae cada vez que usas el microondas. Un amigo sugiere hackers; otro, interferencia en 2,4 GHz.','Your Wi-Fi drops every time you use the microwave. One friend says hackers; another says 2.4 GHz interference.','La interferencia explica todo con una sola suposición conocida.','Interference explains everything with one well-known assumption.'],
+ ['k34','falsif','Un horóscopo dice: "Esta semana enfrentarás desafíos, pero también oportunidades".','A horoscope says: "This week you\'ll face challenges, but also opportunities."','Ningún resultado podría contradecirlo, así que no dice nada.','No outcome could contradict it, so it says nothing.'],
+ ['k35','fat','El modelo de un banco dice que una caída del 20% en un día pasa una vez en miles de años. Pasa dos veces en 30 años.','A bank\'s model says a 20% one-day crash happens once in thousands of years. It happens twice in 30 years.','El modelo asumía una curva normal, pero los mercados tienen colas pesadas: los extremos son mucho más comunes.','The model assumed a normal curve, but markets have fat tails: extremes are far more common.'],
+ ['k36','nonlin','Duermes 5 horas en vez de 8 y esperas rendir al 60%. Rindes mucho peor y cometes errores graves.','You sleep 5 hours instead of 8 and expect to work at 60%. You do far worse and make serious mistakes.','El efecto del sueño no es proporcional: por debajo de cierto umbral el rendimiento se desploma.','Sleep\'s effect isn\'t proportional: below a threshold, performance collapses.']
+];
+var TOPICS=[
+ ['cosmos','El Big Bang y la edad del universo','The Big Bang and the age of the universe'],['earth','Tectónica de placas y volcanes de los Andes','Plate tectonics and the Andes volcanoes'],
+ ['evo','Evolución por selección natural','Evolution by natural selection'],['brain','Cómo funciona la memoria en el cerebro','How memory works in the brain'],
+ ['democ','Democracia, separación de poderes y Estado de derecho','Democracy, separation of powers and rule of law'],['ideol','Izquierda y derecha: de dónde vienen y qué defienden','Left and right: origins and core ideas'],
+ ['colhist','Historia de Colombia: de la Independencia al Frente Nacional','History of Colombia: from Independence to the National Front'],['wars','Por qué empezó la Primera Guerra Mundial','Why World War I started'],
+ ['relig','Las grandes religiones del mundo y sus ideas centrales','The world\'s major religions and their core ideas'],['philo','Estoicismo: qué es y por qué volvió a estar de moda','Stoicism: what it is and why it\'s popular again'],
+ ['sex','Sexualidad humana según la ciencia: hormonas, deseo y diversidad','Human sexuality according to science: hormones, desire and diversity'],['health','Sueño: qué pasa en el cuerpo mientras duermes','Sleep: what happens in your body overnight'],
+ ['money','Inflación y qué hace un banco central','Inflation and what a central bank does'],['global','Globalización y comercio internacional','Globalization and international trade'],
+ ['art','El Renacimiento y por qué cambió el arte','The Renaissance and how it changed art'],['music','Por qué ciertas notas suenan bien juntas','Why some notes sound good together'],
+ ['tech','Cómo funciona internet de punta a punta','How the internet works end to end'],['ai','Qué es realmente la inteligencia artificial','What artificial intelligence really is'],
+ ['climate','Cambio climático: la física del efecto invernadero','Climate change: the physics of the greenhouse effect'],['quantum','Física cuántica sin fórmulas','Quantum physics without equations'],
+ ['lang','De dónde viene el español','Where Spanish comes from'],['food','La historia del café en Colombia','The history of coffee in Colombia'],
+ ['mathhist','Los números que cambiaron la historia: cero, π y e','Numbers that changed history: zero, pi and e'],['psych','Por qué creemos en teorías conspirativas','Why people believe conspiracy theories']
+];
+var CASES={};K.forEach(function(r){CASES[r[0]]={id:r[0],c:r[1],q:{es:r[2],en:r[3]},w:{es:r[4],en:r[5]}}});
+
+/* ---------------- strings ---------------- */
+var T={
+ es:{eyebrow:'Entrenamiento diario · 15 minutos',title:'Gimnasio Mental',subtitle:'Recordar, calcular, conectar y aplicar ideas de matemáticas, estadística, economía, psicología, lógica y sistemas.',
+  sStreak:'días seguidos',tPure:'Matemática',bCalc:'Cálculo mental',calcTech:'Técnica de hoy',calcHelp:'Léela, pruébala con el ejemplo y luego haz un sprint de {s} segundos. Las preguntas suben de nivel cuando vas rápido y sin errores.',calcStart:'Sprint de {s} s',answer:'Respuesta',calcScore:'Correctas: {n}',cCorrect:'correctas',cAcc:'precisión',cAvg:'por respuesta',levelUp:'Subiste de nivel en:',cMissed:'Para repasar:',chartT:'Correctas por sprint',chartSoon:'Haz dos sprints en días distintos para ver tu gráfica.',cUnlocked:'Técnicas desbloqueadas: {n} de {m}. Se abre una nueva cada día que entrenas.',pTitle:'Matemática del día',pHelp:'Cinco minutos para recuperar las matemáticas paso a paso, desde lo básico: una idea explicada con un ejemplo y una pregunta rápida. Avanzas de tema cuando lo sientes claro.',pToday:'Ver la de hoy',pGen:'Preparando la tarjeta…',pMin:'≈ 5 min',pQ:'Pregunta rápida:',pStep:'Tema {n} de {m}',pNext:'Sigue:',pGot:'Lo entendí, siguiente tema',pRepeat:'Repasar este tema otra vez',pSyl:'Ver el temario completo',pJump:'Toca un tema para saltar a él.',calcOnly:'Solo cálculo mental (3 min)',synced:'Progreso guardado en tu cuenta: lo verás en cualquier dispositivo.',syncErr:'No pude guardar en tu cuenta; queda guardado en este navegador.',pPh:'Tu respuesta en una o dos líneas…',pHint:'Pista',pSol:'Solución',pCheck:'Que Claude revise mi respuesta',pAnother:'Otra tarjeta',pHist:'Tarjetas anteriores',tKnow:'Saberes',b4:'Descubrir',discQ:'Una lección corta para hablar de cualquier tema. Mañana te pregunto lo clave.',pick:'O elige otro tema:',gen:'Preparando la lección…',genErr:'No pude preparar la lección ahora. Inténtalo más tarde o salta este bloque.',noSample:'Este bloque necesita a Claude: abre la página desde la app de Claude.',talkL:'Para sacarlo en una conversación:',perspL:'Dos miradas',keyL:'Lo clave (lo repasarás)',finish:'Terminar sesión',knowHelp:'Las lecciones que has descubierto. Sus ideas clave entran en tus repasos.',noKnow:'Aún no has descubierto ninguna lección.',factQ:'Responde sin mirar.',sLearned:'conceptos vistos',sMastered:'dominados',sAcc:'aciertos al aplicar',tToday:'Hoy',tLib:'Conceptos',tJournal:'Diario',tSet:'Ajustes',
+  b1:'Recordar',b2:'Conectar',b3:'Aplicar',min:'≈ 4 min',start:'Empezar sesión',startSub:'Cinco bloques cortos, unos 15–18 minutos en total. Escribe con tus palabras: el esfuerzo de recordar es lo que fija la idea.',
+  todayPlan:'Hoy: {r} repasos, {n} conceptos nuevos, un sprint de cálculo, 1 conexión, 3 casos y 1 lección nueva.',newC:'Concepto nuevo',review:'Repaso',
+  recallQ:'Explícalo con tus palabras y da un ejemplo propio, sin mirar.',recallPh:'Escribe aquí lo que recuerdas…',reveal:'Ver la respuesta',
+  rate0:'No lo sabía',rate1:'Más o menos',rate2:'Lo sabía',gotIt:'Entendido',newHelp:'Léelo con calma y piensa en un ejemplo de tu vida o tu trabajo. Mañana te lo pregunto.',
+  feedback:'Opinión de Claude',fbWait:'Claude está leyendo…',fbErr:'No pude obtener la opinión ahora. Sigue sin ella.',
+  connQ:'¿Cómo se relacionan estas dos ideas? Busca un caso real donde aparezcan juntas, o donde una explique a la otra.',connPh:'Por ejemplo: "En mi trabajo, …"',save:'Guardar y seguir',skip:'Saltar',
+  applyQ:'¿Qué concepto explica mejor esta situación?',right:'Correcto.',wrong:'No exactamente. Era: {c}.',next:'Siguiente',
+  doneT:'Sesión completa',doneS:'Llevas {n} días seguidos. Vuelve mañana: hay {d} repasos programados.',again:'Hacer otra ronda de casos',
+  libHelp:'Todos los conceptos por área. Los puntos muestran qué tan firme lo tienes. Toca uno para leerlo.',journalHelp:'Tus conexiones guardadas. Releerlas de vez en cuando es otra forma de repaso.',noJournal:'Aún no has guardado conexiones.',
+  newPerDay:'Conceptos nuevos por día',newPerDayHelp:'Con 2 por día ves todos en unas tres semanas.',backup:'Respaldo',backupHelp:'El progreso se guarda en este navegador. Copia el respaldo para pasarlo a otro dispositivo.',
+  copy:'Copiar respaldo',restore:'Restaurar desde el cuadro',reset:'Borrar todo',resetArm:'Toca otra vez para borrar',copied:'Respaldo copiado.',selectIt:'Selecciona y copia el texto del cuadro.',restored:'Respaldo restaurado.',badBackup:'Ese texto no es un respaldo válido.',wiped:'Se borró el progreso.',
+  howTitle:'Por qué funciona',howText:'Se basa en tres hallazgos sólidos sobre aprendizaje: recordar sin mirar fija mejor que releer (práctica de recuperación), repasar justo antes de olvidar ahorra tiempo (repetición espaciada) y relacionar ideas de distintas áreas crea los modelos mentales que permiten conectar rápido. No sube el CI; construye conocimiento organizado y la costumbre de usarlo.',
+  langNote:'Escribe en el idioma que quieras practicar.'},
+ en:{eyebrow:'Daily training · 15 minutes',title:'Gimnasio Mental',subtitle:'Recall, calculate, connect and apply ideas from math, statistics, economics, psychology, logic and systems.',
+  sStreak:'day streak',tPure:'Math',bCalc:'Mental math',calcTech:'Today\'s technique',calcHelp:'Read it, try it on the example, then do a {s}-second sprint. Questions level up when you\'re fast and accurate.',calcStart:'{s}-second sprint',answer:'Answer',calcScore:'Correct: {n}',cCorrect:'correct',cAcc:'accuracy',cAvg:'per answer',levelUp:'Leveled up in:',cMissed:'To review:',chartT:'Correct answers per sprint',chartSoon:'Do two sprints on different days to see your chart.',cUnlocked:'Techniques unlocked: {n} of {m}. A new one opens each day you train.',pTitle:'Math of the day',pHelp:'Five minutes to rebuild your math step by step, from the basics: one idea explained with an example and a quick question. You move on when it feels clear.',pToday:'Show today\'s card',pGen:'Preparing the card…',pMin:'≈ 5 min',pQ:'Quick question:',pStep:'Topic {n} of {m}',pNext:'Next up:',pGot:'Got it, next topic',pRepeat:'Review this topic again',pSyl:'See the full syllabus',pJump:'Tap a topic to jump to it.',calcOnly:'Mental math only (3 min)',synced:'Progress saved to your account: you\'ll see it on any device.',syncErr:'Couldn\'t save to your account; it\'s saved in this browser.',pPh:'Your answer in a line or two…',pHint:'Hint',pSol:'Solution',pCheck:'Have Claude check my answer',pAnother:'Another card',pHist:'Past cards',tKnow:'Knowledge',b4:'Discover',discQ:'A short lesson so you can talk about anything. Tomorrow I\'ll quiz you on the key points.',pick:'Or pick another topic:',gen:'Preparing the lesson…',genErr:'Couldn\'t prepare the lesson right now. Try later or skip this block.',noSample:'This block needs Claude: open the page from the Claude app.',talkL:'To bring it up in conversation:',perspL:'Two views',keyL:'Key points (you\'ll review these)',finish:'Finish session',knowHelp:'Lessons you\'ve discovered. Their key points go into your reviews.',noKnow:'No lessons discovered yet.',factQ:'Answer without looking.',sLearned:'concepts seen',sMastered:'mastered',sAcc:'apply accuracy',tToday:'Today',tLib:'Concepts',tJournal:'Journal',tSet:'Settings',
+  b1:'Recall',b2:'Connect',b3:'Apply',min:'≈ 4 min',start:'Start session',startSub:'Five short blocks, about 15–18 minutes in total. Write in your own words: the effort of recalling is what makes ideas stick.',
+  todayPlan:'Today: {r} reviews, {n} new concepts, a mental-math sprint, 1 connection, 3 cases and 1 new lesson.',newC:'New concept',review:'Review',
+  recallQ:'Explain it in your own words and give your own example, without looking.',recallPh:'Write what you remember…',reveal:'Show answer',
+  rate0:'Didn\'t know',rate1:'Sort of',rate2:'Knew it',gotIt:'Got it',newHelp:'Read it slowly and think of an example from your life or work. I\'ll ask you tomorrow.',
+  feedback:'Claude\'s take',fbWait:'Claude is reading…',fbErr:'Couldn\'t get feedback right now. Keep going without it.',
+  connQ:'How are these two ideas related? Find a real case where they show up together, or where one explains the other.',connPh:'For example: "At work, …"',save:'Save and continue',skip:'Skip',
+  applyQ:'Which concept best explains this situation?',right:'Correct.',wrong:'Not quite. It was: {c}.',next:'Next',
+  doneT:'Session complete',doneS:'You\'re on a {n}-day streak. Come back tomorrow: {d} reviews are scheduled.',again:'Do another round of cases',
+  libHelp:'Every concept by area. The dots show how solid it is. Tap one to read it.',journalHelp:'Your saved connections. Rereading them now and then is another kind of review.',noJournal:'No connections saved yet.',
+  newPerDay:'New concepts per day',newPerDayHelp:'At 2 a day you\'ll see them all in about three weeks.',backup:'Backup',backupHelp:'Progress is saved in this browser. Copy the backup to move it to another device.',
+  copy:'Copy backup',restore:'Restore from the box',reset:'Erase everything',resetArm:'Tap again to erase',copied:'Backup copied.',selectIt:'Select and copy the text in the box.',restored:'Backup restored.',badBackup:'That text isn\'t a valid backup.',wiped:'Progress erased.',
+  howTitle:'Why it works',howText:'It\'s built on three solid findings about learning: recalling without looking beats rereading (retrieval practice), reviewing right before you forget saves time (spaced repetition), and linking ideas across fields builds the mental models that let you connect things fast. It won\'t raise your IQ; it builds organized knowledge and the habit of using it.',
+  langNote:'Write in whichever language you want to practice.'}
+};
+
+/* ---------------- state ---------------- */
+var KEY='gimnasio-mental.v1',DAYS=[0,1,3,7,16,35,80];
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function dayNum(s){var p=s.split('-');return Math.round(new Date(+p[0],p[1]-1,+p[2]).getTime()/864e5)}
+function blank(){return {lang:'es',npd:2,cards:{},cases:{},journal:[],days:[],facts:{},lessons:[],ti:0}}
+var S=blank();
+try{var raw=localStorage.getItem(KEY);if(raw){S=Object.assign(blank(),JSON.parse(raw))}}catch(e){}
+var DOC=null,syncTimer=null,syncState='';
+function save(){S.updated=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(DOC){clearTimeout(syncTimer);syncTimer=setTimeout(push,1500)}}
+function push(){if(!DOC)return;DOC.set({json:JSON.stringify(S),updated:S.updated||Date.now()}).then(function(){syncState='ok';showSync()}).catch(function(){syncState='err';showSync()})}
+function showSync(){var e=document.getElementById('sync');if(!e)return;e.textContent=syncState==='ok'?t('synced'):syncState==='err'?t('syncErr'):'';}
+function startSync(){
+  if(!(window.claude&&window.claude.use))return;
+  Promise.all([window.claude.use('db'),window.claude.use('user')]).then(function(r){var db=r[0],u=r[1];if(!db||!u)return null;
+    return u.id().then(function(id){if(!id)return;DOC=db.doc('data/users/'+id+'/state');
+      return DOC.get().then(function(snap){var remote=null;try{if(snap.exists&&snap.data().json)remote=JSON.parse(snap.data().json)}catch(e){}
+        if(remote&&(remote.updated||0)>(S.updated||0)){S=Object.assign(blank(),remote);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}stopCalc();cur=null;syncState='ok';applyLang()}
+        else if(Object.keys(S.cards).length||S.days.length){push()}else{syncState='ok';showSync()}});
+    })}).catch(function(){});
+}
+function L(){return S.lang}
+function t(k,vars){var s=(T[L()][k]||k);if(vars)Object.keys(vars).forEach(function(v){s=s.replace('{'+v+'}',vars[v])});return s}
+function cn(id){return CONCEPTS[id].n[L()]}
+function isFact(id){return id.indexOf('f:')===0}
+
+/* ---------------- sample (Claude feedback, optional) ---------------- */
+var sample=null;
+if(window.claude&&window.claude.use){window.claude.use('sample').then(function(s){sample=s;if(cur)render()}).catch(function(){})}
+
+/* ---------------- scheduling ---------------- */
+function dueToday(){var n=dayNum(today());return Object.keys(S.cards).filter(function(id){return S.cards[id].due<=n})}
+function unseen(){return C.map(function(r){return r[0]}).filter(function(id){return !S.cards[id]})}
+function conceptIds(){return Object.keys(S.cards).filter(function(id){return !isFact(id)})}
+function grade(id,r){
+  var c=S.cards[id];var n=dayNum(today());
+  if(r===0){c.box=1;c.lapses=(c.lapses||0)+1}else if(r===2){c.box=Math.min(6,c.box+1)}else{c.box=Math.max(1,c.box)}
+  c.due=n+(r===1?Math.max(1,Math.ceil(DAYS[c.box]/2)):DAYS[c.box]);c.reps=(c.reps||0)+1;save();
+}
+function introduce(id){S.cards[id]={box:1,due:dayNum(today())+1,reps:0,lapses:0};save()}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var x=a[i];a[i]=a[j];a[j]=x}return a}
+function pickCases(n){
+  var all=K.map(function(r){return r[0]});var now=dayNum(today());
+  var score=function(id){var s=S.cases[id];if(!s)return 0;return (s.ok&&s.last===now?100:0)+(s.ok?10+Math.min(20,now-(s.last||0))*-1:-5)};
+  return shuffle(all).sort(function(a,b){return score(a)-score(b)}).slice(0,n);
+}
+function pickPair(){
+  var pool=conceptIds();if(pool.length<4)pool=C.map(function(r){return r[0]});
+  var a=pool[Math.floor(Math.random()*pool.length)];var others=pool.filter(function(x){return CONCEPTS[x].area!==CONCEPTS[a].area});
+  return [a,others[Math.floor(Math.random()*others.length)]];
+}
+
+/* ---------------- session ---------------- */
+var cur=null;
+function newSession(){
+  var dueAll=shuffle(dueToday());var due=dueAll.filter(function(x){return !isFact(x)}).slice(0,5).concat(dueAll.filter(isFact).slice(0,3));var fresh=unseen().slice(0,S.npd);
+  var items=due.map(function(id){return {id:id,kind:'review'}}).concat(fresh.map(function(id){return {id:id,kind:'new'}}));
+  cur={block:0,items:items,i:0,revealed:false,text:'',fb:null,pair:pickPair(),connText:'',cases:pickCases(3),ci:0,answered:null,lesson:null,topic:TOPICS[S.ti%TOPICS.length][0]};
+}
+function stats(){
+  var ids=conceptIds();$('sLearned').textContent=ids.length;
+  $('sMastered').textContent=ids.filter(function(id){return S.cards[id].box>=4}).length;
+  var tot=0,ok=0;Object.keys(S.cases).forEach(function(k){tot+=S.cases[k].n||0;ok+=S.cases[k].okN||0});
+  $('sAcc').textContent=tot?Math.round(ok/tot*100)+'%':'–';
+  var days=S.days.slice().sort(),streak=0,d=dayNum(today());
+  var set={};days.forEach(function(x){set[dayNum(x)]=1});if(!set[d])d--;while(set[d]){streak++;d--}
+  $('sStreak').textContent=streak;return streak;
+}
+function areaTag(id){var a=CONCEPTS[id].area;return '<span class="area '+a+'">'+esc(AREAS[a][L()])+'</span>'}
+function defBox(id){var c=CONCEPTS[id];return '<div class="def"><p>'+esc(c.d[L()])+'</p><p class="ex">'+esc(c.x[L()])+'</p></div>'}
+function steps(){var s=$('steps').children;$('steps').hidden=!!(cur&&cur.standalone);for(var i=0;i<5;i++){s[i].className=!cur?'':i<cur.block-1?'done':i===cur.block-1?'on':''}}
+function render(){
+  stats();steps();var st=$('stage');
+  if(!cur){var r=Math.min(8,dueToday().length),n=Math.min(S.npd,unseen().length);
+    st.innerHTML='<h2>'+t('start')+'</h2><p class="small">'+t('startSub')+'</p><p>'+t('todayPlan',{r:r,n:n})+'</p><div class="row"><button class="btn primary" id="go">'+t('start')+'</button><button class="btn" id="goCalc">'+t('calcOnly')+'</button></div><p class="small" id="sync"></p>';showSync();
+    $('goCalc').onclick=startCalcOnly;
+    $('go').onclick=function(){newSession();cur.block=1;if(!cur.items.length)cur.block=2;render()};return}
+  if(cur.block===1)return renderRecall(st);
+  if(cur.block===2)return renderCalc(st);
+  if(cur.block===3)return renderConnect(st);
+  if(cur.block===4)return renderApply(st);
+  if(cur.block===5)return renderDiscover(st);
+  return renderDone(st);
+}
+function head(k,extra){return '<div class="blockhead"><span class="kicker">'+t(k)+' · '+t('min')+'</span><span class="small">'+(extra||'')+'</span></div>'}
+function fbHtml(){if(!cur.fb)return '';return '<div class="fb'+(cur.fb.wait?' wait':'')+'" id="fbOut">'+esc(cur.fb.text)+'</div>'}
+function askClaude(prompt){
+  if(!sample)return;cur.fb={wait:true,text:t('fbWait')};render();
+  sample(prompt,{cache:false,modelTier:'quick',onText:function(u){cur.fb={wait:false,text:u.text};var o=$('fbOut');if(o){o.textContent=u.text;o.className='fb'}}})
+  .then(function(r){cur.fb={wait:false,text:r.text};render()})
+  .catch(function(e){cur.fb={wait:false,text:t('fbErr')};render()});
+}
+function langLine(){return L()==='en'?'Reply in English. If the learner wrote in English and made a real grammar or word-choice error, add one line at the end starting with "English fix:" with the single most useful correction (American English).':'Responde en español. Si el estudiante escribió en inglés y cometió un error real de gramática o vocabulario, agrega al final una línea "English fix:" con la corrección más útil (inglés americano).'}
+function renderRecall(st){
+  var it=cur.items[cur.i];if(isFact(it.id))return renderFact(st,it);var c=CONCEPTS[it.id];
+  var h=head('b1',(cur.i+1)+' / '+cur.items.length)+'<div class="row">'+areaTag(it.id)+' <span class="small">'+(it.kind==='new'?t('newC'):t('review'))+'</span></div><div class="concept">'+esc(c.n[L()])+'</div>';
+  if(it.kind==='new'){
+    h+=defBox(it.id)+'<p class="small">'+t('newHelp')+'</p><div class="row"><button class="btn primary" id="ok">'+t('gotIt')+'</button></div>';
+    st.innerHTML=h;$('ok').onclick=function(){introduce(it.id);nextItem()};return;
+  }
+  h+='<p>'+t('recallQ')+'</p><textarea id="rt" placeholder="'+esc(t('recallPh'))+'" aria-label="'+esc(t('recallQ'))+'">'+esc(cur.text)+'</textarea>';
+  if(!cur.revealed){h+='<div class="row"><button class="btn primary" id="rv">'+t('reveal')+'</button></div>';st.innerHTML=h;
+    $('rt').oninput=function(e){cur.text=e.target.value};$('rv').onclick=function(){cur.text=$('rt').value;cur.revealed=true;render()};return}
+  h+=defBox(it.id)+fbHtml();
+  h+='<div class="row">'+(sample&&cur.text.trim().length>15&&!cur.fb?'<button class="btn" id="fb">'+t('feedback')+'</button>':'')+
+     '<button class="btn rate-0" data-r="0">'+t('rate0')+'</button><button class="btn rate-1" data-r="1">'+t('rate1')+'</button><button class="btn rate-2" data-r="2">'+t('rate2')+'</button></div>';
+  st.innerHTML=h;$('rt').oninput=function(e){cur.text=e.target.value};
+  if($('fb'))$('fb').onclick=function(){askClaude('You are a concise, honest tutor. Concept: "'+c.n.en+'". Reference definition: '+c.d.en+' Example: '+c.x.en+'\nThe learner explained it from memory:\n"""'+cur.text+'"""\nIn 2-4 short sentences: say what they got right, the single most important thing missing or wrong, and whether their own example fits. No praise filler. '+langLine())};
+  st.querySelectorAll('[data-r]').forEach(function(b){b.onclick=function(){grade(it.id,+b.getAttribute('data-r'));nextItem()}});
+}
+function renderFact(st,it){
+  var f=S.facts[it.id];if(!f){nextItem();return}
+  var h=head('b1',(cur.i+1)+' / '+cur.items.length)+'<div class="row"><span class="area c">'+esc(f.topic)+'</span> <span class="small">'+t('review')+'</span></div><div class="concept">'+esc(f.q)+'</div><p class="small">'+t('factQ')+'</p><textarea id="rt" aria-label="'+esc(f.q)+'">'+esc(cur.text)+'</textarea>';
+  if(!cur.revealed){h+='<div class="row"><button class="btn primary" id="rv">'+t('reveal')+'</button></div>';st.innerHTML=h;$('rt').oninput=function(e){cur.text=e.target.value};$('rv').onclick=function(){cur.text=$('rt').value;cur.revealed=true;render()};return}
+  h+='<div class="def"><p>'+esc(f.a)+'</p></div><div class="row"><button class="btn rate-0" data-r="0">'+t('rate0')+'</button><button class="btn rate-1" data-r="1">'+t('rate1')+'</button><button class="btn rate-2" data-r="2">'+t('rate2')+'</button></div>';
+  st.innerHTML=h;st.querySelectorAll('[data-r]').forEach(function(b){b.onclick=function(){grade(it.id,+b.getAttribute('data-r'));nextItem()}});
+}
+function topicName(id){var r=TOPICS.filter(function(x){return x[0]===id})[0];return r?(L()==='en'?r[2]:r[1]):id}
+function makeLesson(){
+  if(!sample)return;var id=cur.topic,name=topicName(id);cur.lesson={wait:true};render();
+  var lang=L()==='en'?'English':'Spanish (Colombian, neutral)';
+  sample.json('Write a short daily-learning lesson for a curious adult (math graduate, data engineer in Colombia) who wants to be able to talk knowledgeably about many subjects. Topic: "'+name+'". Write in '+lang+'. Be accurate and use mainstream, well-established knowledge; where a topic is politically, religiously or morally contested, describe the main positions fairly without taking sides. Return ONLY JSON: {"title": string, "lesson": string (160-220 words, plain text, 2-3 short paragraphs, concrete facts, names, dates and numbers where useful), "perspectives": null or [string, string] (only for contested topics: two fair one-sentence views), "talk": string (one natural sentence he could say in a conversation), "facts": [{"q": string, "a": string}, ...] (exactly 3 short recall questions with 1-2 sentence answers)}',{modelTier:'default',cache:false})
+  .then(function(j){if(!j||!j.lesson||!j.facts)throw 0;cur.lesson={topic:id,title:j.title||name,lesson:j.lesson,perspectives:j.perspectives||null,talk:j.talk||'',facts:j.facts.slice(0,3)};render()})
+  .catch(function(){cur.lesson={err:true};render()});
+}
+function saveLesson(){
+  var ls=cur.lesson,n=dayNum(today()),lid=today()+'-'+ls.topic;
+  ls.facts.forEach(function(f,i){var fid='f:'+lid+':'+i;S.facts[fid]={q:f.q,a:f.a,topic:ls.title};S.cards[fid]={box:1,due:n+1,reps:0,lapses:0}});
+  S.lessons.unshift({id:lid,date:today(),topic:ls.topic,title:ls.title,lesson:ls.lesson,perspectives:ls.perspectives,talk:ls.talk,lang:L()});
+  if(ls.topic===TOPICS[S.ti%TOPICS.length][0])S.ti++;save();
+}
+function finishSession(){if(S.days.indexOf(today())<0)S.days.push(today());save();cur.block=6;render();window.scrollTo(0,0)}
+function renderDiscover(st){
+  var h=head('b4')+'<p class="small">'+t('discQ')+'</p>';
+  if(!sample){st.innerHTML=h+'<p class="note small">'+t('noSample')+'</p><div class="row"><button class="btn primary" id="fin">'+t('finish')+'</button></div>';$('fin').onclick=finishSession;return}
+  var ls=cur.lesson;
+  if(!ls){h+='<div class="concept">'+esc(topicName(cur.topic))+'</div><div class="row"><button class="btn primary" id="mk">'+t('b4')+'</button><button class="btn" id="fin">'+t('skip')+'</button></div><p class="small">'+t('pick')+'</p><div class="topics">'+
+      TOPICS.map(function(r){return '<button class="btn" data-tp="'+r[0]+'">'+esc(L()==='en'?r[2]:r[1])+'</button>'}).join('')+'</div>';
+    st.innerHTML=h;$('mk').onclick=makeLesson;$('fin').onclick=finishSession;
+    st.querySelectorAll('[data-tp]').forEach(function(b){b.onclick=function(){cur.topic=b.getAttribute('data-tp');makeLesson()}});return}
+  if(ls.wait){st.innerHTML=h+'<p class="fb wait">'+t('gen')+'</p>';return}
+  if(ls.err){st.innerHTML=h+'<p class="small">'+t('genErr')+'</p><div class="row"><button class="btn" id="re">'+t('b4')+'</button><button class="btn primary" id="fin">'+t('finish')+'</button></div>';$('re').onclick=makeLesson;$('fin').onclick=finishSession;return}
+  h+='<div class="concept">'+esc(ls.title)+'</div><div class="lesson">'+esc(ls.lesson)+'</div>';
+  if(ls.perspectives&&ls.perspectives.length===2)h+='<h3>'+t('perspL')+'</h3><div class="persp"><div>'+esc(ls.perspectives[0])+'</div><div>'+esc(ls.perspectives[1])+'</div></div>';
+  if(ls.talk)h+='<p class="small">'+t('talkL')+'</p><p class="talk">'+esc(ls.talk)+'</p>';
+  h+='<h3>'+t('keyL')+'</h3><ul>'+ls.facts.map(function(f){return '<li>'+esc(f.q)+'</li>'}).join('')+'</ul><div class="row"><button class="btn primary" id="fin">'+t('finish')+'</button></div>';
+  st.innerHTML=h;$('fin').onclick=function(){saveLesson();finishSession()};
+}
+function renderKnow(){
+  if(!S.lessons.length){$('know').innerHTML='<p class="empty">'+t('noKnow')+'</p>';return}
+  $('know').innerHTML=S.lessons.map(function(l){return '<details class="entry"><summary><span class="meta">'+esc(l.date)+'</span><br><b>'+esc(l.title)+'</b></summary><div class="lesson">'+esc(l.lesson)+'</div>'+(l.talk?'<p class="talk">'+esc(l.talk)+'</p>':'')+'</details>'}).join('');
+}
+function nextItem(){cur.i++;cur.revealed=false;cur.text='';cur.fb=null;if(cur.i>=cur.items.length)cur.block=2;render();window.scrollTo(0,0)}
+function renderConnect(st){
+  var a=cur.pair[0],b=cur.pair[1];
+  var h=head('b2')+'<div class="pair"><div class="c">'+areaTag(a)+'<b>'+esc(cn(a))+'</b></div><span class="plus">+</span><div class="c">'+areaTag(b)+'<b>'+esc(cn(b))+'</b></div></div>'+
+    '<p>'+t('connQ')+'</p><p class="small">'+t('langNote')+'</p><textarea id="ct" placeholder="'+esc(t('connPh'))+'" aria-label="'+esc(t('connQ'))+'">'+esc(cur.connText)+'</textarea>'+fbHtml()+
+    '<details><summary class="small">'+esc(cn(a))+' / '+esc(cn(b))+'</summary>'+defBox(a)+defBox(b)+'</details>'+
+    '<div class="row">'+(sample?'<button class="btn" id="fb"'+(cur.fb?' disabled':'')+'>'+t('feedback')+'</button>':'')+'<button class="btn primary" id="sv">'+t('save')+'</button><button class="btn" id="sk">'+t('skip')+'</button></div>';
+  st.innerHTML=h;var ta=$('ct');ta.oninput=function(e){cur.connText=e.target.value};
+  if($('fb'))$('fb').onclick=function(){cur.connText=ta.value;if(cur.connText.trim().length<15)return;askClaude('You are a sharp, encouraging thinking coach. The learner was asked to connect two ideas: "'+CONCEPTS[a].n.en+'" ('+CONCEPTS[a].d.en+') and "'+CONCEPTS[b].n.en+'" ('+CONCEPTS[b].d.en+'). Their answer:\n"""'+cur.connText+'"""\nIn 3-5 short sentences: judge whether the link is real and correctly reasoned, point out any misunderstanding, and offer one sharper or more surprising connection they could explore. No filler. '+langLine())};
+  $('sv').onclick=function(){cur.connText=ta.value;if(cur.connText.trim()){S.journal.unshift({date:today(),a:a,b:b,text:cur.connText.trim(),fb:cur.fb&&!cur.fb.wait?cur.fb.text:null});save()}cur.fb=null;cur.block=4;render();window.scrollTo(0,0)};
+  $('sk').onclick=function(){cur.fb=null;cur.block=4;render()};
+}
+function renderApply(st){
+  var k=CASES[cur.cases[cur.ci]];
+  if(!cur.choices||cur.choices.k!==k.id){
+    var same=C.filter(function(r){return r[0]!==k.c&&r[1]===CONCEPTS[k.c].area}).map(function(r){return r[0]});
+    var rest=C.filter(function(r){return r[0]!==k.c&&r[1]!==CONCEPTS[k.c].area}).map(function(r){return r[0]});
+    var d=shuffle(same).slice(0,2).concat(shuffle(rest).slice(0,1));cur.choices={k:k.id,list:shuffle(d.concat(k.c))};
+  }
+  var h=head('b3',(cur.ci+1)+' / '+cur.cases.length)+'<p class="scenario">'+esc(k.q[L()])+'</p><p class="small">'+t('applyQ')+'</p><div class="choices">'+
+    cur.choices.list.map(function(id){var cls='choice';if(cur.answered){if(id===k.c)cls+=' ok';else if(id===cur.answered)cls+=' no'}
+      return '<button class="'+cls+'" data-c="'+id+'"'+(cur.answered?' disabled':'')+'>'+esc(cn(id))+'</button>'}).join('')+'</div>';
+  if(cur.answered){var ok=cur.answered===k.c;
+    h+='<p class="result '+(ok?'ok':'no')+'">'+(ok?t('right'):esc(t('wrong',{c:cn(k.c)})))+'</p><p class="why">'+esc(k.w[L()])+'</p><div class="row"><button class="btn primary" id="nx">'+t('next')+'</button></div>'}
+  st.innerHTML=h;
+  st.querySelectorAll('[data-c]').forEach(function(b){b.onclick=function(){if(cur.answered)return;cur.answered=b.getAttribute('data-c');var ok=cur.answered===k.c;
+    var s=S.cases[k.id]||(S.cases[k.id]={n:0,okN:0});s.n++;if(ok)s.okN++;s.ok=ok;s.last=dayNum(today());
+    if(S.cards[k.c]&&!ok){S.cards[k.c].due=Math.min(S.cards[k.c].due,dayNum(today())+1)}save();render()}});
+  if($('nx'))$('nx').onclick=function(){cur.ci++;cur.answered=null;if(cur.ci>=cur.cases.length){cur.block=cur.again?6:5}render();window.scrollTo(0,0)};
+}
+function renderDone(st){
+  var n=stats();var d=dayNum(today())+1;var tomorrow=Object.keys(S.cards).filter(function(id){return S.cards[id].due<=d}).length;
+  st.innerHTML='<div class="done-hero"><div class="big">'+n+'</div><h2>'+t('doneT')+'</h2><p class="small">'+t('doneS',{n:n,d:tomorrow})+'</p></div><div class="row" style="justify-content:center"><button class="btn" id="ag">'+t('again')+'</button></div>';
+  $('ag').onclick=function(){cur.cases=pickCases(3);cur.ci=0;cur.answered=null;cur.block=4;cur.again=true;render()};
+}
+
+/* ---------------- mental math ---------------- */
+var TECH=[
+ ['add','Sumar de izquierda a derecha','Add left to right','Suma primero las centenas, luego las decenas, luego las unidades, y ve acumulando. Así trabajas con números redondos.','Add the hundreds first, then the tens, then the ones, keeping a running total. You always work with round numbers.','356 + 478 = 700 + 120 + 14 = 834'],
+ ['sub','Restar redondeando','Subtract by rounding','Redondea lo que restas a una decena o centena, resta eso y devuelve la diferencia.','Round what you subtract to a ten or hundred, subtract that, then give back the difference.','83 − 47 = 83 − 50 + 3 = 36'],
+ ['split','Descomponer la multiplicación','Split the multiplication','Separa el número grande en decenas y unidades, multiplica cada parte y suma.','Split the bigger number into tens and ones, multiply each part and add.','47 × 6 = 40×6 + 7×6 = 240 + 42 = 282'],
+ ['mul5','Multiplicar por 5, 50 y 25','Multiply by 5, 50 and 25','×5 es la mitad por 10. ×50 es la mitad por 100. ×25 es la cuarta parte por 100.','×5 is half then ×10. ×50 is half then ×100. ×25 is a quarter then ×100.','68 × 5 = 34 × 10 = 340 · 36 × 25 = 9 × 100 = 900'],
+ ['mul11','Multiplicar por 11','Multiply by 11','Con dos cifras, pon la suma de las cifras en el medio. Si pasa de 9, lleva 1 a la izquierda.','For two digits, put the sum of the digits in the middle. If it passes 9, carry 1 to the left.','53 × 11 = 5|8|3 = 583 · 78 × 11 = 7|15|8 = 858'],
+ ['round','Redondear y corregir','Round and correct','Si un número está cerca de uno redondo, multiplica por el redondo y resta lo que sobra.','If a number is close to a round one, multiply by the round number and subtract the extra.','98 × 7 = 700 − 14 = 686 · 199 × 4 = 800 − 4 = 796'],
+ ['pct','Porcentajes rápidos','Quick percentages','10% es correr la coma; 5% es la mitad de eso; 15% = 10% + 5%. Y x% de y = y% de x.','10% means moving the decimal point; 5% is half of that; 15% = 10% + 5%. And x% of y = y% of x.','15% de 240 = 24 + 12 = 36 · 8% de 50 = 50% de 8 = 4'],
+ ['sq','Cuadrados rápidos','Fast squares','Terminados en 5: la decena por la siguiente, y pegas 25. Cerca de 50: 2.500 ± 100 por la distancia, más la distancia al cuadrado.','Ending in 5: the tens digit times the next number, then append 25. Near 50: 2,500 ± 100 × distance, plus the distance squared.','35² = 3×4|25 = 1.225 · 53² = 2.500 + 300 + 9 = 2.809'],
+ ['diffsq','Diferencia de cuadrados','Difference of squares','Si dos números están a igual distancia de uno redondo: (m+d)(m−d) = m² − d².','If two numbers sit equally far from a round number: (m+d)(m−d) = m² − d².','23 × 17 = 20² − 3² = 400 − 9 = 391'],
+ ['div','Dividir por partes','Divide in steps','÷4 es mitad de la mitad. ÷5 es ×2 y ÷10. ÷25 es ×4 y ÷100.','÷4 is half of half. ÷5 is ×2 then ÷10. ÷25 is ×4 then ÷100.','348 ÷ 4 = 174 ÷ 2 = 87 · 135 ÷ 5 = 270 ÷ 10 = 27']
+];
+var TECHS={};TECH.forEach(function(r){TECHS[r[0]]={id:r[0],n:{es:r[1],en:r[2]},d:{es:r[3],en:r[4]},x:r[5]}});
+function R(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+function D(d){return R(Math.pow(10,d-1),Math.pow(10,d)-1)}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+var GEN={
+ add:function(l){var a=D([2,2,3,3,4][l-1]),b=D([2,2,2,3,3][l-1]);return [a+' + '+b,a+b]},
+ sub:function(l){var d=[2,2,3,3,4][l-1];var a=Math.max(D(d),25),b=R(11,a-1);if(l>=4)b=R(Math.floor(a/3),a-1);return [a+' − '+b,a-b]},
+ split:function(l){var a,b;if(l<=2){a=R(3,9);b=l===1?R(12,49):R(12,99)}else if(l<=4){a=R(3,9);b=l===3?R(101,499):R(101,999)}else{a=R(11,19);b=R(12,49)}return [b+' × '+a,a*b]},
+ mul5:function(l){var a;if(l<=2){a=R(12,l===1?60:99);return [a+' × 5',a*5]}if(l===3){a=R(100,999);return [a+' × 5',a*5]}if(l===4){a=R(12,99);return [a+' × 50',a*50]}a=4*R(3,49);return [a+' × 25',a*25]},
+ mul11:function(l){var a;if(l===1){var x=R(1,8),y=R(0,9-x);a=10*x+y}else if(l<=3)a=R(12,99);else a=R(101,l===4?499:999);return [a+' × 11',a*11]},
+ round:function(l){var base=[10,10,100,100,1000][l-1],k=R(2,9),off=R(1,l<3?2:3),n=base*k-off,m=l<=4?R(3,9):R(3,7);if(base===10)n=10*R(3,9)-off;return [n+' × '+m,n*m]},
+ pct:function(l){var p,n;if(l===1){p=pick([10,20,50,25]);n=20*R(2,30)}else if(l===2){p=pick([5,15,30]);n=20*R(2,40)}else if(l<=4){p=pick([15,35,45,75,5]);n=20*R(5,60)}else{p=pick([4,8,12,16,24,28,32,36,44,48]);n=pick([25,50,75])}return [(L()==='es'?p+'% de ':p+'% of ')+n,n*p/100]},
+ sq:function(l){var a;if(l===1)a=R(11,20);else if(l===2)a=10*R(1,9)+5;else if(l===3)a=R(41,59);else if(l===4)a=R(21,40);else a=R(91,109);return [a+'²',a*a]},
+ diffsq:function(l){var m=10*R(2,l<3?6:l<5?9:10),d=R(1,l<3?3:l<5?6:9);return [(m+d)+' × '+(m-d),m*m-d*d]},
+ div:function(l){var dv=[pick([2,4]),5,pick([4,8]),25,pick([12,15])][l-1],q=l<=2?R(12,99):R(12,199);return [(q*dv)+' ÷ '+dv,q]}
+};
+function calcState(){if(!S.calc)S.calc={unlocked:1,lvl:{},stats:{},hist:[],lastDay:null};return S.calc}
+function todayTech(){var c=calcState();var ids=TECH.slice(0,c.unlocked).map(function(r){return r[0]});
+  if(c.lastDay!==today()&&c.unlocked<TECH.length&&c.hist.length)return {id:TECH[c.unlocked][0],isNew:true};
+  var w=ids.slice().sort(function(a,b){var sa=c.stats[a]||{n:0,ok:0},sb=c.stats[b]||{n:0,ok:0};return (sa.n?sa.ok/sa.n:0)-(sb.n?sb.ok/sb.n:0)||(c.lvl[a]||1)-(c.lvl[b]||1)});
+  return {id:c.unlocked===1?ids[0]:w[0],isNew:c.hist.length===0}}
+function nextProblem(focus){var c=calcState();var pool=TECH.slice(0,Math.max(c.unlocked,TECH.findIndex(function(r){return r[0]===focus})+1)).map(function(r){return r[0]});
+  var type=Math.random()<0.6?focus:pick(pool);var g=GEN[type](c.lvl[type]||1);return {type:type,q:g[0],a:g[1],t0:Date.now()}}
+var SPRINT=90;
+function renderCalc(st){
+  var c=calcState();
+  if(!cur.calc){var tt=todayTech();cur.calc={phase:'intro',focus:tt.id,isNew:tt.isNew}}
+  var cs=cur.calc,tk=TECHS[cs.focus];
+  if(cs.phase==='intro'){
+    st.innerHTML=head('bCalc')+'<div class="row"><span class="area m">'+t('calcTech')+'</span> <span class="small">'+(cs.isNew?t('newC'):t('review'))+'</span></div><div class="concept">'+esc(tk.n[L()])+'</div>'+
+      '<div class="def"><p>'+esc(tk.d[L()])+'</p><p class="ex mono">'+esc(tk.x)+'</p></div><p class="small">'+t('calcHelp',{s:SPRINT})+'</p>'+
+      '<div class="row"><button class="btn primary" id="cgo">'+t('calcStart',{s:SPRINT})+'</button><button class="btn" id="csk">'+t('skip')+'</button></div>';
+    $('cgo').onclick=function(){cs.phase='run';cs.end=Date.now()+SPRINT*1000;cs.log=[];cs.p=nextProblem(cs.focus);render()};
+    $('csk').onclick=function(){stopCalc();if(cur.standalone){cur=null}else cur.block=3;render()};return;
+  }
+  if(cs.phase==='run'){
+    var left=Math.max(0,Math.ceil((cs.end-Date.now())/1000));var ok=cs.log.filter(function(x){return x.ok}).length;
+    st.innerHTML=head('bCalc','<b class="mono" id="cleft">'+left+' s</b>')+'<div class="timebar"><span id="cbar" style="width:'+(left/SPRINT*100)+'%"></span></div>'+
+      '<div class="problem mono" id="cq">'+esc(cs.p.q)+' =</div><form id="cf" class="row" autocomplete="off"><input id="ca" class="ans mono" inputmode="decimal" enterkeyhint="go" aria-label="'+esc(t('answer'))+'"><button class="btn primary">OK</button></form>'+
+      '<div class="calcfb" id="cfb" aria-live="polite">'+(cs.flash||'')+'</div><p class="small">'+t('calcScore',{n:ok})+'</p>';
+    var inp=$('ca');setTimeout(function(){inp.focus()},0);
+    $('cf').onsubmit=function(e){e.preventDefault();var v=parseFloat(inp.value.replace(',','.').replace(/\s/g,''));if(isNaN(v))return;
+      var good=Math.abs(v-cs.p.a)<1e-9;cs.log.push({type:cs.p.type,ok:good,ms:Date.now()-cs.p.t0,q:cs.p.q,a:cs.p.a});
+      cs.flash=good?'<span class="result ok">✓</span>':'<span class="result no">✗ '+esc(cs.p.q)+' = '+fmt(cs.p.a)+'</span>';
+      cs.p=nextProblem(cs.focus);render()};
+    if(!cs.timer)cs.timer=setInterval(function(){var l=Math.max(0,Math.ceil((cs.end-Date.now())/1000));var e=$('cleft'),b=$('cbar');if(e)e.textContent=l+' s';if(b)b.style.width=(l/SPRINT*100)+'%';
+      if(l<=0){stopCalc();finishSprint()}},250);
+    return;
+  }
+  var r=cs.result;
+  st.innerHTML=head('bCalc')+'<div class="stats calcstats"><div class="stat"><b>'+r.ok+'</b><span>'+t('cCorrect')+'</span></div><div class="stat"><b>'+r.acc+'%</b><span>'+t('cAcc')+'</span></div><div class="stat"><b>'+r.avg+' s</b><span>'+t('cAvg')+'</span></div></div>'+
+    (r.ups.length?'<p class="result ok">'+t('levelUp')+' '+r.ups.map(function(id){return esc(TECHS[id].n[L()])}).join(', ')+'</p>':'')+
+    (r.misses.length?'<p class="small">'+t('cMissed')+'</p><ul class="mono">'+r.misses.map(function(m){return '<li>'+esc(m)+'</li>'}).join('')+'</ul>':'')+
+    calcChart()+'<div class="row"><button class="btn primary" id="cnx">'+t('next')+'</button></div>';
+  $('cnx').onclick=function(){if(cur.standalone){cur=null}else cur.block=3;render();window.scrollTo(0,0)};
+}
+function calcLevels(){var c=calcState();return '<div class="lvls">'+TECH.slice(0,c.unlocked).map(function(r){var lv=c.lvl[r[0]]||1,d='';for(var i=1;i<=5;i++)d+='<i class="'+(lv>=i?'on':'')+'"></i>';return '<div class="lvl"><span>'+esc(TECHS[r[0]].n[L()])+'</span><span class="dots">'+d+'</span></div>'}).join('')+'</div><p class="small">'+t('cUnlocked',{n:c.unlocked,m:TECH.length})+'</p>'}
+function fmt(n){return Number.isInteger(n)?String(n):String(Math.round(n*100)/100)}
+function startCalcOnly(){stopCalc();cur={block:2,standalone:true,items:[]};openTab('p-today');render();window.scrollTo(0,0)}
+function stopCalc(){if(cur&&cur.calc&&cur.calc.timer){clearInterval(cur.calc.timer);cur.calc.timer=null}}
+function finishSprint(){
+  var c=calcState(),cs=cur.calc,log=cs.log,ok=log.filter(function(x){return x.ok}).length;
+  var by={};log.forEach(function(x){var b=by[x.type]||(by[x.type]={n:0,ok:0,ms:0});b.n++;if(x.ok)b.ok++;b.ms+=x.ms;
+    var s=c.stats[x.type]||(c.stats[x.type]={n:0,ok:0,ms:0});s.n++;if(x.ok)s.ok++;s.ms+=x.ms});
+  var ups=[];Object.keys(by).forEach(function(k){var b=by[k],lv=c.lvl[k]||1;
+    if(b.n>=4&&b.ok/b.n>=0.9&&b.ms/b.n<6000&&lv<5){c.lvl[k]=lv+1;ups.push(k)}else if(b.n>=3&&b.ok/b.n<0.6&&lv>1){c.lvl[k]=lv-1}});
+  if(cs.isNew&&c.lastDay!==today()&&c.unlocked<TECH.length&&TECH[c.unlocked]&&TECH[c.unlocked][0]===cs.focus)c.unlocked++;
+  c.lastDay=today();var acc=log.length?Math.round(ok/log.length*100):0;
+  var day=c.hist.filter(function(h){return h.d===today()})[0];if(day){day.score=Math.max(day.score,ok);day.acc=acc}else c.hist.push({d:today(),score:ok,acc:acc});
+  c.hist=c.hist.slice(-60);save();
+  cs.result={ok:ok,acc:acc,avg:log.length?Math.round(log.reduce(function(s,x){return s+x.ms},0)/log.length/100)/10:0,ups:ups,
+    misses:log.filter(function(x){return !x.ok}).slice(0,6).map(function(x){return x.q+' = '+fmt(x.a)})};
+  cs.phase='done';render();
+}
+function calcChart(){
+  var h=calcState().hist.slice(-30);if(h.length<2)return '<p class="small">'+t('chartSoon')+'</p>';
+  var W=320,H=110,P=24,max=Math.max.apply(null,h.map(function(x){return x.score}))||1;
+  var xs=function(i){return P+(W-2*P)*i/(h.length-1)},ys=function(v){return H-P-(H-2*P)*v/max};
+  var pts=h.map(function(x,i){return xs(i)+','+ys(x.score)}).join(' ');
+  return '<figure class="chart"><figcaption class="small">'+t('chartT')+'</figcaption><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(t('chartT'))+'">'+
+    '<line x1="'+P+'" y1="'+(H-P)+'" x2="'+(W-P)+'" y2="'+(H-P)+'" class="ax"/><line x1="'+P+'" y1="'+ys(max)+'" x2="'+(W-P)+'" y2="'+ys(max)+'" class="grid"/>'+
+    '<text x="'+(P-6)+'" y="'+(ys(max)+4)+'" text-anchor="end" class="lbl">'+max+'</text><text x="'+(P-6)+'" y="'+(H-P+4)+'" text-anchor="end" class="lbl">0</text>'+
+    '<polyline points="'+pts+'" class="ln"/>'+h.map(function(x,i){return '<circle cx="'+xs(i)+'" cy="'+ys(x.score)+'" r="'+(i===h.length-1?4:2.5)+'" class="pt"/>'}).join('')+
+    '<text x="'+P+'" y="'+(H-6)+'" class="lbl">'+esc(h[0].d.slice(5))+'</text><text x="'+(W-P)+'" y="'+(H-6)+'" text-anchor="end" class="lbl">'+esc(h[h.length-1].d.slice(5))+'</text></svg></figure>';
+}
+
+/* ---------------- pure math ---------------- */
+var SYL=[
+ ['Fracciones, potencias y raíces','Fractions, exponents and roots'],['Logaritmos y sus reglas','Logarithms and their rules'],['Ecuaciones lineales y cuadráticas','Linear and quadratic equations'],
+ ['Funciones: dominio, imagen y composición','Functions: domain, range and composition'],['Funciones exponencial y logarítmica','Exponential and logarithmic functions'],['Trigonometría básica','Basic trigonometry'],
+ ['Conjuntos y lógica: ∀, ∃ e implicación','Sets and logic: ∀, ∃ and implication'],['Demostración directa y por contradicción','Direct proof and proof by contradiction'],['Inducción matemática','Mathematical induction'],
+ ['Sumatorias y progresiones','Sums and progressions'],['Límites: la idea intuitiva','Limits: the intuitive idea'],['Continuidad','Continuity'],
+ ['La derivada como tasa de cambio','The derivative as rate of change'],['Reglas de derivación','Differentiation rules'],['Regla de la cadena','The chain rule'],
+ ['Máximos y mínimos','Maxima and minima'],['La integral y el teorema fundamental del cálculo','The integral and the fundamental theorem of calculus'],['Integración por sustitución','Integration by substitution'],
+ ['Integración por partes','Integration by parts'],['Sucesiones y series: convergencia','Sequences and series: convergence'],['Series geométricas y de Taylor','Geometric and Taylor series'],
+ ['Vectores y producto punto','Vectors and the dot product'],['Matrices y sistemas lineales','Matrices and linear systems'],['Determinantes','Determinants'],
+ ['Espacios vectoriales, base y dimensión','Vector spaces, basis and dimension'],['Transformaciones lineales','Linear transformations'],['Valores y vectores propios','Eigenvalues and eigenvectors'],
+ ['Conteo: permutaciones y combinaciones','Counting: permutations and combinations'],['Probabilidad condicional y Bayes','Conditional probability and Bayes'],['Variables aleatorias, esperanza y varianza','Random variables, expectation and variance'],
+ ['Distribución normal y teorema central del límite','Normal distribution and the central limit theorem'],['Divisibilidad, primos y mcd','Divisibility, primes and gcd'],['Aritmética modular','Modular arithmetic'],
+ ['Grupos: definición y ejemplos','Groups: definition and examples'],['Límites con épsilon y delta','Epsilon-delta limits'],['Supremo y completitud de los reales','Supremum and completeness of the reals'],
+ ['Convergencia puntual y uniforme','Pointwise and uniform convergence']
+];
+var PTOP=[['Análisis real','Real analysis'],['Álgebra lineal','Linear algebra'],['Álgebra abstracta','Abstract algebra'],['Teoría de números','Number theory'],['Cálculo','Calculus'],['Combinatoria','Combinatorics'],['Probabilidad','Probability'],['Ecuaciones diferenciales','Differential equations'],['Topología básica','Basic topology'],['Geometría','Geometry']];
+var PSTATIC=[
+ ['Teoría de números','Number theory','Demuestra que √2 es irracional.','Prove that √2 is irrational.','Supón que √2 = p/q con la fracción reducida.','Assume √2 = p/q in lowest terms.','Si √2 = p/q irreducible, entonces p² = 2q², así que p² es par y p es par: p = 2k. Entonces 4k² = 2q², o sea q² = 2k², y q también es par. Ambos pares contradice que la fracción era irreducible.','If √2 = p/q in lowest terms, then p² = 2q², so p² is even and p is even: p = 2k. Then 4k² = 2q², so q² = 2k² and q is even too. Both even contradicts lowest terms.'],
+ ['Combinatoria','Combinatorics','Demuestra que 1 + 3 + 5 + … + (2n − 1) = n².','Prove that 1 + 3 + 5 + … + (2n − 1) = n².','Inducción, o imagina cuadrados que crecen.','Induction, or picture growing squares.','Base: n = 1 da 1 = 1². Paso: si la suma hasta 2n − 1 es n², al sumar 2n + 1 queda n² + 2n + 1 = (n + 1)².','Base: n = 1 gives 1 = 1². Step: if the sum up to 2n − 1 is n², adding 2n + 1 gives n² + 2n + 1 = (n + 1)².'],
+ ['Teoría de números','Number theory','Demuestra que existen infinitos números primos.','Prove there are infinitely many primes.','Supón que hay una lista finita y construye un número nuevo.','Assume a finite list and build a new number.','Si p₁,…,pₖ fueran todos los primos, N = p₁·…·pₖ + 1 deja residuo 1 al dividir por cada uno, así que ninguno lo divide. Pero N > 1 tiene algún factor primo, que no está en la lista. Contradicción.','If p₁,…,pₖ were all the primes, N = p₁·…·pₖ + 1 leaves remainder 1 when divided by each, so none divides it. But N > 1 has some prime factor not on the list. Contradiction.'],
+ ['Cálculo','Calculus','Calcula la derivada de f(x) = xˣ para x > 0.','Find the derivative of f(x) = xˣ for x > 0.','Escribe xˣ = e^(x ln x).','Write xˣ = e^(x ln x).','f(x) = e^(x ln x), así que f′(x) = e^(x ln x)·(ln x + 1) = xˣ(ln x + 1).','f(x) = e^(x ln x), so f′(x) = e^(x ln x)·(ln x + 1) = xˣ(ln x + 1).'],
+ ['Cálculo','Calculus','Calcula ∫ x eˣ dx.','Compute ∫ x eˣ dx.','Integración por partes con u = x.','Integration by parts with u = x.','u = x, dv = eˣ dx: ∫ x eˣ dx = x eˣ − ∫ eˣ dx = (x − 1)eˣ + C.','u = x, dv = eˣ dx: ∫ x eˣ dx = x eˣ − ∫ eˣ dx = (x − 1)eˣ + C.'],
+ ['Álgebra lineal','Linear algebra','Encuentra los valores y vectores propios de A = [[2, 1], [1, 2]].','Find the eigenvalues and eigenvectors of A = [[2, 1], [1, 2]].','Resuelve det(A − λI) = 0.','Solve det(A − λI) = 0.','(2 − λ)² − 1 = 0 da λ = 3 y λ = 1. Para λ = 3: (1, 1). Para λ = 1: (1, −1).','(2 − λ)² − 1 = 0 gives λ = 3 and λ = 1. For λ = 3: (1, 1). For λ = 1: (1, −1).'],
+ ['Combinatoria','Combinatorics','¿Cuántos subconjuntos tiene un conjunto de n elementos? Justifícalo.','How many subsets does a set with n elements have? Justify it.','Cada elemento toma una decisión.','Each element makes a choice.','Cada elemento está o no está en el subconjunto: 2 opciones independientes por elemento, así que hay 2ⁿ subconjuntos.','Each element is either in or out: 2 independent choices per element, so there are 2ⁿ subsets.'],
+ ['Teoría de números','Number theory','Calcula mcd(252, 198) con el algoritmo de Euclides.','Compute gcd(252, 198) with the Euclidean algorithm.','Divide y quédate con el residuo.','Divide and keep the remainder.','252 = 1·198 + 54; 198 = 3·54 + 36; 54 = 1·36 + 18; 36 = 2·18. El mcd es 18.','252 = 1·198 + 54; 198 = 3·54 + 36; 54 = 1·36 + 18; 36 = 2·18. The gcd is 18.'],
+ ['Teoría de números','Number theory','Demuestra que n³ − n es divisible por 6 para todo entero n.','Prove that n³ − n is divisible by 6 for every integer n.','Factoriza.','Factor it.','n³ − n = (n − 1)n(n + 1) es el producto de tres enteros consecutivos: uno es múltiplo de 3 y al menos uno es par. Por eso es divisible por 6.','n³ − n = (n − 1)n(n + 1) is a product of three consecutive integers: one is a multiple of 3 and at least one is even, so it is divisible by 6.'],
+ ['Análisis real','Real analysis','Calcula lím x→0 de (1 − cos x) / x².','Compute lim x→0 of (1 − cos x) / x².','Multiplica arriba y abajo por (1 + cos x).','Multiply top and bottom by (1 + cos x).','(1 − cos x)/x² = sin²x / (x²(1 + cos x)) = (sin x / x)² · 1/(1 + cos x) → 1 · 1/2 = 1/2.','(1 − cos x)/x² = sin²x / (x²(1 + cos x)) = (sin x / x)² · 1/(1 + cos x) → 1 · 1/2 = 1/2.'],
+ ['Probabilidad','Probability','Lanzas dos dados. ¿Cuál es la probabilidad de que la suma sea 7?','You roll two dice. What is the probability the sum is 7?','Cuenta pares ordenados.','Count ordered pairs.','Hay 36 resultados igual de probables y 6 suman 7: (1,6), (2,5), (3,4), (4,3), (5,2), (6,1). Probabilidad 6/36 = 1/6.','There are 36 equally likely outcomes and 6 sum to 7: (1,6), (2,5), (3,4), (4,3), (5,2), (6,1). Probability 6/36 = 1/6.'],
+ ['Álgebra abstracta','Abstract algebra','Demuestra que todo grupo de orden primo p es cíclico.','Prove that every group of prime order p is cyclic.','Teorema de Lagrange.','Lagrange\'s theorem.','Toma g ≠ e. El subgrupo ⟨g⟩ tiene orden que divide a p (Lagrange) y es mayor que 1, así que es p. Entonces ⟨g⟩ es todo el grupo.','Take g ≠ e. The subgroup ⟨g⟩ has order dividing p (Lagrange) and greater than 1, so it is p. Hence ⟨g⟩ is the whole group.']
+];
+function pureState(){if(!S.pure)S.pure={today:null,hist:[],si:0,ti:0};var p=S.pure;if(p.step==null){p.step=0;if(p.today&&p.today.step==null)p.today=null}return p}
+var pureUI={sol:'',fb:null,showHint:false,showSol:false,wait:false,err:false};
+function staticProblem(){var p=pureState();var r=PSTATIC[p.si%PSTATIC.length];p.si++;
+  return {date:today(),area:{es:r[0],en:r[1]},q:{es:r[2],en:r[3]},hint:{es:r[4],en:r[5]},sol:{es:r[6],en:r[7]}}}
+function newPure(){
+  var p=pureState();
+  if(!sample){p.today=staticProblem();save();renderPure();return}
+  var step=Math.min(p.step,SYL.length-1),top=SYL[step];pureUI.wait=true;pureUI.err=false;renderPure();
+  var seen=(p.hist||[]).filter(function(h){return h.step===step}).length;
+  sample.json('Create a 5-minute math refresher card on "'+top[1]+'" (step '+(step+1)+' of a '+SYL.length+'-step course that rebuilds math from the basics). The learner studied a math degree years ago but has not practiced in a long time and wants to recover step by step, so explain as a friendly tutor would to someone rusty: no assumed recent practice, define any symbol you use, and keep it concrete. '+(seen?'He has already seen '+seen+' card(s) on this step, so cover a different aspect or example of the same topic. ':'')+'Part 1, "lesson": 90-140 words: the core idea in plain words, the key rule or formula, and ONE short worked example with numbers. Part 2, "q": one quick question on the same idea, similar to the worked example, answerable in 1-3 minutes with a couple of lines; never a long proof. Use plain text with Unicode math symbols (², √, ∫, ≤, ∈, →), never LaTeX. Return ONLY JSON: {"es":{"area":string,"lesson":string,"q":string,"hint":string,"sol":string},"en":{same keys}} with Spanish under "es" and English under "en"; hint is one nudge, sol is a short correct answer with its reasoning.',{modelTier:'default',cache:false})
+  .then(function(j){if(!j||!j.es||!j.en||!j.es.q)throw 0;p.today={date:today(),step:step,area:{es:top[0],en:top[1]},lesson:j.es.lesson?{es:j.es.lesson,en:j.en.lesson}:null,q:{es:j.es.q,en:j.en.q},hint:{es:j.es.hint,en:j.en.hint},sol:{es:j.es.sol,en:j.en.sol}};pureUI.wait=false;save();renderPure()})
+  .catch(function(){pureUI.wait=false;p.today=staticProblem();save();renderPure()});
+}
+function renderPure(){
+  var p=pureState(),el=$('pure'),tp=p.today;
+  if(pureUI.wait){el.innerHTML='<div class="card"><p class="fb wait">'+t('pGen')+'</p></div>';return}
+  if(!tp||tp.date!==today()){
+    el.innerHTML='<div class="card"><h2>'+t('pTitle')+'</h2><p class="small">'+t('pHelp')+'</p><p><b>'+t('pNext')+'</b> '+esc(SYL[p.step][L()==='en'?1:0])+' <span class="small">('+t('pStep',{n:p.step+1,m:SYL.length})+')</span></p><div class="row"><button class="btn primary" id="pnew">'+t('pToday')+'</button></div></div>'+pureSyl()+pureHist();
+    $('pnew').onclick=function(){pureUI={sol:'',fb:null,showHint:false,showSol:false,wait:false};newPure()};return}
+  var h='<div class="card"><div class="row"><span class="area m">'+esc(tp.area[L()])+'</span> <span class="small">'+(tp.step!=null?t('pStep',{n:tp.step+1,m:SYL.length})+' · ':'')+t('pMin')+'</span></div>'+(tp.lesson?'<div class="def"><p class="lesson">'+esc(tp.lesson[L()])+'</p></div>':'')+'<p><b>'+t('pQ')+'</b> '+esc(tp.q[L()])+'</p>'+
+    '<textarea id="psol" class="mono" placeholder="'+esc(t('pPh'))+'" aria-label="'+esc(t('pPh'))+'">'+esc(pureUI.sol)+'</textarea>'+
+    (pureUI.showHint?'<div class="def"><p><b>'+t('pHint')+':</b> '+esc(tp.hint[L()])+'</p></div>':'')+
+    (pureUI.fb?'<div class="fb'+(pureUI.fb.wait?' wait':'')+'" id="pfb">'+esc(pureUI.fb.text)+'</div>':'')+
+    (pureUI.showSol?'<div class="def"><p><b>'+t('pSol')+':</b></p><p class="lesson">'+esc(tp.sol[L()])+'</p></div>':'')+
+    '<div class="row">'+(!pureUI.showHint?'<button class="btn" id="phint">'+t('pHint')+'</button>':'')+
+    (sample?'<button class="btn" id="pcheck"'+(pureUI.fb&&pureUI.fb.wait?' disabled':'')+'>'+t('pCheck')+'</button>':'')+
+    (!pureUI.showSol?'<button class="btn primary" id="pshow">'+t('pSol')+'</button>':(tp.step==null?'<button class="btn" id="pnew2">'+t('pAnother')+'</button>':''))+'</div>'+
+    (pureUI.showSol&&tp.step!=null?'<div class="row"><button class="btn rate-2" id="padv">'+t('pGot')+'</button><button class="btn rate-1" id="prep">'+t('pRepeat')+'</button></div>':'')+'</div>'+pureSyl()+pureHist();
+  el.innerHTML=h;var ta=$('psol');ta.oninput=function(e){pureUI.sol=e.target.value};
+  if($('phint'))$('phint').onclick=function(){pureUI.showHint=true;renderPure()};
+  if($('pshow'))$('pshow').onclick=function(){pureUI.showSol=true;var hs=p.hist;if(!hs.length||hs[0].q.es!==tp.q.es){hs.unshift({date:tp.date,step:tp.step,area:tp.area,q:tp.q,mine:pureUI.sol});p.hist=hs.slice(0,40);save()}renderPure()};
+  if($('pnew2'))$('pnew2').onclick=function(){p.today=null;pureUI={sol:'',fb:null,showHint:false,showSol:false};newPure()};
+  if($('padv'))$('padv').onclick=function(){if(p.step===tp.step)p.step=Math.min(SYL.length-1,p.step+1);p.today=null;save();pureUI={sol:'',fb:null,showHint:false,showSol:false};renderPure();window.scrollTo(0,0)};
+  if($('prep'))$('prep').onclick=function(){p.today=null;save();pureUI={sol:'',fb:null,showHint:false,showSol:false};newPure()};
+  if($('pcheck'))$('pcheck').onclick=function(){pureUI.sol=ta.value;if(pureUI.sol.trim().length<10)return;pureUI.fb={wait:true,text:t('fbWait')};renderPure();
+    sample('You are a rigorous but encouraging math professor. Quick question: '+tp.q.en+'\nReference solution: '+tp.sol.en+'\nStudent attempt:\n"""'+pureUI.sol+'"""\nIn 2-4 short sentences: say whether the answer is correct, point to the first gap or error precisely, and say what would fix it. Do not just paste the reference solution. Plain text with Unicode math, no LaTeX. '+langLine(),{cache:false,modelTier:'default',onText:function(u){var o=$('pfb');pureUI.fb={wait:false,text:u.text};if(o){o.textContent=u.text;o.className='fb'}}})
+    .then(function(r){pureUI.fb={wait:false,text:r.text};renderPure()}).catch(function(){pureUI.fb={wait:false,text:t('fbErr')};renderPure()})};
+}
+function pureSyl(){var p=pureState();return '<details class="card"><summary>'+t('pSyl')+'</summary><ol class="syl">'+SYL.map(function(r,i){return '<li class="'+(i<p.step?'done':i===p.step?'now':'')+'"><button class="linkbtn" data-step="'+i+'">'+esc(r[L()==='en'?1:0])+'</button></li>'}).join('')+'</ol><p class="small">'+t('pJump')+'</p></details>'}
+document.addEventListener('click',function(e){var b=e.target.closest('[data-step]');if(!b)return;var p=pureState();p.step=+b.getAttribute('data-step');p.today=null;save();pureUI={sol:'',fb:null,showHint:false,showSol:false};renderPure();window.scrollTo(0,0)});
+function pureHist(){var hs=pureState().hist;if(!hs.length)return '';
+  return '<h3>'+t('pHist')+'</h3>'+hs.slice(0,15).map(function(x){return '<details class="entry"><summary><span class="meta">'+esc(x.date)+' · '+esc(x.area[L()])+'</span></summary><div class="lesson">'+esc(x.q[L()])+'</div>'+(x.mine?'<div class="fb mono">'+esc(x.mine)+'</div>':'')+'</details>'}).join('')}
+
+/* ---------------- library + journal + settings ---------------- */
+function renderLib(){
+  var h='';Object.keys(AREAS).forEach(function(a){
+    h+='<div class="libgroup"><span class="area '+a+'" style="align-self:flex-start">'+esc(AREAS[a][L()])+'</span>';
+    C.filter(function(r){return r[1]===a}).forEach(function(r){var c=CONCEPTS[r[0]],s=S.cards[r[0]],box=s?s.box:0,dots='';
+      for(var i=1;i<=5;i++)dots+='<i class="'+(box>=i?'on':'')+'"></i>';
+      h+='<button class="libitem" data-id="'+c.id+'"><span class="nm">'+esc(c.n[L()])+'</span><span class="dots" aria-label="'+box+'/5">'+dots+'</span><span class="dd" hidden>'+esc(c.d[L()])+'<br><i>'+esc(c.x[L()])+'</i></span></button>'});
+    h+='</div>'});
+  $('lib').innerHTML=h;
+  $('lib').querySelectorAll('.libitem').forEach(function(b){b.onclick=function(){var d=b.querySelector('.dd');d.hidden=!d.hidden}});
+}
+function renderJournal(){
+  if(!S.journal.length){$('journal').innerHTML='<p class="empty">'+t('noJournal')+'</p>';return}
+  $('journal').innerHTML=S.journal.map(function(j){return '<div class="entry"><span class="meta">'+esc(j.date)+' · '+esc(cn(j.a))+' + '+esc(cn(j.b))+'</span><div>'+esc(j.text)+'</div>'+(j.fb?'<div class="fb">'+esc(j.fb)+'</div>':'')+'</div>'}).join('');
+}
+function renderSet(){
+  $('npd').innerHTML=[1,2,3,4].map(function(n){return '<button class="btn'+(S.npd===n?' primary':'')+'" data-n="'+n+'">'+n+'</button>'}).join('');
+  $('npd').querySelectorAll('[data-n]').forEach(function(b){b.onclick=function(){S.npd=+b.getAttribute('data-n');save();renderSet()}});
+}
+$('bCopy').onclick=function(){var s=JSON.stringify(S);$('iBackup').value=s;
+  try{navigator.clipboard.writeText(s).then(function(){$('bkMsg').textContent=t('copied')},function(){$('iBackup').select();$('bkMsg').textContent=t('selectIt')})}catch(e){$('iBackup').select();$('bkMsg').textContent=t('selectIt')}};
+$('bRestore').onclick=function(){try{var o=JSON.parse($('iBackup').value);if(!o.cards)throw 0;S=Object.assign(blank(),o);save();cur=null;applyLang();$('bkMsg').textContent=t('restored')}catch(e){$('bkMsg').textContent=t('badBackup')}};
+var armed=false;$('bReset').onclick=function(){if(!armed){armed=true;$('bReset').textContent=t('resetArm');setTimeout(function(){armed=false;$('bReset').textContent=t('reset')},4000);return}
+  var lang=S.lang;S=blank();S.lang=lang;save();cur=null;armed=false;applyLang();$('bkMsg').textContent=t('wiped')};
+
+/* ---------------- tabs + language ---------------- */
+function openTab(id){if(id!=='p-today'&&cur&&cur.calc&&cur.calc.phase==='run'){stopCalc();cur.calc.phase='intro'}document.querySelectorAll('.tab').forEach(function(x){var on=x.dataset.p===id;x.setAttribute('aria-selected',on);$(x.dataset.p).hidden=!on});
+  if(id==='p-lib')renderLib();if(id==='p-know')renderKnow();if(id==='p-pure'){renderPure();$('calcProg').innerHTML='<h3>'+t('bCalc')+'</h3><div class="row"><button class="btn primary" id="calcGo2">'+t('calcOnly')+'</button></div>'+calcChart()+calcLevels();$('calcGo2').onclick=startCalcOnly}if(id==='p-journal')renderJournal();if(id==='p-set')renderSet()}
+document.querySelectorAll('.tab').forEach(function(x){x.onclick=function(){openTab(x.dataset.p)}});
+function applyLang(){
+  document.documentElement.lang=L();
+  document.querySelectorAll('[data-t]').forEach(function(el){el.textContent=t(el.getAttribute('data-t'))});
+  $('lEs').setAttribute('aria-pressed',L()==='es');$('lEn').setAttribute('aria-pressed',L()==='en');
+  render();var open=document.querySelector('.tab[aria-selected="true"]');if(open)openTab(open.dataset.p);
+}
+$('lEs').onclick=function(){S.lang='es';save();applyLang()};
+$('lEn').onclick=function(){S.lang='en';save();applyLang()};
+applyLang();
+startSync();
+})();
+</script>
