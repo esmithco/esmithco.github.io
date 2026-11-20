@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=84;
+var APP_VER=85;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1716,7 +1716,9 @@ function tradeNext(){
   ch.innerHTML=opts.map(function(o){return '<button class="btn mono" data-s="'+esc(o[0])+'">'+esc(o[0])+'</button>'}).join('');
   var pick=function(san){if(cur.answered)return;dclkPause();T.n++;var best=r[1][0],mine=r[1].filter(function(o){return o[0]===san})[0],ok=san===best[0];if(ok)T.ok++;
     var sg=function(v){return v>=99?t('trMate'):v>0?'+'+v:v<0?String(v).replace('-','−'):'='};
-    var h=ok?'✓ '+t('trOk','<b class="mono">'+esc(san)+'</b>',sg(best[1])):'✗ '+t('trBad','<b class="mono">'+esc(san)+'</b>',sg(mine?mine[1]:0),'<b class="mono">'+esc(best[0])+'</b>',sg(best[1]));
+    /* Nov 20 fix: step 1 must NOT give the count away (he was told "+6" and then asked to count it) — numbers only after step 2 */
+    var h=ok?'✓ '+t('trOk1','<b class="mono">'+esc(san)+'</b>'):'✗ '+t('trBad1','<b class="mono">'+esc(san)+'</b>','<b class="mono">'+esc(best[0])+'</b>');
+    var hFull=ok?'✓ '+t('trOk','<b class="mono">'+esc(san)+'</b>',sg(best[1])):'✗ '+t('trBad','<b class="mono">'+esc(san)+'</b>',sg(mine?mine[1]:0),'<b class="mono">'+esc(best[0])+'</b>',sg(best[1]));
     var tbl='<div class="trtbl">'+r[1].map(function(o){return '<span class="'+(o===best?'best':'')+'"><b class="mono">'+esc(o[0])+'</b> → '+sg(o[1])+'</span>'}).join('')+'</div>';
     /* step 2 (Nov 20, "I have to be able to hold the material in my head"): the board does NOT move; the winning line is shown as text
        and he must say how he ends up. The ⚖ counter in the bubble only shows afterwards, to check. */
@@ -1729,7 +1731,7 @@ function tradeNext(){
     B.arrows=[];var ba0=arrowFor(fen,best[0],'#0E9488');if(ba0)B.arrows=[ba0];drawBoard();
     ch.querySelectorAll('[data-v]').forEach(function(b){b.onclick=function(){var v=+b.getAttribute('data-v'),cok=v===val;if(cok)T.cnt=(T.cnt||0)+1;
       $('choices').hidden=true;var ba=arrowFor(fen,best[0],'#0E9488');
-      pauseReview(fen,line,ok&&cok,h+' '+(cok?'✓ '+t('trCountOk',mk(val)):'✗ '+t('trCountBad',mk(v),mk(val)))+tbl,ba?[ba]:[],tradeNext,'')}});
+      pauseReview(fen,line,ok&&cok,hFull+' '+(cok?'✓ '+t('trCountOk',mk(val)):'✗ '+t('trCountBad',mk(v),mk(val)))+tbl,ba?[ba]:[],tradeNext,'')}});
   };
   ch.querySelectorAll('[data-s]').forEach(function(b){b.onclick=function(){pick(b.getAttribute('data-s'))}});
   var myPos=T.n;dclkStart(45,function(){if(!cur||cur.trade!==T||T.n!==myPos||cur.answered)return;pick('—')});
