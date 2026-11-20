@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=90;
+var APP_VER=91;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1590,11 +1590,11 @@ function calcNext(){
   var who=function(i){return (i%2===0)!==!!x.att?t('calcYou'):t('calcOpp')};
   var draw=function(){
     var q=x.att?t('calcQAtt','<b class="mono">'+esc(a.m.san)+'</b>'):t('calcQ'),
-        seq=done.map(function(s,i){return '<span class="cmv"><small>'+who(i)+'</small> <b class="mono">'+esc(s)+'</b></span>'}).join(' → ');
+        seq=done.map(function(s,i){return '<span class="cmv"><small>'+who(i)+'</small> <b class="mono">'+esc(noMate(s))+'</b></span>'}).join(' → ');
     seq+=(seq?' → ':'')+'<span class="cmv cq"><small>'+who(done.length)+'</small> <b>?</b></span>';
     $('prompt').innerHTML=calcHead()+'<div class="bigq">'+q+'</div><p class="small">'+t('calcFrozen')+'</p><div class="cseq">'+seq+'</div>';
     var ops=calcOpts(h,sol[2*k],2*k===sol.length-1),ch=$('choices');ch.hidden=false;ch.classList.add('grid');
-    ch.innerHTML=ops.map(function(s){return '<button class="btn mono" data-s="'+esc(s)+'">'+esc(s)+'</button>'}).join('');
+    ch.innerHTML=ops.map(function(s){return '<button class="btn mono" data-s="'+esc(s)+'">'+esc(noMate(s))+'</button>'}).join('');
     ch.querySelectorAll('[data-s]').forEach(function(b){b.onclick=function(){pick(b.getAttribute('data-s'))}});
   };
   var finish=function(ok,html,wrong){
@@ -1614,6 +1614,8 @@ function calcNext(){
   draw();
   var steps=Math.ceil(sol.length/2),myPos=C.n;dclkStart(30*steps+15,function(){if(!cur||cur.calc!==C||C.n!==myPos||cur.answered)return;finish(false,'⏱ '+t('timeOut')+' '+t('calcSol',sanSeq(sol)))});
 }
+/* Nov 20: never show '#' before he answers — the mate symbol gave the answer away ("I see the symbol of mate, so I just chose it") */
+function noMate(s){return String(s).replace(/#/g,'+')}
 function sanSeq(ms){return ms.map(function(m){return '<b class="mono">'+esc(m)+'</b>'}).join(' ')}
 function calcEnd(){dclkStop();
   var C=cur.calc,sec=Math.round((now()-C.t0)/1000),s=S.drill.calc||(S.drill.calc={best:0,bestT:0,runs:0});s.runs++;addTot('calc',C.ok);
@@ -1736,19 +1738,23 @@ function tradeNext(){
   setBoard(fen,me==='b');B.locked=true;B.onMove=null;   /* Nov 20: no arrows on the captures — he finds them on the board from the notation, like in a game */
   $('prompt').innerHTML='<div class="op">'+kindPill('idea',t('trT'))+' <span class="counter">'+(T.n+1)+'/'+T.total+' · ✓ '+T.ok+'</span></div><div class="bigq">'+t('trQ')+'</div>';
   var ch=$('choices');ch.hidden=false;ch.classList.add('grid');
-  ch.innerHTML=opts.map(function(o){return '<button class="btn mono" data-s="'+esc(o[0])+'">'+esc(o[0])+'</button>'}).join('');
+  ch.innerHTML=opts.map(function(o){return '<button class="btn mono" data-s="'+esc(o[0])+'">'+esc(noMate(o[0]))+'</button>'}).join('');
   var pick=function(san){if(cur.answered)return;dclkPause();T.n++;var best=r[1][0],mine=r[1].filter(function(o){return o[0]===san})[0],ok=san===best[0];if(ok)T.ok++;
     var sg=function(v){return v>=99?t('trMate'):v>0?'+'+v:v<0?String(v).replace('-','−'):'='};
     /* Nov 20 fix: step 1 must NOT give the count away (he was told "+6" and then asked to count it) — numbers only after step 2 */
-    var h=ok?'✓ '+t('trOk1','<b class="mono">'+esc(san)+'</b>'):'✗ '+t('trBad1','<b class="mono">'+esc(san)+'</b>','<b class="mono">'+esc(best[0])+'</b>');
+    var h=ok?'✓ '+t('trOk1','<b class="mono">'+esc(noMate(san))+'</b>'):'✗ '+t('trBad1','<b class="mono">'+esc(noMate(san))+'</b>','<b class="mono">'+esc(noMate(best[0]))+'</b>');
     var hFull=ok?'✓ '+t('trOk','<b class="mono">'+esc(san)+'</b>',sg(best[1])):'✗ '+t('trBad','<b class="mono">'+esc(san)+'</b>',sg(mine?mine[1]:0),'<b class="mono">'+esc(best[0])+'</b>',sg(best[1]));
     var tbl='<div class="trtbl">'+r[1].map(function(o){return '<span class="'+(o===best?'best':'')+'"><b class="mono">'+esc(o[0])+'</b> → '+sg(o[1])+'</span>'}).join('')+'</div>';
     /* step 2 (Nov 20, "I have to be able to hold the material in my head"): the board does NOT move; the winning line is shown as text
        and he must say how he ends up. The ⚖ counter in the bubble only shows afterwards, to check. */
     var line=best[2].split(' ');if(best[1]<99&&line.length%2===1&&line.length>1)line=line.slice(0,-1);   /* the count is taken after the opponent's last reply */
     var val=best[1]>=99?99:best[1],mk=function(v){return v>=99?t('trMate'):v>0?'+'+v:v<0?String(v).replace('-','−'):'='};
-    var ops=[val];[val-3,val+3,val-2,0,val-6,val+1].forEach(function(v){if(ops.length<4&&ops.indexOf(v)<0&&v<99)ops.push(v)});ops.sort(function(a,b){return a-b});
-    $('prompt').innerHTML='<div class="op">'+kindPill('idea',t('trT'))+'</div><div class="bigq">'+t('trCount','<b class="mono">'+esc(best[0])+'</b>')+'</div><div class="cseq">'+line.map(function(m,i){return '<span class="cmv"><small>'+((i%2===0)?t('calcYou'):t('calcOpp'))+'</small> <b class="mono">'+esc(m)+'</b></span>'}).join(' → ')+'</div>';
+    /* Nov 20: "mate" is ALWAYS one of the options and, when the answer is mate, the other options are realistic counts (it used to be the
+       only odd one out next to +93/+96) */
+    var ops=val===99?[99]:[val,99],cand=(val===99?[3,5,2,0,1,4,6]:[val-3,val+3,val-2,0,val-6,val+1]).sort(function(){return Math.random()-.5});
+    if(val!==99)cand.sort(function(a,b){return Math.abs(a-val)-Math.abs(b-val)});
+    cand.forEach(function(v){if(ops.length<4&&ops.indexOf(v)<0&&v<99&&v>-9)ops.push(v)});ops.sort(function(a,b){return a-b});
+    $('prompt').innerHTML='<div class="op">'+kindPill('idea',t('trT'))+'</div><div class="bigq">'+t('trCount','<b class="mono">'+esc(noMate(best[0]))+'</b>')+'</div><div class="cseq">'+line.map(function(m,i){return '<span class="cmv"><small>'+((i%2===0)?t('calcYou'):t('calcOpp'))+'</small> <b class="mono">'+esc(noMate(m))+'</b></span>'}).join(' → ')+'</div>';
     $('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=h;
     ch.innerHTML=ops.map(function(v){return '<button class="btn mono" data-v="'+v+'">'+mk(v)+'</button>'}).join('');ch.hidden=false;ch.classList.add('grid');
     B.arrows=[];var ba0=arrowFor(fen,best[0],'#0E9488');if(ba0)B.arrows=[ba0];drawBoard();
