@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=85;
+var APP_VER=86;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1710,7 +1710,7 @@ function tradeNext(){
   var T=cur.trade;if(T.n>=T.total){tradeEnd();return}
   var r=T.list[T.n],fen=r[0],me=new Chess(fen).turn(),opts=r[1].slice().sort(function(){return Math.random()-.5});seenPuz('tr:'+fen);
   anOff();cur.answered=false;$('trBody').classList.remove('answered');$('fb').innerHTML='';$('fb').className='feedback';
-  setBoard(fen,me==='b');B.locked=true;B.onMove=null;B.arrows=opts.map(function(o){return arrowFor(fen,o[0],'#64748B')}).filter(Boolean);drawBoard();
+  setBoard(fen,me==='b');B.locked=true;B.onMove=null;   /* Nov 20: no arrows on the captures — he finds them on the board from the notation, like in a game */
   $('prompt').innerHTML='<div class="op">'+kindPill('idea',t('trT'))+' <span class="counter">'+(T.n+1)+'/'+T.total+' · ✓ '+T.ok+'</span></div><div class="bigq">'+t('trQ')+'</div>';
   var ch=$('choices');ch.hidden=false;ch.classList.add('grid');
   ch.innerHTML=opts.map(function(o){return '<button class="btn mono" data-s="'+esc(o[0])+'">'+esc(o[0])+'</button>'}).join('');
