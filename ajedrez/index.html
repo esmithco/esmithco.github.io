@@ -355,6 +355,8 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 .trtbl{display:flex;flex-wrap:wrap;gap:6px}.trtbl span{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 8px}.trtbl span.best{border-color:#0E9488;background:#ECFDF5;font-weight:700}
 .pth{font-size:.9rem;color:#7C3AED;margin-left:4px}
 .gsecs{font-weight:600;color:#7C3AED;margin:.4em 0}.gatego{width:100%;padding:16px;font-size:1.15rem}
+/* Nov 20: the a–h letters sit under the board (absolute): always keep room for them, with or without the eval bar */
+@media (max-width:979px){.bwrap{margin-bottom:20px}.boardwrap{gap:4px!important}.evalbar{margin-top:0!important}}
 </style>
 </head>
 <body>
@@ -522,6 +524,6 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 <script src="debiles.js?v=2"></script>
 <script src="conv.js?v=2"></script>
 <script src="trades.js?v=1"></script>
-<script src="app.js?v=88"></script>
+<script src="app.js?v=89"></script>
 </body>
 </html>
