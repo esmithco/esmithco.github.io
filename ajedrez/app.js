@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=82;
+var APP_VER=83;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -376,7 +376,7 @@ function prio(c){return (c.rep?1e6:0)+(c.kind==='punish'?(c.mat>=1?2e5:0)+(c.mis
 function dueList(kind,onlyRep){var sn=S.seen||{},rec=now()-20*36e5;
   return cardsOf(kind).filter(function(c){return (c.due||0)<=now()&&(!onlyRep||c.rep)}).map(function(c){return {c:c,k:((sn[c.id]||0)>rec?100:0)+((c.reps||0)>0?0:10)-Math.min(9,prio(c)/10)+Math.random()*4}})
     .sort(function(a,b){return a.k-b.k}).map(function(x){return x.c})}
-function counts(kind){var cs=cardsOf(kind),due=0,nw=0;cs.forEach(function(c){if((c.reps||0)===0)nw++;else if((c.due||0)<=now())due++});return {due:due,nw:nw,all:cs.length}}
+function counts(kind){var cs=cardsOf(kind),due=0,nw=0,todo=0;cs.forEach(function(c){if((c.reps||0)===0)nw++;else if((c.due||0)<=now())due++;if((c.box||0)<2)todo++});return {due:due,nw:nw,all:cs.length,todo:todo}}
 
 /* repertoire */
 function lineId(op,i){return op+':'+i}
@@ -632,8 +632,8 @@ function renderCoach(){
   if($('bCoachRep'))$('bCoachRep').onclick=function(){startSession(rpt.slice(0,10).map(function(c){return {t:'card',id:c.id}}),'mine');X.back='home'};
   if($('bCoachLast'))$('bCoachLast').onclick=function(){startSession(lg.cards.slice(0,10).map(function(c){return {t:'card',id:c.id}}),'mine');X.back='home'};
 }
-function fmtCount(c){var es=LANG==='es';
-  return c.due?'<strong>'+c.due+'</strong>'+(es?'para repasar':'to review')+'<small>'+c.nw+(es?' nuevas':' new')+'</small>':'<strong>'+c.nw+'</strong>'+(es?'nuevas':'new')}
+/* Nov 20: the tile shows what the session really contains — left to master out of the whole list (it used to show only today's due cards) */
+function fmtCount(c){var es=LANG==='es';return '<strong>'+c.todo+'</strong>'+(es?'por dominar':'to master')+'<small>'+(es?'de ':'of ')+c.all+'</small>'}
 $('bToday').onclick=function(){
   var d=dailyNow();if(d.done){buildToday((d.n||1)+1);d=S.daily}
   startSession(d.items,'today',d.idx);
@@ -1143,7 +1143,7 @@ $('bRepGo').onclick=function(){
    He stops with ✕ whenever he wants; every 10 right answers a small 🎉 note. */
 function quickSession(kind){
   var due=dueList(kind,false),sn=S.seen||{},rec=now()-20*36e5;
-  var rest=cardsOf(kind).filter(function(c){return due.indexOf(c)<0}).map(function(c){return {c:c,k:((sn[c.id]||0)>rec?10:0)+Math.random()}}).sort(function(a,b){return a.k-b.k}).map(function(x){return x.c});
+  var rest=cardsOf(kind).filter(function(c){return due.indexOf(c)<0}).map(function(c){return {c:c,k:((c.box||0)>=2?20:0)+((sn[c.id]||0)>rec?10:0)+Math.random()}}).sort(function(a,b){return a.k-b.k}).map(function(x){return x.c});   /* not mastered first, mastered last */
   startSession(due.concat(rest).map(function(c){return {t:'card',id:c.id}}),kind);X.back='home';X.endless=true;
 }
 
