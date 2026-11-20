@@ -148,6 +148,8 @@ Criteria (same offline and in-app; `isMistake`/`isPunish` in app.js, `is_mistake
 
 **No mate symbol before answering (Nov 20, "I see the symbol of mate, so I just chose it")**: `noMate(san)` turns `#` into `+` in everything shown before he answers — Cuenta el cambio (capture buttons, question, step-1 verdict, step-2 line) and Cálculo (move buttons, replies). In step 2 "mate" is always one of the 4 options; when the answer is mate the others are realistic counts (+1…+6, =), not +93/+96.
 
+**Eval bar hidden until he answers (Nov 20, "the bar says mate in 1, so counting is easy")**: `anOff()` (called at the start of every drill position) now hides the bar; own-mistake/punish cards and Remata no longer show the eval before the answer. It comes back with the review (`anEval`) and the card result.
+
 **Judge reasons, no overlap (Nov 20, "several reasons are true at once")**: `JR` = mat (you lose material: undefended piece or bad trade — merges the old hang/material), fork, lines, mate, pos. Picking `mat` when the real reason is a tactic (fork/lines/mate) counts as right and the message names the concrete pattern (`jGeneral`: "Sí: Qe3 pierde material. La forma concreta: permite un tenedor.").
 
 Regenerating `datos.json` offline (needs `brew install stockfish` + a venv with `pip install chess`; run from a scratch dir, **not** the repo): `tools/fetch.py` (all games via curl — Chess.com needs a User-Agent; python.org Python lacks certs) → `analyse.py` (depth 12 on every opening position, 7 processes, ~10 min) → `deep.py` (depth 16 PVs + null-move threats for selected positions) → `rep.py` → `build.py` → copy `datos.json` + `repertorio.js` into `ajedrez/`.

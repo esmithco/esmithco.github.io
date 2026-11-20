@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=91;
+var APP_VER=92;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -726,7 +726,7 @@ function loadCard(c){
   var fen=fenOf(c.line),prev=c.line.length?fenOf(c.line.slice(0,-1)):null;
   setBoard(fen,c.side==='b',c.line[c.line.length-1],prev);
   var ref=c.kind==='mine'?c.s0:c.s1;cur.fen=fen;cur.ref=ref;
-  setBar(toW(ref,c.side));
+  setBar(toW(ref,c.side),false);
   var head=kindPill(c.kind==='mine'?(c.trap?'trap':'mine'):'punish',sideTxt(c.side));
   if(c.kind==='punish'&&(c.s0||0)<=-150)head+=' <span class="pill come">'+t('kComeback')+'</span>';
   var p=c.kind==='mine'?(c.line.length?t('oppJust',esc(c.line[c.line.length-1]))+' ':'')+t('pMineFind'):t('pPun2',esc(c.oppMove));
@@ -799,7 +799,8 @@ function showWhy(list){if(!list.length)return;$('why').hidden=false;var body='<u
 var INIT=new Chess().fen();
 var AN={on:false,start:INIT,moves:[],i:0,base:0,tok:0,ev:{},good:{}};
 function anSet(start,moves,i,base){AN.known=moves.length;AN.on=true;AN.start=start;AN.moves=moves.slice();AN.i=Math.max(0,Math.min(i,AN.moves.length));AN.base=base==null?AN.i:base;$('anBar').hidden=false;$('line').hidden=true;anRender()}
-function anOff(){AN.on=false;AN.tok++;$('anBar').hidden=true;if($('guide'))$('guide').hidden=true;B.badges={};B.rings={};$('anStory').innerHTML='';$('line').hidden=false;$('anEval').innerHTML=''}
+/* Nov 20 ("the bar says mate in 1, so counting is easy"): the eval bar never shows before he answers — every new position starts hidden */
+function anOff(){AN.on=false;AN.tok++;setBar(null,false);$('anBar').hidden=true;if($('guide'))$('guide').hidden=true;B.badges={};B.rings={};$('anStory').innerHTML='';$('line').hidden=false;$('anEval').innerHTML=''}
 function anChess(n){var c=new Chess(AN.start);for(var k=0;k<n&&k<AN.moves.length;k++){if(!c.move(AN.moves[k],{sloppy:true}))break}return c}
 /* ---------- Coach bubble (Nov 19, "too much text, square names and numbers; I don't see text that is elsewhere; show it on the board") ----------
    After he answers, a bubble right above the board explains the line one move at a time, in one short sentence with an icon,
@@ -1705,7 +1706,7 @@ function loadConv(){
 function convNext(){
   var C=cur.conv;if(C.n>=C.total){convEnd();return}
   var r=C.list[C.n],fen=r[0],me=new Chess(fen).turn();seenPuz('cv:'+fen);anOff();cur.answered=false;$('trBody').classList.remove('answered');$('fb').innerHTML='';$('fb').className='feedback';$('choices').hidden=true;
-  setBoard(fen,me==='b');setBar(r[1]*(me==='w'?1:-1));
+  setBoard(fen,me==='b');setBar(null,false);
   $('prompt').innerHTML='<div class="op">'+kindPill('idea',t('cvT'))+' <span class="counter">'+(C.n+1)+'/'+C.total+' · ✓ '+C.ok+'</span></div><div class="bigq">'+t(C.fast?'cvQfast':'cvQ')+'</div>';
   B.locked=false;B.onMove=function(mv){B.locked=true;B.onMove=null;C.n++;dclkPause();
     var fin=function(ok,after,pv){if(ok)C.ok++;var ba=arrowFor(fen,r[2],'#0E9488');
