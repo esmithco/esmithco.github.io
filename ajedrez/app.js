@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=83;
+var APP_VER=84;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1841,7 +1841,9 @@ function loadPuz(l,p){
   seenPuz(p.id);
   var c=new Chess(p.fen),me=c.turn()==='w'?'b':'w';cur.puz={l:l,p:p,ply:0,me:me};
   setBoard(p.fen,me==='b');setBar(null,false);B.locked=true;
-  $('prompt').innerHTML='<div class="op">'+kindPill('puz',esc(tt(l.t))+' · '+sideTxt(me))+'</div>'+t('puzQ')+' <span class="small">'+t('puzRating',p.r)+'</span>';
+  /* Nov 20: outside Aprender the theme is hidden until he answers ("if you tell me it's a mate I stop looking at the position") */
+  var showTheme=X.src==='learn'&&!/^w_/.test(l.id);cur.puzHidden=!showTheme;
+  $('prompt').innerHTML='<div class="op">'+kindPill('puz',sideTxt(me))+(showTheme?' <b class="pth">'+esc(tt(l.t))+'</b>':'')+'</div>'+t('puzQ')+(showTheme?' <span class="small">'+t('puzRating',p.r)+'</span>':'');
   setBtns({scan:true,hint:true,show:true});B.onMove=onPuzMove;
   later(function(){puzOpp()},600);
 }
@@ -1861,7 +1863,7 @@ function onPuzMove(mv){
 }
 function puzSolved(){
   var P=cur.puz,s=S.puz[P.p.id]||(S.puz[P.p.id]={box:0,due:0});gradeObj(s,cur.first);
-  $('fb').className='feedback '+(cur.first?'good':'bad');$('fb').innerHTML=cur.first?t('puzDone'):t('puzDoneLate');
+  $('fb').className='feedback '+(cur.first?'good':'bad');$('fb').innerHTML=cur.first?t('puzDone'):t('puzDoneLate');if(cur.puzHidden)$('fb').innerHTML+=' <span class="small">'+t('puzWas',esc(tt(P.l.t)))+'</span>';
   var c=new Chess(P.p.fen);c.move(P.p.m[0],{sloppy:true});var f1=c.fen(),sol=P.p.m.slice(1);
   var r=outcome(f1,sol,P.me,sol.length);
   var w=['<b>'+esc(tt(P.l.t))+':</b> '+esc(tt(P.l.body)[0]),fold(t('stStep'),story(f1,sol,P.me,8))];
