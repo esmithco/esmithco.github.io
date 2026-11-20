@@ -146,6 +146,8 @@ Criteria (same offline and in-app; `isMistake`/`isPunish` in app.js, `is_mistake
 
 **Overlap audit (Nov 20)**: scripted bounding-box check of buttons/labels/coordinates at 375×640 and 360×640 over home, weak spots, every drill (gate, calc, trade steps, judge, game, defense, rush, remata), plan viewer, Repertorio, Progreso and an answered card. The only real overlap was the a–h letters (absolutely positioned under the board) against the answer buttons when the eval bar is hidden — fixed with `.bwrap{margin-bottom:20px}` and `.boardwrap{gap:4px}` on phones.
 
+**Judge reasons, no overlap (Nov 20, "several reasons are true at once")**: `JR` = mat (you lose material: undefended piece or bad trade — merges the old hang/material), fork, lines, mate, pos. Picking `mat` when the real reason is a tactic (fork/lines/mate) counts as right and the message names the concrete pattern (`jGeneral`: "Sí: Qe3 pierde material. La forma concreta: permite un tenedor.").
+
 Regenerating `datos.json` offline (needs `brew install stockfish` + a venv with `pip install chess`; run from a scratch dir, **not** the repo): `tools/fetch.py` (all games via curl — Chess.com needs a User-Agent; python.org Python lacks certs) → `analyse.py` (depth 12 on every opening position, 7 processes, ~10 min) → `deep.py` (depth 16 PVs + null-move threats for selected positions) → `rep.py` → `build.py` → copy `datos.json` + `repertorio.js` into `ajedrez/`.
 
 Findings (Nov 2026; 2,478 games): quick losses mostly from openings he dropped (1…e5, Scotch Gambit). Repertoire traps he fell for are encoded as trap lines (Caro Advance Bg5/…e6??, London …Nh5/g4?, Englund, Fantasy …Bg4?). Vs Queen's Gambit as Black he scored badly → Slav lines.

@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=89;
+var APP_VER=90;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1632,9 +1632,11 @@ function calcTrend(){var h=(S.drill.calc&&S.drill.calc.h)||[];if(!h.length)retur
    A move is drawn on the board; he says good or mistake, and if mistake, WHY (6 reasons). Sources: his own mistakes (his game move, and the
    engine's move as a good one), course/bank puzzles (the move that allowed the tactic), and quiet positions from his games (the plan move =
    good; a clearly worse move = "no tactic, but it makes the position worse" — the moments he just moves a piece). */
-var JR=['hang','material','fork','lines','mate','pos'];
-var JK={hanging:'hang',leftdef:'hang',material:'material',badtrade:'material',fork:'fork',pin:'lines',skewer:'lines',discovered:'lines',mate:'mate',backrank:'mate',king:'mate'};
-var JL={hanging:'hang',fork:'fork',pin:'lines',skewer:'lines',discovered:'lines',backrank:'mate',mate2:'mate',mate3:'mate',anastasia:'mate',arabian:'mate',smothered:'mate',doublecheck:'mate',w_forkd:'fork',w_lines:'lines',w_matek:'mate'};
+/* Nov 20: the old 6 reasons overlapped (a fork also loses material…). Now 5 distinct ones; 'mat' (you lose material) is always true
+   when there is a tactic, so it counts as right, and the message names the concrete pattern. */
+var JR=['mat','fork','lines','mate','pos'];
+var JK={hanging:'mat',leftdef:'mat',material:'mat',badtrade:'mat',fork:'fork',pin:'lines',skewer:'lines',discovered:'lines',mate:'mate',backrank:'mate',king:'mate'};
+var JL={hanging:'mat',fork:'fork',pin:'lines',skewer:'lines',discovered:'lines',backrank:'mate',mate2:'mate',mate3:'mate',anastasia:'mate',arabian:'mate',smothered:'mate',doublecheck:'mate',w_forkd:'fork',w_lines:'lines',w_matek:'mate'};
 function judgeCards(){return Object.keys(S.cards).map(function(k){return S.cards[k]}).filter(function(c){return c.kind==='mine'&&(!c.hide||c.jo)&&visOf(c)!=='win'&&c.pvBad&&c.line&&c.line.length&&(c.s0||0)>=-100})}
 function judgeList(N){
   var sh=function(a){return a.sort(function(){return Math.random()-.5})},out=[],cs=sh(judgeCards()),i;
@@ -1669,16 +1671,18 @@ function judgeNext(){
 }
 function judgeAns(x,saidBad,r){
   var J=cur.judge,ok,h,mv=esc(x.san);$('choices').hidden=true;J.n++;
-  if(!x.bad)ok=!saidBad;else ok=saidBad&&r===x.r;
+  var general=x.bad&&saidBad&&r==='mat'&&x.r!=='mat'&&x.r!=='pos';
+  if(!x.bad)ok=!saidBad;else ok=saidBad&&(r===x.r||general);
   if(ok)J.ok++;
   var best=x.src==='card'?x.c.best:x.src==='pos'?x.q.p.best:null,why='';
   if(!x.bad)h=(ok?'✓ ':'✗ ')+t(ok?'jGoodOk':'jWasGood','<b class="mono">'+mv+'</b>');
+  else if(ok&&general){var rn=t('jr_'+x.r);h='✓ '+t('jGeneral','<b class="mono">'+mv+'</b>',rn.charAt(0).toLowerCase()+rn.slice(1))}
   else if(ok)h='✓ '+t('jBadOk','<b class="mono">'+mv+'</b>',t('jr_'+x.r));
   else if(saidBad)h='✗ '+t('jRightWrongWhy','<b class="mono">'+mv+'</b>',t('jr_'+x.r));
   else h='✗ '+t('jWasBad','<b class="mono">'+mv+'</b>',t('jr_'+x.r));
   if(x.bad&&best)h+=' '+t('jBetter','<b class="mono">'+esc(best)+'</b>');
   if(x.src==='card'&&x.tb)why+=teachBox(x.tb);
-  else if(x.bad&&x.r!=='pos')why+='<p class="small">'+esc(t({hang:'wb_hang',material:'jm_rule',fork:'wb_forkd',lines:'wb_lines',mate:'wb_matek'}[x.r]))+'</p>';
+  else if(x.bad&&x.r!=='pos')why+='<p class="small">'+esc(t({mat:'wb_hang',fork:'wb_forkd',lines:'wb_lines',mate:'wb_matek'}[x.r]))+'</p>';
   else if(x.r==='pos')why+='<p class="small">'+esc(t('jPosRule'))+(x.q?' '+t('jPlan','<b class="mono">'+esc(x.q.p.best)+'</b>',esc(tt(stratById(x.q.tag).t))):'')+'</p>';
   why+=fold(x.bad?t('stIf',mv):t('stStep'),story(x.fen,[x.san].concat(x.cont||[]).slice(0,7),x.me,6));
   var arr=[];var a1=arrowFor(x.fen,x.san,x.bad?'#C0392B':'#0E9488');if(a1)arr.push(a1);if(best){var a2=arrowFor(x.fen,best,'#0E9488');if(a2)arr.push(a2)}
