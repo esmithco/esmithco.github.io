@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=87;
+var APP_VER=88;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1200,8 +1200,8 @@ function timeOut(){$('fb').className='feedback bad';$('fb').innerHTML='⏱ '+t('
 function loadDrill(id){
   var D=cur.drill={id:id,n:0,ok:0,total:(cur.it&&cur.it.n)||(id==='nota'?6:id==='sqname'?8:10),t0:now()};
   setBar(null,false);boardEl.classList.toggle('nocoords',id!=='nota');
-  D.flip=Math.random()<.5;setBtns({});drillNext();
-  dclkStart(D.total*(id==='nota'?15:6),function(){if(!cur||cur.drill!==D||D.n>=D.total)return;D.total=D.n;B.onTap=null;B.onMove=null;drillEnd();$('fb').innerHTML='⏱ '+t('timeOut')+' '+$('fb').innerHTML});
+  D.flip=Math.random()<.5;setBtns({});readyGate(tt(fundById(id).t),t('gate_'+id),null,function(){drillNext();
+  dclkStart(D.total*(id==='nota'?15:6),function(){if(!cur||cur.drill!==D||D.n>=D.total)return;D.total=D.n;B.onTap=null;B.onMove=null;drillEnd();$('fb').innerHTML='⏱ '+t('timeOut')+' '+$('fb').innerHTML});})
 }
 function drillHead(){var D=cur.drill,f=fundById(D.id);return '<div class="op">'+kindPill('idea',esc(tt(f.t)))+' <span class="counter">'+(D.n+1)+'/'+D.total+' · ✓ '+D.ok+'</span></div>'}
 function drillStep(ok){var D=cur.drill;D.n++;if(ok)D.ok++;if(D.n>=D.total){drillEnd();return}later(drillNext,ok?350:1900)}
@@ -1396,7 +1396,7 @@ function timerBar(ms,cb){var el=$('tmr');if(!el){later(cb,ms);return}var t0=now(
 function loadRush(){
   var pool=puzPool(['hanging','mate1','fork','backrank','pin'],1350).concat(puzPool(['mate2'],1300)).sort(function(a,b){return a.k-b.k});
   if(cur.it&&cur.it.n)pool=pool.slice(0,cur.it.n+3);
-  cur.rush={max:(cur.it&&cur.it.n)||99,pool:pool,n:0,ok:0,lives:3,sec:rushSec(),missed:[],times:[]};setBar(null,false);setBtns({});rushNext();
+  cur.rush={max:(cur.it&&cur.it.n)||99,pool:pool,n:0,ok:0,lives:3,sec:rushSec(),missed:[],times:[]};setBar(null,false);setBtns({});readyGate(t('rushT'),t('gateRush'),String((S.drill.rush&&S.drill.rush.sec)||20),rushNext);
 }
 function rushSec(){var s=S.drill.rush;return Math.max(8,Math.min(30,(s&&s.sec)||20))}
 function rushHead(){var R=cur.rush;return '<div class="op">'+kindPill('idea',t('rushT'))+' <span class="counter">'+'❤️'.repeat(R.lives)+'🤍'.repeat(3-R.lives)+' · ✓ '+R.ok+'</span></div>'}
@@ -1453,7 +1453,7 @@ function defMake(it){
 function loadDefend(){
   var pool=puzPool(['mate1','hanging','backrank','fork'],1500),list=[],cnt={mate:0,hang:0};
   var N=(cur.it&&cur.it.n)||8,cap=Math.ceil(N*.6);for(var i=0;i<pool.length&&list.length<N;i++){var x=defMake(pool[i]);if(x&&cnt[x.kind]<cap){cnt[x.kind]++;list.push(x)}}
-  cur.def={list:list,n:0,ok:0,total:list.length,t0:now()};setBar(null,false);setBtns({});defNext();
+  cur.def={list:list,n:0,ok:0,total:list.length,t0:now()};setBar(null,false);setBtns({});readyGate(t('defT'),t('gateDef'),'35',defNext);
 
 }
 function defHead(){var D=cur.def;return '<div class="op">'+kindPill('idea',t('defT'))+' <span class="counter">'+Math.min(D.n+1,D.total)+'/'+D.total+' · ✓ '+D.ok+'</span></div>'}
@@ -1492,7 +1492,7 @@ function loadGame(){
   /* the moment in his own games right before it fell apart (he asked: "show me the 1-2 moves that destroy everything") */
   var mc=shuf(cardsOf('mine').filter(function(c){return visOf(c)!=='win'&&c.pvBad&&c.line&&c.line.length})).slice(0,Math.min(2,NQ-1));mc.forEach(function(c){L.push({type:'mine',c:c})});
   var qs=[];Object.keys(PLANS).forEach(function(k){PLANS[k].forEach(function(p){qs.push({type:'quiet',p:p,tag:k})})});shuf(qs).slice(0,NQ-mc.length).forEach(function(q){L.push(q)});
-  cur.game={list:shuf(L),n:0,ok:0,total:L.length,t0:now()};setBar(null,false);setBtns({});gameNext();
+  cur.game={list:shuf(L),n:0,ok:0,total:L.length,t0:now()};setBar(null,false);setBtns({});readyGate(t('gameT'),t('gateGame'),'45',gameNext);
 
 }
 function gameHead(){var G=cur.game;return '<div class="op">'+kindPill('idea',t('gameT'))+' <span class="counter">'+Math.min(G.n+1,G.total)+'/'+G.total+' · ✓ '+G.ok+'</span></div>'}
@@ -1559,10 +1559,18 @@ function calcPool(lvl,att){
       out.push({l:l,p:p})})})}
   return out.sort(function(){return Math.random()-.5});
 }
+/* Nov 20 ("I lose time reading what I have to do"): every timed drill starts with a ready screen — what to do in one line and the
+   seconds per position, board hidden — and the clock starts only on "¡Listo!". */
+function readyGate(title,line,secs,fn){
+  anOff();$('boardwrap').hidden=true;$('fb').innerHTML='';$('fb').className='feedback';$('trBody').classList.remove('answered');
+  $('prompt').innerHTML='<div class="op">'+kindPill('idea',esc(title))+'</div><div class="bigq">'+line+'</div>'+(secs?'<p class="gsecs">⏱ '+t('gateSecs',secs)+'</p>':'');
+  var ch=$('choices');ch.hidden=false;ch.classList.remove('grid');ch.innerHTML='<button class="btn primary gatego" id="bGo" type="button">'+t('gateGo')+'</button>';
+  $('bGo').onclick=function(){ch.innerHTML='';ch.hidden=true;$('boardwrap').hidden=false;fn()};
+}
 function loadCalc(){
   var N=(cur.it&&cur.it.n)||6,lvl=calcLvl(),A=calcPool(lvl,true),Nn=calcPool(lvl,false),list=[],used={};
   for(var i=0;i<N;i++){var att=i%2===1,src=att&&A.length?A:Nn,x=null;while(src.length&&!x){var y=src.shift();if(!used[y.p.id]){used[y.p.id]=1;x=y}}if(x)list.push({it:x,att:att&&src===A})}
-  cur.calc={list:list,n:0,ok:0,total:list.length,t0:now(),secs:[],lvl:lvl};setBar(null,false);setBtns({});calcNext();
+  cur.calc={list:list,n:0,ok:0,total:list.length,t0:now(),secs:[],lvl:lvl};setBar(null,false);setBtns({});readyGate(t('calcT'),t('calcQ')+' '+t('gateCalc'),'30',calcNext);
 }
 function calcHead(){var C=cur.calc;return '<div class="op">'+kindPill('idea',t('calcT'))+' <span class="pill">'+t('calcLvl',C.lvl)+'</span> <span class="counter">'+Math.min(C.n+1,C.total)+'/'+C.total+' · ✓ '+C.ok+'</span></div>'}
 function calcOpts(ch,want,final){
@@ -1686,7 +1694,7 @@ function judgeEnd(){dclkStop();
    brilliant). Positions not seen in the last 7 days first. */
 function loadConv(){
   var fast=cur.it&&cur.it.f==='convfast',N=(cur.it&&cur.it.n)||6,sn=S.seen||{},wk=now()-7*864e5,rows=(window.CONV||[]).map(function(r){return {r:r,k:((sn['cv:'+r[0]]||0)>wk?10:0)+(fast?(r[7]!=null&&r[7]<90?0:4):(r[4]?0:2))+Math.random()*3}}).sort(function(a,b){return a.k-b.k}).slice(0,N).map(function(x){return x.r});
-  cur.conv={list:rows,n:0,ok:0,total:rows.length,t0:now(),fast:fast};setBar(null,false);setBtns({});convNext();
+  cur.conv={list:rows,n:0,ok:0,total:rows.length,t0:now(),fast:fast};setBar(null,false);setBtns({});readyGate(t(fast?'cvTfast':'cvT'),t(fast?'cvQfast':'cvQ'),fast?'10':'25',convNext);
 }
 function convNext(){
   var C=cur.conv;if(C.n>=C.total){convEnd();return}
@@ -1715,7 +1723,7 @@ function convEnd(){dclkStop();
 function loadTrade(){
   var N=(cur.it&&cur.it.n)||6,sn=S.seen||{},wk=now()-7*864e5;
   var rows=(window.TRADES||[]).map(function(r){return {r:r,k:((sn['tr:'+r[0]]||0)>wk?10:0)+(r[2]>1500?3:0)+Math.random()*3}}).sort(function(a,b){return a.k-b.k}).slice(0,N).map(function(x){return x.r});
-  cur.trade={list:rows,n:0,ok:0,total:rows.length,t0:now()};setBar(null,false);setBtns({});tradeNext();
+  cur.trade={list:rows,n:0,ok:0,total:rows.length,t0:now()};setBar(null,false);setBtns({});readyGate(t('trT'),t('trQ'),'45',tradeNext);
 }
 function tradeNext(){
   var T=cur.trade;if(T.n>=T.total){tradeEnd();return}
