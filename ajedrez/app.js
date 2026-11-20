@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=86;
+var APP_VER=87;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -432,11 +432,11 @@ function buildToday(n){
   /* Nov 19: he wants the notation drill back in the daily ("it's good for me, I like it"): notation every day + coordinates or square names
      rotating; the course lesson puzzle moved to its own home button (courseItems) */
   var bas=dd%2?'coord':'sqname';
-  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},{t:'drill',f:'nota',n:3},C(pun[po]),{t:'drill',f:'defend',n:2},{t:'drill',f:'game',n:3},window.CONV?{t:'drill',f:(dd%2?'convfast':'conv'),n:2}:null,window.TRADES?{t:'drill',f:'trade',n:2}:null,C(mine[o]),C(pun[po+1]),{t:'drill',f:bas,n:5},
+  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},{t:'drill',f:'nota',n:3},C(pun[po]),{t:'drill',f:'defend',n:2},{t:'drill',f:'game',n:3},window.CONV?{t:'drill',f:(dd%2?'convfast':'conv'),n:2}:null,window.TRADES?{t:'drill',f:'trade',n:2}:null,C(mine[o]),C(pun[po+1]),   /* Nov 20: coordinates/square names dropped — calc, trade, judge and notation already read squares in notation */
       dd%2?L(pickL[n>1?1:0]||pickL[0]):r1,C(mine[o+1]),C(pun[po+2]),extra].filter(Boolean);
   while(it.length>5&&estSec(it)>720)it.splice(it.length-1,1);
   while(it.length&&it[it.length-1].t==='theory')it.pop();
-  S.daily={v:13,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
+  S.daily={v:14,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
 }
 /* how long things take him: median of his last logged times per type, defaults otherwise */
 var EST={drill:75,line:80,puz:60,card:90,plan:60,quiz:25,idea:60,name:25,theory:40,ftheory:40,stheory:40,play:150};
@@ -449,7 +449,7 @@ function estOne(it){
   return a.length>=4?med(a):(EST[it.t]||60);
 }
 function estSec(items){return items.reduce(function(a,x){return a+estOne(x)},0)}
-function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<13&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
+function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<14&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
 
 /* ---------- routing / screens ---------- */
 var SCREENS=['home','train','rep','learn','progress','data','weak'],LISTS={mine:1,punish:1},TABS={weak:'weakScrT',home:'navToday',rep:'navRep',learn:'navLearn',progress:'navProg',data:'tData'};
@@ -543,19 +543,30 @@ function renderWeak(){
    One button on home: ~10 items that walk through Aprender in order — the current course lesson (theory the first time + puzzles),
    one strategy position, every other day an endgame technique, and a concept (key idea or commentator word). Same S.puz / S.plan /
    S.tech / S.quiz state as everywhere, so what he solves here counts in Aprender and the other way round. */
-function courseProg(){var n=0,ok=0;CURSO.lessons.forEach(function(l){n++;if(lessonProg(l).pct>=.6)ok++});
-  CURSO.tech.forEach(function(x){n++;var s=S.tech[x.id];if(s&&s.box>=2)ok++});
-  STRAT.filter(function(x){return plansOf(x.id).length}).forEach(function(x){n++;if(planProg(x.id).pct>=.6)ok++});return {ok:ok,n:n}}
-function courseItems(){
-  var cl=curLesson(),it=lessonItems(cl,4),dd=new Date().getDate();   /* a small bite: ~6 items, ~5 minutes */
-  var cs=curStrat();if(cs&&!(dd%2))it=it.concat(stratItems(cs.id,1).slice(0,S.seenLesson['s_'+cs.id]?1:2));
-  var tx=CURSO.tech.filter(function(x){var s=S.tech[x.id];return !s||s.box<2})[0];if(tx&&dd%2)it.push({t:'play',id:tx.id});
-  var idea=IDEAS.filter(function(x){return !S.ideas[x.id]})[0],vq=VOCAB.filter(function(q){var s=S.quiz[q.id];return !s||(s.due||0)<=now()})[0];
-  if(dd%2&&vq)it.push({t:'quiz',id:vq.id});else if(idea)it.push({t:'idea',id:idea.id});else if(vq)it.push({t:'quiz',id:vq.id});
-  return it;
+/* Nov 20 ("the title says mate in 1 but I got other things"): ONE topic per course session. The course is a single ordered path —
+   the course lessons in order, a strategy lesson after every 4 of them, the endgame techniques after the endgame lessons, and a key idea
+   now and then — and each session is only the first unfinished step, named exactly on the button. */
+function coursePath(){
+  var out=[],st=STRAT.filter(function(x){return plansOf(x.id).length}),si=0,ii=0,k=0;
+  CURSO.lessons.forEach(function(l){out.push({k:'l',l:l});k++;
+    if(l.unit==='end'&&CURSO.lessons.filter(function(x){return x.unit==='end'}).slice(-1)[0]===l)CURSO.tech.forEach(function(x){out.push({k:'tech',x:x})});
+    if(k%4===0&&si<st.length)out.push({k:'s',s:st[si++]});
+    if(k%3===0&&ii<IDEAS.length)out.push({k:'idea',x:IDEAS[ii++]})});
+  while(si<st.length)out.push({k:'s',s:st[si++]});while(ii<IDEAS.length)out.push({k:'idea',x:IDEAS[ii++]});
+  return out}
+function stepDone(p){if(p.k==='l')return lessonProg(p.l).pct>=.6;if(p.k==='s')return planProg(p.s.id).pct>=.6;if(p.k==='tech'){var s=S.tech[p.x.id];return !!(s&&s.box>=2)}var q=S.ideas[p.x.id];return !!(q&&q.box>=2)}
+function curStep(){var P=coursePath();return P.filter(function(p){return !stepDone(p)})[0]||P[0]}
+function stepName(p){return p.k==='l'?tt(p.l.t):p.k==='s'?tt(p.s.t):p.k==='tech'?tt(p.x.t):tt(p.x.t)}
+function stepProg(p){if(p.k==='l'){var q=lessonProg(p.l);return [q.ok,q.n]}if(p.k==='s'){var r=planProg(p.s.id);return [r.ok,r.n]}return [stepDone(p)?1:0,1]}
+function courseProg(){var P=coursePath();return {ok:P.filter(stepDone).length,n:P.length}}
+function courseItems(){var p=curStep();
+  if(p.k==='l')return lessonItems(p.l,6);
+  if(p.k==='s'){var it=stratItems(p.s.id,5);return it.length?it:plansOf(p.s.id).slice(0,5).map(function(_,k){return {t:'plan',s:p.s.id,k:k}})}
+  if(p.k==='tech')return [{t:'play',id:p.x.id}];
+  return [{t:'idea',id:p.x.id}];
 }
-function renderCourse(){var b=$('bCourse');if(!b)return;var cl=curLesson(),p=lessonProg(cl),cp=courseProg();
-  $('courseSub').textContent=t('courseSub',tt(cl.t),p.ok,p.n,cp.ok,cp.n);$('courseBar').style.width=Math.round(cp.ok/Math.max(1,cp.n)*100)+'%';
+function renderCourse(){var b=$('bCourse');if(!b)return;var p=curStep(),pr=stepProg(p),cp=courseProg(),kind=t('ck_'+p.k);
+  $('courseSub').textContent=t('courseSub2',kind,stepName(p),pr[0],pr[1],cp.ok,cp.n);$('courseBar').style.width=Math.round(cp.ok/Math.max(1,cp.n)*100)+'%';
   b.onclick=function(){startSession(courseItems(),'learn');X.back='home'};
 }
 function renderWeakScr(){
