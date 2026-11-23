@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=102;
+var APP_VER=103;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -684,6 +684,7 @@ function renderItem(){
   $('trCount').textContent=(X.i+1)+'/'+X.items.length;$('trProg').style.width=(X.i/X.items.length*100)+'%';
   ['fb','why','choices','note'].forEach(function(id){$(id).innerHTML='';$(id).className=id==='fb'?'feedback':id;$(id).hidden=id!=='fb'});
   $('line').textContent='';$('trEnd').hidden=true;$('trBody').hidden=false;$('boardwrap').hidden=false;$('choices').classList.remove('grid');boardEl.classList.remove('nocoords');B.onMove=null;
+  if(X.past===X.i&&X.revs&&X.revs[X.i]&&X.revs[X.i].length){X.past=null;cur.revs=X.revs[X.i];cur.past=true;cur.answered=true;setBtns({});showRev(cur.revs.length-1);return}
   if(it.t==='card'){var c=S.cards[it.id];if(!c){skip();return}cur.card=c;loadCard(c)}
   else if(it.t==='line'){if(!REP[it.op]||!REP[it.op].lines[it.i]||REP[it.op].lines[it.i].off){skip();return}loadLine(it.op,it.i)}
   else if(it.t==='opun'){if(!REP[it.op]||!REP[it.op].lines[it.i]||typeof REP[it.op].lines[it.i].key!=='number'){skip();return}loadOPun(it.op,it.i)}
@@ -711,8 +712,27 @@ function itemDone(ok){
   if(cur.anPath){var p=cur.anPath();if(p){var arr=B.arrows;anSet(p.start,p.moves,p.i==null?p.moves.length:p.i,p.base);if(p.keepArrows){B.arrows=arr;drawBoard()}B.onMove=anMove}}
   $('bNext').focus({preventScroll:true});
 }
-$('bPrevEx').onclick=function(){if(X.i>0){X.i--;saveDaily();renderItem()}};
-$('bNext').onclick=function(){X.i++;saveDaily();renderItem()};
+/* Nov 23 ("I tap Next by mistake because the buttons move; and Previous shows a NEW set, not the position I just saw"):
+   (1) every reviewed drill position is kept (cur.revs, X.revs per item) and ‹ Anterior steps back through them — same positions, with
+   their solution — before going to the previous item; (2) a next-button ignores taps for 0.7 s after it appears (tapLock). */
+function tapLock(el){if(!el)return;el.disabled=true;setTimeout(function(){el.disabled=false},700)}
+function keepRevs(){if(cur&&cur.revs&&cur.revs.length&&cur.it&&cur.it.t==='drill'&&!cur.past){X.revs=X.revs||{};X.revs[X.i]=cur.revs}}
+function showRev(i){var r=cur.revs[i];if(!r)return;cur.revI=i;dclkPause();cur.answered=true;anOff();$('trBody').classList.add('answered');
+  setBoard(r.fen,r.flip);anSet(r.fen,r.moves,Math.min(1,r.moves.length),0);B.onMove=anMove;if(r.arrows&&r.arrows.length){B.arrows=r.arrows;drawBoard()}
+  $('fb').className='feedback '+(r.ok?'good':'bad');$('fb').innerHTML='<span class="pill revp">'+t('revPast',i+1,cur.revs.length)+'</span> '+r.html;
+  if(r.why){$('why').innerHTML='';showWhy([r.why])}else $('why').hidden=true;
+  var last=i>=cur.revs.length-1,ch=$('choices');ch.hidden=false;ch.classList.remove('grid');
+  ch.innerHTML='<button class="btn primary" id="bRevNext">'+(last&&!cur.past&&!cur.inPause?t('revBack'):t('flashNextR'))+'</button>';tapLock($('bRevNext'));
+  $('bRevNext').onclick=function(){
+    if(!last){showRev(i+1);return}
+    if(cur.past){X.i++;saveDaily();renderItem();return}
+    anOff();cur.answered=false;cur.revI=null;cur.inPause=false;$('trBody').classList.remove('answered');B.onMove=null;B.arrows=[];$('why').hidden=true;
+    if(cur.revNext)cur.revNext();dclkResume()};
+}
+$('bPrevEx').onclick=function(){
+  if(cur&&cur.revs&&cur.revs.length){var i=cur.revI!=null?cur.revI-1:cur.inPause?cur.revs.length-2:cur.revs.length-1;if(i>=0){showRev(i);return}}
+  if(X.i>0){keepRevs();X.i--;if(X.items[X.i].t==='drill'&&X.revs&&X.revs[X.i])X.past=X.i;saveDaily();renderItem()}};
+$('bNext').onclick=function(){keepRevs();X.i++;saveDaily();renderItem()};
 function endSession(){closeItemTime();
   $('trBody').hidden=true;$('trEnd').hidden=false;$('trProg').style.width='100%';
   $('trEndT').textContent=X.items.length?t('sessDone'):t('sessEmpty');
@@ -723,7 +743,7 @@ function endSession(){closeItemTime();
 $('bEndHome').onclick=function(){go(X.back||'home')};
 function setBtns(o){
   var map={hint:'bHint',show:'bShow',bad:'bBad',good:'bGood',next:'bNext',retry:'bRetry',scan:'bScan',yours:'bYours'};
-  Object.keys(map).forEach(function(k){$(map[k]).hidden=!o[k]});
+  var wasHidden=$('bNext').hidden;Object.keys(map).forEach(function(k){$(map[k]).hidden=!o[k]});if(o.next&&wasHidden)tapLock($('bNext'));
 }
 function kindPill(k,extra){var m={mine:['kMine','mist'],punish:['kPun','good'],rep:['kRep','rep'],name:['kName','rep'],puz:['kPuz','idea'],trap:['kTrap','blun'],idea:['kIdea','idea']}[k];
   return '<span class="pill '+m[1]+'">'+t(m[0])+'</span>'+(extra?' <span class="small">'+extra+'</span>':'')}
@@ -1560,11 +1580,13 @@ function defNext(){
 }
 /* shared pause after an answer: pieces stay, analysis bar on, threat/answer arrows, "Next ▶" */
 function pauseReview(fen,moves,ok,html,arrows,next,why){
-  dclkPause();cur.answered=true;$('trBody').classList.add('answered');if(why){$('why').innerHTML='';showWhy([why])}else{$('why').hidden=true}anSet(fen,moves,Math.min(1,moves.length),0);B.onMove=anMove;
+  dclkPause();cur.answered=true;cur.inPause=true;cur.revI=null;cur.revs=cur.revs||[];cur.revs.push({fen:fen,moves:moves.slice(),ok:ok,html:html,arrows:(arrows||[]).slice(),why:why,flip:B.flip});cur.revNext=next;$('bPrevEx').disabled=false;
+  $('trBody').classList.add('answered');if(why){$('why').innerHTML='';showWhy([why])}else{$('why').hidden=true}anSet(fen,moves,Math.min(1,moves.length),0);B.onMove=anMove;
   if(arrows&&arrows.length){B.arrows=arrows;drawBoard()}
   $('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=html+' <span class="small">'+t('flashReview')+'</span>';
   var ch=$('choices');ch.hidden=false;ch.classList.remove('grid');ch.innerHTML='<button class="btn primary" id="bPauseNext">'+t('flashNextR')+'</button>';
-  $('bPauseNext').onclick=function(){anOff();cur.answered=false;$('trBody').classList.remove('answered');B.onMove=null;B.arrows=[];$('why').hidden=true;next();dclkResume()};
+  tapLock($('bPauseNext'));
+  $('bPauseNext').onclick=function(){anOff();cur.answered=false;cur.inPause=false;$('trBody').classList.remove('answered');B.onMove=null;B.arrows=[];$('why').hidden=true;next();dclkResume()};
 }
 /* Game mode: no hints at all. A mix of positions — a threat against you, a tactic for you, or nothing special (a quiet move from his own games).
    He is told nothing; he has to find out what is going on, like in a real game. */
