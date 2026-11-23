@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=96;
+var APP_VER=97;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -432,11 +432,11 @@ function buildToday(n){
   /* Nov 19: he wants the notation drill back in the daily ("it's good for me, I like it"): notation every day + coordinates or square names
      rotating; the course lesson puzzle moved to its own home button (courseItems) */
   var bas=dd%2?'coord':'sqname';
-  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},{t:'drill',f:'nota',n:3},C(pun[po])].concat(opunPick(2),[{t:'drill',f:'defend',n:2},{t:'drill',f:'game',n:3},dayDrill(dd)?{t:'drill',f:dayDrill(dd),n:3}:null,C(mine[o]),C(pun[po+1]),   /* Nov 20: coordinates/square names dropped — calc, trade, judge and notation already read squares in notation */
+  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},{t:'drill',f:'nota',n:3},C(pun[po])].concat(opunPick(2),pindItems(2),[{t:'drill',f:'defend',n:2},{t:'drill',f:'game',n:3},dayDrill(dd)?{t:'drill',f:dayDrill(dd),n:3}:null,C(mine[o]),C(pun[po+1]),   /* Nov 20: coordinates/square names dropped — calc, trade, judge and notation already read squares in notation */
       dd%2?L(pickL[n>1?1:0]||pickL[0]):r1,C(mine[o+1]),C(pun[po+2]),extra]).filter(Boolean);   /* Nov 23: + 2 'punish in the opening' moments from his lines */
   while(it.length>5&&estSec(it)>720)it.splice(it.length-1,1);
   while(it.length&&it[it.length-1].t==='theory')it.pop();
-  S.daily={v:16,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
+  S.daily={v:17,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
 }
 /* how long things take him: median of his last logged times per type, defaults otherwise */
 var EST={opun:30,drill:75,line:80,puz:60,card:90,plan:60,quiz:25,idea:60,name:25,theory:40,ftheory:40,stheory:40,play:150};
@@ -449,7 +449,7 @@ function estOne(it){
   return a.length>=4?med(a):(EST[it.t]||60);
 }
 function estSec(items){return items.reduce(function(a,x){return a+estOne(x)},0)}
-function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<16&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
+function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<17&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
 
 /* ---------- routing / screens ---------- */
 var SCREENS=['home','train','rep','learn','progress','data','weak'],LISTS={mine:1,punish:1},TABS={weak:'weakScrT',home:'navToday',rep:'navRep',learn:'navLearn',progress:'navProg',data:'tData'};
@@ -532,6 +532,9 @@ function weakTheme(k){
    the weak-spots screen takes the other two, so the two screens never run the same drill on the same day */
 function dayDrill(dd){var o=['trade','conv','convfast'].filter(function(f){return f==='trade'?window.TRADES:window.CONV});return o.length?o[dd%o.length]:null}
 function todayDrill(){return S.daily&&padKey(S.daily.date)===today()?(S.daily.items||[]).filter(function(x){return x.t==='drill'&&/^(trade|conv|convfast)$/.test(x.f)}).map(function(x){return x.f}):[]}
+/* Nov 23 ("I don't take a pawn with my queen because it looks defended… but the defender is pinned to the king"):
+   clavados.js = Lichess puzzles whose first move captures something whose defender cannot recapture because it is pinned */
+function pindItems(n){var o=[];if(!WEAKL.pind)return o;if(!S.seenLesson['w_pind'])o.push({t:'theory',l:'w_pind'});return o.concat(weakPuz('pind',n))}
 function weakItems(){
   var R=weakRank().filter(function(x){return x.k!=='calc'}),a=R[0]&&R[0].k,b=R[1]&&R[1].k;
   var td=todayDrill(),dr=['trade','convfast','conv'].filter(function(f){return td.indexOf(f)<0&&(f==='trade'?window.TRADES:window.CONV)}).slice(0,2),it=[];
@@ -579,13 +582,14 @@ function renderCourse(){var b=$('bCourse');if(!b)return;var p=curStep(),pr=stepP
 function renderWeakScr(){
   var el=$('weakList');if(!el)return;var R=weakRank();
   $('bWeakGo').onclick=function(){startSession(weakItems().items,'weak')};
-  var js=S.drill.judge,cs=S.drill.conv,thrown=(window.CONV||[]).filter(function(r){return r[4]}).length,ts=S.drill.trade;el.innerHTML=(window.TRADES?'<button class="crow critrow" id="bTrade" type="button"><span class="ci">⚖</span><span class="ct"><b>'+t('trT')+'</b><small>'+t('trRow')+(ts&&ts.tot?' · '+t('jTot',ts.tot):'')+'</small></span><span class="go">›</span></button>':'')+(window.CONV?'<button class="crow critrow" id="bConvF" type="button"><span class="ci">⏱</span><span class="ct"><b>'+t('cvTfast')+'</b><small>'+t('cvRowFast')+'</small></span><span class="go">›</span></button>':'')+(window.CONV?'<button class="crow critrow" id="bConv" type="button"><span class="ci">🏁</span><span class="ct"><b>'+t('cvT')+'</b><small>'+t('cvRow',thrown)+(cs&&cs.tot?' · '+t('jTot',cs.tot):'')+'</small></span><span class="go">›</span></button>':'')+'<button class="crow critrow" id="bJudge" type="button"><span class="ci">🤔</span><span class="ct"><b>'+t('jT')+'</b><small>'+t('jRow')+(js&&js.tot?' · '+t('jTot',js.tot):'')+'</small></span><span class="go">›</span></button>'+R.map(function(o,i){var k=o.k,pr=weakProg(k),sub,pct;
+  var js=S.drill.judge,cs=S.drill.conv,thrown=(window.CONV||[]).filter(function(r){return r[4]}).length,ts=S.drill.trade;el.innerHTML=(window.TRADES?'<button class="crow critrow" id="bTrade" type="button"><span class="ci">⚖</span><span class="ct"><b>'+t('trT')+'</b><small>'+t('trRow')+(ts&&ts.tot?' · '+t('jTot',ts.tot):'')+'</small></span><span class="go">›</span></button>':'')+(window.CONV?'<button class="crow critrow" id="bConvF" type="button"><span class="ci">⏱</span><span class="ct"><b>'+t('cvTfast')+'</b><small>'+t('cvRowFast')+'</small></span><span class="go">›</span></button>':'')+(window.CONV?'<button class="crow critrow" id="bConv" type="button"><span class="ci">🏁</span><span class="ct"><b>'+t('cvT')+'</b><small>'+t('cvRow',thrown)+(cs&&cs.tot?' · '+t('jTot',cs.tot):'')+'</small></span><span class="go">›</span></button>':'')+'<button class="crow critrow" id="bJudge" type="button"><span class="ci">🤔</span><span class="ct"><b>'+t('jT')+'</b><small>'+t('jRow')+(js&&js.tot?' · '+t('jTot',js.tot):'')+'</small></span><span class="go">›</span></button>'+(WEAKL.pind?(function(){var pr=weakProg('pind');return '<button class="crow critrow" id="bPind" type="button"><span class="ci">📌</span><span class="ct"><b>'+t('wt_pind')+'</b><small>'+t('pindRow',pr.ok,pr.n)+'</small></span><span class="go">›</span></button>'})():'')+R.map(function(o,i){var k=o.k,pr=weakProg(k),sub,pct;
     if(k==='calc'){var ct=calcTrend();sub=t('calcLvl',calcLvl())+(ct?' · '+t('calcAvg',ct.last):'')+(o.timeouts?' · '+t('wTimeouts',o.timeouts):'');pct=(calcLvl()-1)/4*100}
     else{sub=t('wSub',pr.cards,pr.ok,pr.n);pct=Math.round(pr.ok/Math.max(1,pr.n)*100)}
     return '<button class="crow critrow" data-wk="'+k+'" type="button"><span class="ci">'+(i+1)+'</span><span class="ct"><b>'+esc(t('wt_'+k))+'</b><small>'+sub+'</small><span class="bar2"><span style="width:'+pct+'%"></span></span></span><span class="go">›</span></button>'}).join('');
   if($('bTrade'))$('bTrade').onclick=function(){startSession([S.seenLesson.f_trade?null:{t:'ftheory',f:'trade'},{t:'drill',f:'trade',n:8}].filter(Boolean),'weak')};
   if($('bConvF'))$('bConvF').onclick=function(){startSession([{t:'drill',f:'convfast',n:8}],'weak')};
   if($('bConv'))$('bConv').onclick=function(){startSession([S.seenLesson.f_conv?null:{t:'ftheory',f:'conv'},{t:'drill',f:'conv',n:8}].filter(Boolean),'weak')};
+  if($('bPind'))$('bPind').onclick=function(){startSession(pindItems(10),'weak')};
   $('bJudge').onclick=function(){startSession([S.seenLesson.f_judge?null:{t:'ftheory',f:'judge'},{t:'drill',f:'judge',n:8}].filter(Boolean),'weak')};
   el.querySelectorAll('[data-wk]').forEach(function(x){x.onclick=function(){var k=x.getAttribute('data-wk');startSession(weakTheme(k),'weak')}});
 }
@@ -1937,7 +1941,7 @@ function loadTheory(l){
   $('prompt').innerHTML=theoryHtml(kindPill('idea',esc(tt(lessonUnit(l)))),tt(l.t),l.body);
   setBtns({next:true});cur.answered=true;
 }
-function lessonUnit(l){return CURSO.units.filter(function(u){return u.id===l.unit})[0].t}
+function lessonUnit(l){var u=CURSO.units.filter(function(u){return u.id===l.unit})[0];return u?u.t:{es:'Puntos débiles',en:'Weak spots'}}   /* weak-bank lessons (w_*) have no unit */
 /* puzzle: FEN is before the opponent's move; m[0] is played automatically, then you alternate */
 function loadPuz(l,p){
   seenPuz(p.id);
