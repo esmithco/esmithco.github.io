@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=100;
+var APP_VER=101;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -432,11 +432,11 @@ function buildToday(n){
   /* Nov 19: he wants the notation drill back in the daily ("it's good for me, I like it"): notation every day + coordinates or square names
      rotating; the course lesson puzzle moved to its own home button (courseItems) */
   var bas=dd%2?'coord':'sqname';
-  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},{t:'drill',f:'nota',n:3},C(pun[po])].concat(opunPick(2),pindItems(2),[{t:'drill',f:'defend',n:2},{t:'drill',f:'game',n:3},window.GOOD&&GOOD.length?{t:'drill',f:'mygames',n:2}:null,dayDrill(dd)?{t:'drill',f:dayDrill(dd),n:3}:null,C(mine[o]),C(pun[po+1]),   /* Nov 20: coordinates/square names dropped — calc, trade, judge and notation already read squares in notation */
+  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},{t:'drill',f:'nota',n:3},C(pun[po])].concat(opunPick(2),pindItems(2),bankItems('sac',1),[{t:'drill',f:'defend',n:2},{t:'drill',f:'game',n:3},window.GOOD&&GOOD.length?{t:'drill',f:'mygames',n:2}:null,dayDrill(dd)?{t:'drill',f:dayDrill(dd),n:3}:null,C(mine[o]),C(pun[po+1]),   /* Nov 20: coordinates/square names dropped — calc, trade, judge and notation already read squares in notation */
       dd%2?L(pickL[n>1?1:0]||pickL[0]):r1,C(mine[o+1]),C(pun[po+2]),extra]).filter(Boolean);   /* Nov 23: + 2 'punish in the opening' moments from his lines */
   while(it.length>5&&estSec(it)>720)it.splice(it.length-1,1);
   while(it.length&&it[it.length-1].t==='theory')it.pop();
-  S.daily={v:18,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
+  S.daily={v:19,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
 }
 /* how long things take him: median of his last logged times per type, defaults otherwise */
 var EST={opun:30,drill:75,line:80,puz:60,card:90,plan:60,quiz:25,idea:60,name:25,theory:40,ftheory:40,stheory:40,play:150};
@@ -449,7 +449,7 @@ function estOne(it){
   return a.length>=4?med(a):(EST[it.t]||60);
 }
 function estSec(items){return items.reduce(function(a,x){return a+estOne(x)},0)}
-function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<18&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
+function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<19&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
 
 /* ---------- routing / screens ---------- */
 var SCREENS=['home','train','rep','learn','progress','data','weak'],LISTS={mine:1,punish:1},TABS={weak:'weakScrT',home:'navToday',rep:'navRep',learn:'navLearn',progress:'navProg',data:'tData'};
@@ -534,7 +534,9 @@ function dayDrill(dd){var o=['trade','conv','convfast','conv'].filter(function(f
 function todayDrill(){return S.daily&&padKey(S.daily.date)===today()?(S.daily.items||[]).filter(function(x){return x.t==='drill'&&/^(trade|conv|convfast)$/.test(x.f)}).map(function(x){return x.f}):[]}
 /* Nov 23 ("I don't take a pawn with my queen because it looks defended… but the defender is pinned to the king"):
    clavados.js = Lichess puzzles whose first move captures something whose defender cannot recapture because it is pinned */
-function pindItems(n){var o=[];if(!WEAKL.pind)return o;if(!S.seenLesson['w_pind'])o.push({t:'theory',l:'w_pind'});return o.concat(weakPuz('pind',n))}
+function pindItems(n){return bankItems('pind',n)}
+/* theory the first time, then never-seen puzzles of a bank (pind = pinned defender, sac = sacrifices) */
+function bankItems(k,n){var o=[];if(!WEAKL[k])return o;if(!S.seenLesson['w_'+k])o.push({t:'theory',l:'w_'+k});return o.concat(weakPuz(k,n))}
 function weakItems(){
   var R=weakRank().filter(function(x){return x.k!=='calc'}),a=R[0]&&R[0].k,b=R[1]&&R[1].k;
   var td=todayDrill(),dr=['trade','convfast','conv'].filter(function(f){return td.indexOf(f)<0&&(f==='trade'?window.TRADES:window.CONV)}).slice(0,2),it=[];
@@ -582,7 +584,7 @@ function renderCourse(){var b=$('bCourse');if(!b)return;var p=curStep(),pr=stepP
 function renderWeakScr(){
   var el=$('weakList');if(!el)return;var R=weakRank();
   $('bWeakGo').onclick=function(){startSession(weakItems().items,'weak')};
-  var js=S.drill.judge,cs=S.drill.conv,thrown=(window.CONV||[]).filter(function(r){return r[4]}).length,ts=S.drill.trade;el.innerHTML=(window.TRADES?'<button class="crow critrow" id="bTrade" type="button"><span class="ci">⚖</span><span class="ct"><b>'+t('trT')+'</b><small>'+t('trRow')+(ts&&ts.tot?' · '+t('jTot',ts.tot):'')+'</small></span><span class="go">›</span></button>':'')+(window.CONV?'<button class="crow critrow" id="bConvF" type="button"><span class="ci">⏱</span><span class="ct"><b>'+t('cvTfast')+'</b><small>'+t('cvRowFast')+'</small></span><span class="go">›</span></button>':'')+(window.CONV?'<button class="crow critrow" id="bConv" type="button"><span class="ci">🏁</span><span class="ct"><b>'+t('cvT')+'</b><small>'+t('cvRow',thrown)+(cs&&cs.tot?' · '+t('jTot',cs.tot):'')+'</small></span><span class="go">›</span></button>':'')+'<button class="crow critrow" id="bJudge" type="button"><span class="ci">🤔</span><span class="ct"><b>'+t('jT')+'</b><small>'+t('jRow')+(js&&js.tot?' · '+t('jTot',js.tot):'')+'</small></span><span class="go">›</span></button>'+(window.GOOD&&GOOD.length?'<button class="crow critrow" id="bMyG" type="button"><span class="ci">🔁</span><span class="ct"><b>'+t('mgT')+'</b><small>'+t('mgRow')+'</small></span><span class="go">›</span></button>':'')+(WEAKL.pind?(function(){var pr=weakProg('pind');return '<button class="crow critrow" id="bPind" type="button"><span class="ci">📌</span><span class="ct"><b>'+t('wt_pind')+'</b><small>'+t('pindRow',pr.ok,pr.n)+'</small></span><span class="go">›</span></button>'})():'')+R.map(function(o,i){var k=o.k,pr=weakProg(k),sub,pct;
+  var js=S.drill.judge,cs=S.drill.conv,thrown=(window.CONV||[]).filter(function(r){return r[4]}).length,ts=S.drill.trade;el.innerHTML=(window.TRADES?'<button class="crow critrow" id="bTrade" type="button"><span class="ci">⚖</span><span class="ct"><b>'+t('trT')+'</b><small>'+t('trRow')+(ts&&ts.tot?' · '+t('jTot',ts.tot):'')+'</small></span><span class="go">›</span></button>':'')+(window.CONV?'<button class="crow critrow" id="bConvF" type="button"><span class="ci">⏱</span><span class="ct"><b>'+t('cvTfast')+'</b><small>'+t('cvRowFast')+'</small></span><span class="go">›</span></button>':'')+(window.CONV?'<button class="crow critrow" id="bConv" type="button"><span class="ci">🏁</span><span class="ct"><b>'+t('cvT')+'</b><small>'+t('cvRow',thrown)+(cs&&cs.tot?' · '+t('jTot',cs.tot):'')+'</small></span><span class="go">›</span></button>':'')+'<button class="crow critrow" id="bJudge" type="button"><span class="ci">🤔</span><span class="ct"><b>'+t('jT')+'</b><small>'+t('jRow')+(js&&js.tot?' · '+t('jTot',js.tot):'')+'</small></span><span class="go">›</span></button>'+(window.GOOD&&GOOD.length?'<button class="crow critrow" id="bMyG" type="button"><span class="ci">🔁</span><span class="ct"><b>'+t('mgT')+'</b><small>'+t('mgRow')+'</small></span><span class="go">›</span></button>':'')+(WEAKL.sac?(function(){var pr=weakProg('sac');return '<button class="crow critrow" id="bSac" type="button"><span class="ci">💥</span><span class="ct"><b>'+t('wt_sac')+'</b><small>'+t('sacRow',pr.ok,pr.n)+'</small></span><span class="go">›</span></button>'})():'')+(WEAKL.pind?(function(){var pr=weakProg('pind');return '<button class="crow critrow" id="bPind" type="button"><span class="ci">📌</span><span class="ct"><b>'+t('wt_pind')+'</b><small>'+t('pindRow',pr.ok,pr.n)+'</small></span><span class="go">›</span></button>'})():'')+R.map(function(o,i){var k=o.k,pr=weakProg(k),sub,pct;
     if(k==='calc'){var ct=calcTrend();sub=t('calcLvl',calcLvl())+(ct?' · '+t('calcAvg',ct.last):'')+(o.timeouts?' · '+t('wTimeouts',o.timeouts):'');pct=(calcLvl()-1)/4*100}
     else{sub=t('wSub',pr.cards,pr.ok,pr.n);pct=Math.round(pr.ok/Math.max(1,pr.n)*100)}
     return '<button class="crow critrow" data-wk="'+k+'" type="button"><span class="ci">'+(i+1)+'</span><span class="ct"><b>'+esc(t('wt_'+k))+'</b><small>'+sub+'</small><span class="bar2"><span style="width:'+pct+'%"></span></span></span><span class="go">›</span></button>'}).join('');
@@ -590,6 +592,7 @@ function renderWeakScr(){
   if($('bConvF'))$('bConvF').onclick=function(){startSession([{t:'drill',f:'convfast',n:8}],'weak')};
   if($('bConv'))$('bConv').onclick=function(){startSession([S.seenLesson.f_conv?null:{t:'ftheory',f:'conv'},{t:'drill',f:'conv',n:8}].filter(Boolean),'weak')};
   if($('bMyG'))$('bMyG').onclick=function(){startSession([{t:'drill',f:'mygames',n:8}],'weak')};
+  if($('bSac'))$('bSac').onclick=function(){startSession(bankItems('sac',10),'weak')};
   if($('bPind'))$('bPind').onclick=function(){startSession(pindItems(10),'weak')};
   $('bJudge').onclick=function(){startSession([S.seenLesson.f_judge?null:{t:'ftheory',f:'judge'},{t:'drill',f:'judge',n:8}].filter(Boolean),'weak')};
   el.querySelectorAll('[data-wk]').forEach(function(x){x.onclick=function(){var k=x.getAttribute('data-wk');startSession(weakTheme(k),'weak')}});
@@ -1566,7 +1569,9 @@ function loadGame(){
   if(cur.it&&cur.it.f==='mygames'){   /* Nov 23 (his idea): positions from HIS games, unlabeled — the moments he found the only good move
      (buenas.js) mixed with his mistake positions. Repeating a good move proves it was not luck. */
     var N0=(cur.it&&cur.it.n)||8,sh0=function(a){return a.sort(function(){return Math.random()-.5})},M=[];
-    var goods=freshFirst((window.GOOD||[]).slice(),function(r){return 'gd:'+r[0]}).slice(0,Math.ceil(N0/2)).map(function(r){return {type:'good',r:r}});
+    var gAll=freshFirst((window.GOOD||[]).slice(),function(r){return 'gd:'+r[0]}),gSac=gAll.filter(function(r){return r[7]}),gOk=gAll.filter(function(r){return !r[7]});
+    /* at least one sacrifice he missed per round (Nov 23: "a good sacrifice is really difficult to see") */
+    var goods=(gSac.length?[gSac[0]]:[]).concat(gOk).slice(0,Math.ceil(N0/2)).map(function(r){return {type:'good',r:r}});
     var mines=freshFirst(cardsOf('mine').filter(function(c){return c.pvBad&&c.line&&c.line.length}),function(c){return c.id}).slice(0,N0-goods.length).map(function(c){return {type:'mine',c:c}});
     M=sh0(goods.concat(mines));cur.game={list:M,n:0,ok:0,total:M.length,t0:now()};setBar(null,false);setBtns({});readyGate(t('mgT'),t('mgQ'),'45',gameNext);return}
   var L=[],shuf=function(a){return a.sort(function(){return Math.random()-.5})};
@@ -1601,7 +1606,7 @@ function gameNext(){
       $('fb').className='feedback';$('fb').textContent=t('thinking');
       analyse(B.chess.fen(),1200).then(function(r){fin(r?wp(-r.s)>=wp(c.s0)-8:false)});return}
     if(x.type==='good'){var g=x.r,gm='<b class="mono">'+esc(g[2])+'</b>',ga=arrowFor(fen,g[2],'#0E9488'),gwhy=fold(t('stBest',esc(g[2])),story(fen,g[3].split(' '),me,5)),
-        gfin=function(ok,pv){done(ok,ok?'✓ '+t('gameGoodOk',gm):'✗ '+t('gameGoodBad',gm),ok?[]:(ga?[ga]:[]),ok?g[3].split(' '):[mv.san].concat(pv||[]),gwhy)};
+        gfin=function(ok,pv){done(ok,ok?'✓ '+(g[7]?t('gameSacOk',gm,'<b class="mono">'+esc(g[8])+'</b>'):t('gameGoodOk',gm)):'✗ '+(g[7]?t('gameSacBad',gm,'<b class="mono">'+esc(g[8])+'</b>'):t('gameGoodBad',gm)),ok?[]:(ga?[ga]:[]),ok?g[3].split(' '):[mv.san].concat(pv||[]),gwhy)};
       if(mv.san===g[2]||(g[6]||[]).indexOf(mv.san)>=0){gfin(true);return}
       $('fb').className='feedback';$('fb').textContent=t('thinking');
       analyse(B.chess.fen(),1500).then(function(r){gfin(r?wp(-r.s)>=wp(g[1])-6:false,r&&r.pv?r.pv.slice(0,4):null)});return}
