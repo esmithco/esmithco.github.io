@@ -4,12 +4,12 @@
 window.OVIS={
 london:{
  classic:[
-  ['Tu pirámide de peones: fuerte y segura.','Your pawn pyramid: strong and safe.','','c3 g,d4 g,e3 g'],
-  ['Si cambia el alfil (…Bxg3), come con hxg3.','If they trade bishops (…Bxg3), take with hxg3.','d6 g3 r,h2 g3 g','h1 g'],
-  ['Enroca y salta al caballo a e5.','Castle and jump your knight to e5.','e1 g1 g,f3 e5 g','e5 g'],
-  ['Luego f4 sostiene al caballo.','Then f4 supports the knight.','f2 f4 g','e5 g'],
-  ['Tu alfil mira h7: ataca su rey.','Your bishop looks at h7: attack the king.','d3 h7 g','h7 g'],
-  ['Cuidado: …Qb6 ataca b2 y d4.','Watch out: …Qb6 hits b2 and d4.','d8 b6 r','b2 r,d4 r']],
+  ['Tu pirámide c3-d4-e3: fuerte y segura.','Your c3-d4-e3 pyramid: strong and safe.','','c3 g,d4 g,e3 g'],
+  ['Ne5: la casilla clave del Londres.','Ne5: the key square of the London.','','e5 g'],
+  ['Nd2 cuida e4 y luego salta a f3.','Nd2 guards e4 and then jumps to f3.','d2 f3 g','e4 g'],
+  ['Pase mágico: Qf3 y Qh3 contra h7.','Magic route: Qf3 and Qh3 against h7.','d1 f3 g,f3 h3 g','h7 g'],
+  ['Tu alfil de d3 también mira h7.','Your d3 bishop also looks at h7.','d3 h7 g','h7 g'],
+  ['Si …c4 echa tu alfil: a c2, sigue mirando h7.','If …c4 kicks your bishop: to c2, it still looks at h7.','c5 c4 r,d3 c2 g','c2 g']],
  qb6:[
   ['Su dama ataca b2.','Their queen attacks b2.','b6 b2 r','b2 r'],
   ['Tu dama defiende y no pierde tiempo.','Your queen defends without losing time.','c2 b2 g','b2 g'],
