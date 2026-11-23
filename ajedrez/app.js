@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=101;
+var APP_VER=102;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -370,7 +370,10 @@ function gradeObj(o,ok){
 }
 /* a card worth practising: visible within a move or two, and (own mistakes) from a position that was still playable —
    if the best move still leaves him clearly lost (below −1.0), there is nothing to learn there */
-function usable(c){return !c.hide&&visOf(c)!=='deep'&&!(c.kind==='mine'&&(c.s0||0)<-100)}
+/* Nov 23 (he was asked to judge a forced move — the only legal reply to a check — and told it was 'a mistake'): a position is an
+   exercise only if there is a real choice: not in check with 3+ legal moves (cached per FEN) */
+var RC={};function realChoice(fen){if(RC[fen]!=null)return RC[fen];var ok=false;try{var c=new Chess(fen);ok=!c.in_check()&&c.moves().length>=3}catch(e){}return RC[fen]=ok}
+function usable(c){return !c.hide&&visOf(c)!=='deep'&&!(c.kind==='mine'&&(c.s0||0)<-100)&&(!c.line||realChoice(fenOf(c.line)))}
 function cardsOf(kind){return Object.keys(S.cards).map(function(k){return S.cards[k]}).filter(function(c){return c.kind===kind&&usable(c)})}
 function prio(c){return (c.rep?1e6:0)+(c.kind==='punish'?(c.mat>=1?2e5:0)+(c.missed?1e5:0):(c.trap?2e5:0)+(c.sev==='blunder'?1e5:0))+(c.count||1)*5e4+(c.date||0)/1e5}
 function dueList(kind,onlyRep){var sn=S.seen||{},rec=now()-20*36e5;
@@ -1526,7 +1529,7 @@ function oppThreats(c){
 function defMake(it){
   var a=afterFirst(it.p);if(!a.m||a.c.in_check())return null;var th=oppThreats(a.c),kind=th.mates.length?'mate':th.free.length?'hang':null;if(!kind)return null;
   var f=a.c.fen().split(' ');f[1]=f[1]==='w'?'b':'w';f[3]='-';var d=new Chess();if(!d.load(f.join(' '))||d.game_over())return null;
-  var ms=d.moves({verbose:true}),good=[];
+  var ms=d.moves({verbose:true}),good=[];if(d.in_check()||ms.length<3)return null;
   ms.forEach(function(m){d.move(m.san);var ok=d.in_checkmate();if(!ok&&!d.game_over()){var t2=oppThreats(d);ok=!t2.mates.length&&t2.max-(m.captured?VAL[m.captured]:0)<2}d.undo();if(ok)good.push(m.san)});
   if(!good.length||good.length>ms.length*.6)return null;
   return {d:d,kind:kind,th:kind==='mate'?th.mates:th.free,good:good,pid:it.p.id};
@@ -1742,12 +1745,12 @@ function judgeList(N){
   cs.slice(i,i+nGood).forEach(function(c){var fen=fenOf(c.line);out.push({src:'cardg',fen:fen,san:c.best,bad:false,cont:(c.pvBest||[]).slice(1),last:c.line[c.line.length-1],prev:fenOf(c.line.slice(0,-1)),me:c.side,c:c})});
   var ls=CURSO.lessons.filter(function(l){return JL[l.id]}).concat(['forkd','lines','matek'].map(function(k){return WEAKL[k]}).filter(Boolean)),pz=[];
   ls.forEach(function(l){var key=l.weak?'w_'+l.weak:l.id;l.p.forEach(function(p){if(p.r<=1500&&p.m.length>=2)pz.push({l:l,p:p,r:JL[key]})})});
-  freshFirst(pz,function(x){return x.p.id}).slice(0,nPuz).forEach(function(x){var c0=new Chess(x.p.fen);out.push({src:'puz',p0:x.p.id,fen:x.p.fen,san:x.p.m[0],bad:true,r:x.r,cont:x.p.m.slice(1),me:c0.turn(),l:x.l})});
+  freshFirst(pz.filter(function(x){return realChoice(x.p.fen)}),function(x){return x.p.id}).slice(0,nPuz).forEach(function(x){var c0=new Chess(x.p.fen);out.push({src:'puz',p0:x.p.id,fen:x.p.fen,san:x.p.m[0],bad:true,r:x.r,cont:x.p.m.slice(1),me:c0.turn(),l:x.l})});
   var qs=[];Object.keys(PLANS).forEach(function(k){PLANS[k].forEach(function(p){qs.push({p:p,tag:k})})});qs=freshFirst(qs,function(q){return 'pl:'+q.p.fen});
   qs.filter(function(q){return q.p.opts&&q.p.opts.some(function(o){return q.p.s-o.s>=120})}).slice(0,nPos).forEach(function(q){var o=q.p.opts.filter(function(o){return q.p.s-o.s>=120})[0];
     out.push({src:'pos',fen:q.p.fen,san:o.san,bad:true,r:'pos',cont:o.pv.slice(1),me:new Chess(q.p.fen).turn(),q:q,o:o})});
   qs.slice(nPos,nPos+nQG).forEach(function(q){out.push({src:'posg',fen:q.p.fen,san:q.p.best,bad:false,cont:q.p.pv.slice(1),me:new Chess(q.p.fen).turn(),q:q})});
-  return sh(out).slice(0,N);
+  return sh(out.filter(function(x){return realChoice(x.fen)})).slice(0,N);
 }
 function loadJudge(){var N=(cur.it&&cur.it.n)||8;cur.judge={list:judgeList(N),n:0,ok:0,t0:now()};cur.judge.total=cur.judge.list.length;setBar(null,false);setBtns({});judgeNext()}
 function judgeHead(){var J=cur.judge;return '<div class="op">'+kindPill('idea',t('jT'))+' <span class="counter">'+Math.min(J.n+1,J.total)+'/'+J.total+' · ✓ '+J.ok+'</span></div>'}
