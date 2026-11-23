@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=94;
+var APP_VER=95;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -432,14 +432,14 @@ function buildToday(n){
   /* Nov 19: he wants the notation drill back in the daily ("it's good for me, I like it"): notation every day + coordinates or square names
      rotating; the course lesson puzzle moved to its own home button (courseItems) */
   var bas=dd%2?'coord':'sqname';
-  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},{t:'drill',f:'nota',n:3},C(pun[po]),{t:'drill',f:'defend',n:2},{t:'drill',f:'game',n:3},dayDrill(dd)?{t:'drill',f:dayDrill(dd),n:3}:null,C(mine[o]),C(pun[po+1]),   /* Nov 20: coordinates/square names dropped — calc, trade, judge and notation already read squares in notation */
-      dd%2?L(pickL[n>1?1:0]||pickL[0]):r1,C(mine[o+1]),C(pun[po+2]),extra].filter(Boolean);
+  var it=[S.seenLesson.f_calc?null:{t:'ftheory',f:'calc'},{t:'drill',f:'calc',n:3},{t:'drill',f:'nota',n:3},C(pun[po])].concat(opunPick(2),[{t:'drill',f:'defend',n:2},{t:'drill',f:'game',n:3},dayDrill(dd)?{t:'drill',f:dayDrill(dd),n:3}:null,C(mine[o]),C(pun[po+1]),   /* Nov 20: coordinates/square names dropped — calc, trade, judge and notation already read squares in notation */
+      dd%2?L(pickL[n>1?1:0]||pickL[0]):r1,C(mine[o+1]),C(pun[po+2]),extra]).filter(Boolean);   /* Nov 23: + 2 'punish in the opening' moments from his lines */
   while(it.length>5&&estSec(it)>720)it.splice(it.length-1,1);
   while(it.length&&it[it.length-1].t==='theory')it.pop();
-  S.daily={v:15,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
+  S.daily={v:16,date:today(),items:it,idx:0,ok:0,done:false,n:n};save();
 }
 /* how long things take him: median of his last logged times per type, defaults otherwise */
-var EST={drill:75,line:80,puz:60,card:90,plan:60,quiz:25,idea:60,name:25,theory:40,ftheory:40,stheory:40,play:150};
+var EST={opun:30,drill:75,line:80,puz:60,card:90,plan:60,quiz:25,idea:60,name:25,theory:40,ftheory:40,stheory:40,play:150};
 function estOne(it){
   var med=function(a){a=a.slice(-15).map(function(e){return Math.min(240,e[3])}).sort(function(x,y){return x-y});return a[Math.floor(a.length/2)]};
   var full=(S.log||[]).filter(function(e){return e[4]===1});
@@ -449,7 +449,7 @@ function estOne(it){
   return a.length>=4?med(a):(EST[it.t]||60);
 }
 function estSec(items){return items.reduce(function(a,x){return a+estOne(x)},0)}
-function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<15&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
+function dailyNow(){if(!S.daily||S.daily.date!==today()||((S.daily.v||0)<16&&!S.daily.idx&&!S.daily.done))buildToday();return S.daily}
 
 /* ---------- routing / screens ---------- */
 var SCREENS=['home','train','rep','learn','progress','data','weak'],LISTS={mine:1,punish:1},TABS={weak:'weakScrT',home:'navToday',rep:'navRep',learn:'navLearn',progress:'navProg',data:'tData'};
@@ -675,6 +675,7 @@ function renderItem(){
   $('line').textContent='';$('trEnd').hidden=true;$('trBody').hidden=false;$('boardwrap').hidden=false;$('choices').classList.remove('grid');boardEl.classList.remove('nocoords');B.onMove=null;
   if(it.t==='card'){var c=S.cards[it.id];if(!c){skip();return}cur.card=c;loadCard(c)}
   else if(it.t==='line'){if(!REP[it.op]||!REP[it.op].lines[it.i]||REP[it.op].lines[it.i].off){skip();return}loadLine(it.op,it.i)}
+  else if(it.t==='opun'){if(!REP[it.op]||!REP[it.op].lines[it.i]||typeof REP[it.op].lines[it.i].key!=='number'){skip();return}loadOPun(it.op,it.i)}
   else if(it.t==='name'){if(!REP[it.op]||!REP[it.op].lines[it.i]){skip();return}loadName(it.op,it.i)}
   else if(it.t==='theory'){var lt=lessonById(it.l);if(!lt){skip();return}loadTheory(lt)}
   else if(it.t==='puz'){var lp=lessonById(it.l),pp=lp&&lp.p.filter(function(x){return x.id===it.id})[0];if(!pp){skip();return}loadPuz(lp,pp)}
@@ -932,6 +933,7 @@ $('bShow').onclick=function(){if(!cur||cur.answered)return;cur.first=false;
   if(cur.card){B.locked=true;cardResult(false,'—',null,null)}
   else if(cur.idea)ideaResult(false);
   else if(cur.puz){var P=cur.puz;B.locked=true;(function step(){if(P.ply>=P.p.m.length){puzSolved();return}var m=B.chess.move(P.p.m[P.ply],{sloppy:true});P.ply++;B.marks={};if(m){B.marks[m.from]='hint';B.marks[m.to]='ok'}drawBoard();later(step,700)})()}
+  else if(cur.opun&&cur.show)cur.show();
   else if(cur.rep)repHint('#0E9488')};
 
 /* repertoire line: follow the book, but any move the engine finds fine is accepted and the game goes on from there */
@@ -940,7 +942,7 @@ function bookMap(op){var m={};REP[op].lines.forEach(function(l,i){if(l.off)retur
 function lineFamily(op,i){var g=planOf(op,i);if(!g)return '';var sib=g.g.filter(function(j){return j!==i&&REP[op].lines[j]&&!REP[op].lines[j].off}),sa=sameAs(op,i);
   return '<div class="lfam"><p>🧭 <b>'+esc(tt(g.t))+'</b></p><p class="og">'+esc(tt(g.goal))+'</p>'+
     (sa.length?'<p class="lsame">🔗 '+t('repSame',sa.slice(0,3).map(function(j){return '<b>'+esc(tt(REP[op].lines[j].name))+'</b>'}).join(', '))+'</p>':'')+
-    (sib.length?'<p class="lsib">'+t('repSib',sib.length+1)+'</p>':'')+'</div>'}
+    (sib.length?'<p class="lsib">'+t('repSib',sib.length+1)+'</p>':'')+(REP[op].lines[i].video?'<p>'+vidBtn(REP[op].lines[i].video)+'</p>':(g.vid&&g.vid[0]?'<p>'+vidBtn(g.vid[0])+'</p>':''))+'</div>'}
 /* Nov 23 ("at the start it says nothing, I play, and then you say something"): first the line, its plan and its connections; then he plays */
 function lineIntro(op,i,fn){
   var o=REP[op],l=o.lines[i],e=lineEnd(l);anOff();$('trBody').classList.remove('answered');$('fb').innerHTML='';$('fb').className='feedback';$('demoBar').hidden=true;
@@ -1093,6 +1095,27 @@ function oplanDraw(){
 /* during line practice the notes go in the bubble above the board (they used to land below the buttons, out of sight on phones) */
 function guideNote(html,cls){var el=$('guide');if(!el)return;el.innerHTML='<div class="gtxt '+(cls==='me'?'me':'')+'"><span class="gic">'+(cls==='me'?'✅':cls==='plan'?'🧭':'♟')+'</span><span>'+html+'</span></div>';el.hidden=false}
 /* opening plans (planes_aperturas.js): the idea behind each setup, shown in Repertorio, in the line prompt and when a line is finished */
+/* Nov 23: his favourite teacher's videos (Ajedrez Guerrero) linked from the lines and plan groups, at the exact minute */
+function vidUrl(v){return 'https://www.youtube.com/watch?v='+v.v+(v.t?'&t='+v.t+'s':'')}
+function vidBtn(v){return v?'<a class="btn vidb" href="'+vidUrl(v)+'" target="_blank" rel="noopener">▶ '+t('vidSee',mmss(v.t||0))+'</a>':''}
+/* "Castiga en la apertura" (Nov 23, his idea): the moment an opponent goes wrong in one of his lines; he plays the punishing move */
+function opunList(){var o=[];Object.keys(REP).forEach(function(op){REP[op].lines.forEach(function(l,i){if(!l.off&&typeof l.key==='number')o.push({op:op,i:i,l:l,id:'op:'+op+':'+i})})});return o}
+function opunPick(n){var sn=S.seen||{},rec=now()-20*36e5;S.opun=S.opun||{};
+  return opunList().map(function(x){var st=S.opun[x.id];return {x:x,k:(st&&(st.due||0)>now()?100:0)+((sn[x.id]||0)>rec?50:0)+(st?st.box||0:-1)+Math.random()}}).sort(function(a,b){return a.k-b.k}).slice(0,n).map(function(o){return {t:'opun',op:o.x.op,i:o.x.i}})}
+function loadOPun(op,i){
+  var o=REP[op],l=REP[op].lines[i],k=l.key,id='op:'+op+':'+i,pre=l.moves.slice(0,k),fen=fenOf(pre),want=l.moves[k];seenPuz(id);
+  setBoard(fen,o.side==='b',pre[pre.length-1],fenOf(pre.slice(0,-1)));setBar(null,false);B.locked=false;
+  $('prompt').innerHTML='<div class="op">'+kindPill('punish',esc(tt(o.name)))+'</div><div class="bigq">'+t('opunQ','<b class="mono">'+esc(noMate(pre[pre.length-1]))+'</b>')+'</div>';
+  setBtns({hint:false,show:true});cur.opun={op:op,i:i,want:want};
+  var done=function(ok,html){S.opun=S.opun||{};var st=S.opun[id]||(S.opun[id]={box:0,due:0});gradeObj(st,ok);B.locked=true;B.onMove=null;
+    var ar=arrowFor(fen,want,'#0E9488');B.arrows=ar?[ar]:[];drawBoard();
+    var nt=l.notes[String(k)];$('fb').className='feedback '+(ok?'good':'bad');$('fb').innerHTML=html+(nt?' '+esc(tt(nt)):'')+' '+vidBtn(l.video);
+    cur.anPath=function(){return {start:INIT,moves:l.moves,i:k+1,base:k}};itemDone(ok)};
+  B.onMove=function(mv){var a=mv.san.replace(/[+#]/g,''),b=want.replace(/[+#]/g,'');
+    if(a===b){done(cur.first,'✓ '+t('opunOk','<b class="mono">'+esc(want)+'</b>'));return}
+    cur.first=false;B.chess.undo();done(false,'✗ '+t('opunBad','<b class="mono">'+esc(mv.san)+'</b>','<b class="mono">'+esc(want)+'</b>'))};
+  cur.show=function(){cur.first=false;done(false,t('opunShow','<b class="mono">'+esc(want)+'</b>'))};
+}
 /* Nov 23 ("I need connections: many lines are the same plan in another order"): lines that pass through the same position
    (from move 5 on) are the same thing by another road */
 var SAMEC={};
@@ -1109,7 +1132,7 @@ function repFinish(){
   var R=cur.rep,st=repState(lineId(R.op,R.i));gradeObj(st,R.err===0);
   $('line').innerHTML=moveLine(R.hist);
   $('fb').className='feedback good';$('fb').innerHTML=(R.err?t('repDone'):t('repDoneClean'))+' '+t('repErrs',R.err);
-  var pg=planOf(R.op,R.i),sa=sameAs(R.op,R.i);if(pg){guideNote('<b>'+t('opNow')+'</b> '+esc(tt(pg.goal))+(sa.length?'<br>🔗 '+t('repSame',sa.slice(0,2).map(function(j){return '<b>'+esc(tt(REP[R.op].lines[j].name))+'</b>'}).join(', ')):'')+(visSteps(R.op,pg.k)?' <button class="btn" id="gPlan" type="button">🧭 '+t('opSee')+'</button>':''),'plan');if($('gPlan'))$('gPlan').onclick=function(){planGo(R.op,pg.k)}}
+  var pg=planOf(R.op,R.i),sa=sameAs(R.op,R.i);if(pg){guideNote('<b>'+t('opNow')+'</b> '+esc(tt(pg.goal))+(R.l.video?' '+vidBtn(R.l.video):'')+(sa.length?'<br>🔗 '+t('repSame',sa.slice(0,2).map(function(j){return '<b>'+esc(tt(REP[R.op].lines[j].name))+'</b>'}).join(', ')):'')+(visSteps(R.op,pg.k)?' <button class="btn" id="gPlan" type="button">🧭 '+t('opSee')+'</button>':''),'plan');if($('gPlan'))$('gPlan').onclick=function(){planGo(R.op,pg.k)}}
   cur.fen=B.chess.fen();cur.anPath=function(){return {start:INIT,moves:R.hist,base:R.hist.length}};itemDone(R.err===0);
 }
 
@@ -1169,7 +1192,7 @@ function renderRep(op){
   var OP=window.OPLAN&&OPLAN[repTab],byI={},used={},html='';ls.forEach(function(x){byI[x.i]=x});
   (OP?OP.groups:[]).forEach(function(g){var xs=g.g.map(function(i){return byI[i]}).filter(Boolean);if(!xs.length)return;xs.forEach(function(x){used[x.i]=1});
     html+='<section class="pfam"><div class="pfh"><h3 class="rgroup">🧭 '+esc(tt(g.t))+'</h3><p class="og">'+esc(tt(g.goal))+'</p><p class="small">'+t('repFam',xs.length)+'</p>'+
-      (visSteps(repTab,g.k)?'<button class="btn" type="button" data-pk="'+g.k+'">▶ '+t('opSee')+'</button>':'')+'</div>'+xs.map(row).join('')+'</section>'});
+      (visSteps(repTab,g.k)?'<button class="btn" type="button" data-pk="'+g.k+'">▶ '+t('opSee')+'</button> ':'')+(g.vid||[]).map(vidBtn).join(' ')+'</div>'+xs.map(row).join('')+'</section>'});
   var rest=ls.filter(function(x){return !used[x.i]});if(rest.length)html+='<section class="pfam"><h3 class="rgroup">'+t('repOther')+'</h3>'+rest.map(row).join('')+'</section>';
   $('repList').innerHTML=html;
   $('repList').querySelectorAll('.lrow').forEach(function(b){b.onclick=function(ev){var i=+b.getAttribute('data-i');
@@ -1177,7 +1200,7 @@ function renderRep(op){
       var nx=b.nextElementSibling;if(nx&&nx.classList.contains('rprev')){nx.remove();return}
       $('repList').querySelectorAll('.rprev').forEach(function(x){x.remove()});
       var l=REP[repTab].lines[i],e=lineEnd(l),d=document.createElement('div');d.className='rprev';
-      d.innerHTML=miniBoard(e.fen,REP[repTab].side==='b',e.last,'mini big')+'<p class="small mono">'+esc(l.moves.join(' '))+'</p>'+(planOf(repTab,i)?'<p class="og">🧭 '+esc(tt(planOf(repTab,i).goal))+'</p><button class="btn" type="button" data-pv="1">🧭 '+t('opSee')+'</button> ':'')+'<button class="btn primary" type="button" data-pl="1">'+t('repPlayThis')+'</button>';
+      d.innerHTML=miniBoard(e.fen,REP[repTab].side==='b',e.last,'mini big')+'<p class="small mono">'+esc(l.moves.join(' '))+'</p>'+(planOf(repTab,i)?'<p class="og">🧭 '+esc(tt(planOf(repTab,i).goal))+'</p><button class="btn" type="button" data-pv="1">🧭 '+t('opSee')+'</button> ':'')+vidBtn(l.video)+' <button class="btn primary" type="button" data-pl="1">'+t('repPlayThis')+'</button>';
       d.querySelector('[data-pl]').onclick=function(){startSession([{t:'line',op:repTab,i:i}],'rep')};if(d.querySelector('[data-pv]'))d.querySelector('[data-pv]').onclick=function(){planGo(repTab,planOf(repTab,i).k)};b.after(d);d.scrollIntoView({block:'nearest',behavior:'smooth'})}}});
   $('repList').querySelectorAll('[data-pk]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();planGo(repTab,b.getAttribute('data-pk'))}});
   $('bRepGo').textContent=t('repPractice',tt(REP[repTab].name));$('bRepQuiz').textContent=t('bNameQuiz');
@@ -2170,7 +2193,7 @@ function payload(){
   Object.keys(S.cards).forEach(function(k){var c=S.cards[k];if(c.src==='app')app[k]=c;else if(c.reps)cards[k]=prog(c)});
   Object.keys(S.games).forEach(function(k){if(S.games[k].src==='app')games[k]=S.games[k]});
   var m=function(o){var r={};Object.keys(o||{}).forEach(function(k){r[k]=prog(o[k])});return r};
-  return {v:1,at:now(),user:S.user,cards:cards,appCards:app,games:games,rep:m(S.rep),ideas:m(S.ideas),puz:m(S.puz),tech:m(S.tech),quiz:m(S.quiz),plan:m(S.plan),drill:S.drill,
+  return {v:1,at:now(),user:S.user,cards:cards,appCards:app,games:games,rep:m(S.rep),ideas:m(S.ideas),puz:m(S.puz),tech:m(S.tech),quiz:m(S.quiz),plan:m(S.plan),opun:m(S.opun),drill:S.drill,
     seenLesson:S.seenLesson,log:S.log,daily:S.daily,streak:S.streak,days:S.days,lastSync:S.lastSync};
 }
 function newer(a,b){return (a.reps||0)>(b.reps||0)||((a.reps||0)===(b.reps||0)&&(a.due||0)>(b.due||0))}
@@ -2182,7 +2205,7 @@ function mergeProgress(R){
   Object.keys(R.drill||{}).forEach(function(k){var a=S.drill[k],r=R.drill[k];
     if(k==='calc'&&a){var seen={},h=(a.h||[]).concat(r.h||[]).filter(function(x){var key=x.join('|');if(seen[key])return false;seen[key]=1;return true});if((r.at||0)>(a.at||0)){a.lvl=r.lvl;a.at=r.at}a.h=h.slice(-60);a.tot=Math.max(a.tot||0,r.tot||0);a.runs=Math.max(a.runs||0,r.runs||0);a.best=Math.max(a.best||0,r.best||0);return}
     if(!a||r.best>a.best||(r.best===a.best&&r.bestT&&r.bestT<a.bestT))S.drill[k]=r});
-  ['rep','ideas','puz','tech','quiz','plan'].forEach(function(f){S[f]=S[f]||{};Object.keys(R[f]||{}).forEach(function(k){var a=S[f][k],r=R[f][k];if(!a||newer(r,a))S[f][k]=r})});
+  ['rep','ideas','puz','tech','quiz','plan','opun'].forEach(function(f){S[f]=S[f]||{};Object.keys(R[f]||{}).forEach(function(k){var a=S[f][k],r=R[f][k];if(!a||newer(r,a))S[f][k]=r})});
   Object.keys(R.seenLesson||{}).forEach(function(k){S.seenLesson[k]=1});
   var seen={};S.log=(S.log||[]).concat(R.log||[]).filter(function(e){var k=e[0]+e[1];if(seen[k])return false;seen[k]=1;return true}).sort(function(a,b){return a[0]-b[0]}).slice(-4000);
   S.days=S.days||{};Object.keys(R.days||{}).forEach(function(k){S.days[padKey(k)]=1});
