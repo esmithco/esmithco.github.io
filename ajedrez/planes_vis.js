@@ -25,10 +25,11 @@ london:{
   ['Si …Nh5 ataca el alfil: Be5. Nunca g4.','If …Nh5 hits the bishop: Be5. Never g4.','f4 e5 g','g4 r'],
   ['Luego: c3, Bd3, O-O y Ne5.','Then: c3, Bd3, O-O and Ne5.','c2 c3 g,f1 d3 g','']],
  kid:[
-  ['h3 le da casa al alfil (h2).','h3 gives the bishop a home (h2).','f4 h2 g','h2 g'],
-  ['Su alfil g7 mira b2. Cuídalo.','Their g7 bishop eyes b2. Guard it.','g7 b2 r','b2 r'],
-  ['Juega e4: centro grande.','Play e4: big center.','e3 e4 g','e4 g'],
-  ['Enroca.','Castle.','e1 g1 g','']],
+  ['Enroque largo: tu rey a c1, tu torre a d1.','Long castling: your king to c1, your rook to d1.','','c1 g,d1 g'],
+  ['Bh6 cambia su alfil de g7: su rey pierde al defensor.','Bh6 trades their g7 bishop: their king loses its defender.','h6 g7 g','g7 g'],
+  ['h4 y h5: abre la columna h hacia su rey.','h4 then h5: open the h-file toward their king.','h4 h5 g,h1 h7 g','g8 g'],
+  ['f3 sostiene e4.','f3 holds e4.','','e4 g,f3 g'],
+  ['Cuidado: él ataca tu rey con …b4 y …Qa5.','Watch out: they attack your king with …b4 and …Qa5.','b5 b4 r,a5 a2 r','c3 r,a2 r']],
  englund:[
   ['Cuidado: …Qb4+ ataca rey y b2.','Watch out: …Qb4+ hits king and b2.','e7 b4 r','b2 r,e1 r'],
   ['Saca piezas rápido y enroca.','Bring out pieces fast and castle.','f1 e2 g,e1 g1 g',''],

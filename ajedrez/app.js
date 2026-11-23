@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=93;
+var APP_VER=94;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -381,7 +381,7 @@ function counts(kind){var cs=cardsOf(kind),due=0,nw=0,todo=0;cs.forEach(function
 /* repertoire */
 function lineId(op,i){return op+':'+i}
 function repState(id){return S.rep[id]||(S.rep[id]={box:0,due:0})}
-function repLines(op){return REP[op].lines.map(function(l,i){return {op:op,i:i,l:l,id:lineId(op,i),st:S.rep[lineId(op,i)]}})}
+function repLines(op){return REP[op].lines.map(function(l,i){return {op:op,i:i,l:l,id:lineId(op,i),st:S.rep[lineId(op,i)]}}).filter(function(x){return !x.l.off})}   /* off = retired line (Nov 23: line london:4 replaced by the O-O-O attack) */
 function allLines(){var o=[];Object.keys(REP).forEach(function(k){o=o.concat(repLines(k))});return o}
 function lineDue(x){return !x.st||(x.st.due||0)<=now()}
 
@@ -521,7 +521,8 @@ function weakProg(k){var l=WEAKL[k],n=l?l.p.length:0,ok=l?l.p.filter(function(p)
   return {n:n,ok:ok,cards:cs.length,cfix:cf}}
 /* bank puzzles for a theme: due reviews first, then new ones near his level (target rating rises as he solves more of the theme) */
 function weakPuz(k,max){var l=WEAKL[k];if(!l)return [];var pr=weakProg(k),tgt=1050+Math.min(400,pr.ok*4),cap=1550+Math.min(150,pr.ok);
-  var due=l.p.filter(function(p){var s=S.puz[p.id];return s&&(s.due||0)<=now()&&s.box<4}),fresh=l.p.filter(function(p){return !S.puz[p.id]&&p.r<=cap}).sort(function(a,b){return Math.abs(a.r-tgt)-Math.abs(b.r-tgt)+(Math.random()-.5)*120});
+  /* Nov 23 ("the same exercise over and over, I already know the answer"): bank puzzles are never repeated — only ones he has never seen */
+  var sn=S.seen||{},due=[],fresh=l.p.filter(function(p){return !S.puz[p.id]&&!sn[p.id]&&p.r<=cap}).sort(function(a,b){return Math.abs(a.r-tgt)-Math.abs(b.r-tgt)+(Math.random()-.5)*120});
   return due.slice(0,Math.ceil(max/2)).concat(fresh).slice(0,max).sort(function(a,b){return a.r-b.r}).map(function(p){return {t:'puz',l:'w_'+k,id:p.id}})}
 function weakCardItems(k,max){var sn=S.seen||{},rec=now()-20*36e5;return weakCards(k).filter(function(c){return (c.last!==1||(c.due||0)<=now())&&(c.due||0)<=now()+6*36e5&&(sn[c.id]||0)<rec}).sort(function(a,b){return (a.last===1?1:0)-(b.last===1?1:0)||Math.random()-.5}).slice(0,max).map(function(c){return {t:'card',id:c.id}})}
 function weakTheme(k){
@@ -673,7 +674,7 @@ function renderItem(){
   ['fb','why','choices','note'].forEach(function(id){$(id).innerHTML='';$(id).className=id==='fb'?'feedback':id;$(id).hidden=id!=='fb'});
   $('line').textContent='';$('trEnd').hidden=true;$('trBody').hidden=false;$('boardwrap').hidden=false;$('choices').classList.remove('grid');boardEl.classList.remove('nocoords');B.onMove=null;
   if(it.t==='card'){var c=S.cards[it.id];if(!c){skip();return}cur.card=c;loadCard(c)}
-  else if(it.t==='line'){if(!REP[it.op]||!REP[it.op].lines[it.i]){skip();return}loadLine(it.op,it.i)}
+  else if(it.t==='line'){if(!REP[it.op]||!REP[it.op].lines[it.i]||REP[it.op].lines[it.i].off){skip();return}loadLine(it.op,it.i)}
   else if(it.t==='name'){if(!REP[it.op]||!REP[it.op].lines[it.i]){skip();return}loadName(it.op,it.i)}
   else if(it.t==='theory'){var lt=lessonById(it.l);if(!lt){skip();return}loadTheory(lt)}
   else if(it.t==='puz'){var lp=lessonById(it.l),pp=lp&&lp.p.filter(function(x){return x.id===it.id})[0];if(!pp){skip();return}loadPuz(lp,pp)}
@@ -935,15 +936,30 @@ $('bShow').onclick=function(){if(!cur||cur.answered)return;cur.first=false;
 
 /* repertoire line: follow the book, but any move the engine finds fine is accepted and the game goes on from there */
 var REP_OK=7; /* max win-probability drop that still counts as "fine" */
-function bookMap(op){var m={};REP[op].lines.forEach(function(l,i){var c=new Chess();for(var p=0;p<l.moves.length;p++){var k=posKey(c.fen());if(!m[k])m[k]={i:i,ply:p};c.move(l.moves[p],{sloppy:true})}});return m}
+function bookMap(op){var m={};REP[op].lines.forEach(function(l,i){if(l.off)return;var c=new Chess();for(var p=0;p<l.moves.length;p++){var k=posKey(c.fen());if(!m[k])m[k]={i:i,ply:p};c.move(l.moves[p],{sloppy:true})}});return m}
+function lineFamily(op,i){var g=planOf(op,i);if(!g)return '';var sib=g.g.filter(function(j){return j!==i&&REP[op].lines[j]&&!REP[op].lines[j].off}),sa=sameAs(op,i);
+  return '<div class="lfam"><p>🧭 <b>'+esc(tt(g.t))+'</b></p><p class="og">'+esc(tt(g.goal))+'</p>'+
+    (sa.length?'<p class="lsame">🔗 '+t('repSame',sa.slice(0,3).map(function(j){return '<b>'+esc(tt(REP[op].lines[j].name))+'</b>'}).join(', '))+'</p>':'')+
+    (sib.length?'<p class="lsib">'+t('repSib',sib.length+1)+'</p>':'')+'</div>'}
+/* Nov 23 ("at the start it says nothing, I play, and then you say something"): first the line, its plan and its connections; then he plays */
+function lineIntro(op,i,fn){
+  var o=REP[op],l=o.lines[i],e=lineEnd(l);anOff();$('trBody').classList.remove('answered');$('fb').innerHTML='';$('fb').className='feedback';$('demoBar').hidden=true;
+  setBoard(e.fen,o.side==='b',e.last?e.last.san:null,fenOf(l.moves.slice(0,-1)));B.locked=true;B.onMove=null;
+  var k=l.kind==='trap'?'trap':l.kind==='punish'?'punish':'rep';
+  $('prompt').innerHTML='<div class="op">'+kindPill(k,esc(tt(o.name)))+'</div><div class="bigq">'+esc(tt(l.name))+'</div>'+lineFamily(op,i)+
+    '<details class="lseq"><summary>👀 '+t('repSeq')+'</summary><p class="mono">'+moveLine(l.moves)+'</p></details><p class="lend">'+t('repEndPos')+'</p>';
+  var ch=$('choices');ch.hidden=false;ch.classList.remove('grid');ch.innerHTML='<button class="btn primary gatego" id="bGo" type="button">'+t('repStart')+'</button>';setBtns({});
+  $('bGo').onclick=function(){ch.innerHTML='';ch.hidden=true;fn()};
+}
 function loadLine(op,i,played){
   var o=REP[op],l=o.lines[i];
   if(!played&&!S.rep[lineId(op,i)]){loadDemo(op,i);return}
+  if(!played){lineIntro(op,i,function(){loadLine(op,i,true)});return}
   $('demoBar').hidden=true;
   cur.rep={op:op,i:i,l:l,ply:0,err:0,side:o.side,book:true,hist:[],end:Math.max(l.moves.length,16),map:bookMap(op),reply:null,replyFen:null};
   setBoard(new Chess().fen(),o.side==='b');setBar(null,false);
   var k=l.kind==='trap'?'trap':l.kind==='punish'?'punish':'rep'
-  $('prompt').innerHTML='<div class="op">'+kindPill(k,esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div>'+(l.kind==='trap'?t('pRepTrap'):l.kind==='punish'?t('pRepPunish'):t('pRep'))+' <span class="small">'+t('pRepFree')+'</span>'+(planOf(op,i)?'<p class="small og">🧭 '+esc(tt(planOf(op,i).goal))+'</p>':'');
+  $('prompt').innerHTML='<div class="op">'+kindPill(k,esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div>'+(l.kind==='trap'?t('pRepTrap'):l.kind==='punish'?t('pRepPunish'):t('pRep'))+' <span class="small">'+t('pRepExact')+'</span>';
   setBtns({hint:true,show:true});B.onMove=onRepMove;
   var pg0=planOf(op,i);if(pg0)guideNote(esc(tt(pg0.goal)),'plan');
   repStep();
@@ -952,7 +968,7 @@ function loadLine(op,i,played){
 function loadDemo(op,i){
   var o=REP[op],l=o.lines[i];cur.demo={op:op,i:i,l:l,ply:0,side:o.side};
   setBar(null,false);B.locked=true;
-  $('prompt').innerHTML='<div class="op">'+kindPill('rep',esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div><b>'+t('demoT')+'</b> <span class="small">'+t('demoHint')+'</span>';
+  $('prompt').innerHTML='<div class="op">'+kindPill('rep',esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div><b>'+t('demoT')+'</b> <span class="small">'+t('demoHint')+'</span>'+lineFamily(op,i);
   $('demoBar').hidden=false;setBtns({});demoShow();
 }
 function demoShow(){
@@ -975,7 +991,7 @@ function loadName(op,i){
   setBoard(fenOf(l.moves),o.side==='b',l.moves[l.moves.length-1],fenOf(l.moves.slice(0,-1)));setBar(null,false);B.locked=true;
   $('prompt').innerHTML='<div class="op">'+kindPill('name',esc(tt(o.name)))+'</div><b>'+t('nameQ')+'</b>';
   $('line').innerHTML=moveLine(l.moves);
-  var others=o.lines.map(function(_,j){return j}).filter(function(j){return j!==i}).sort(function(){return Math.random()-.5}).slice(0,3);
+  var others=o.lines.map(function(_,j){return j}).filter(function(j){return j!==i&&!o.lines[j].off}).sort(function(){return Math.random()-.5}).slice(0,3);
   var opts=others.concat([i]).sort(function(){return Math.random()-.5});
   var ch=$('choices');ch.hidden=false;
   ch.innerHTML=opts.map(function(j){return '<button class="btn opt" data-j="'+j+'">'+esc(tt(o.lines[j].name))+'</button>'}).join('');
@@ -1027,6 +1043,11 @@ function onRepMove(mv){
     if(!cur||cur.rep!==R)return;
     if(!a||!b){repMistake(mv,fen0,want,null,null,null);return}
     var sBefore=b.s,sAfter=-a.s,drop=Math.max(0,wp(sBefore)-wp(sAfter));
+    if(drop<REP_OK&&want){   /* Nov 23: "the point is to remember the exact line" — a good move that is not the line's: back and retry */
+      R.err++;cur.first=false;R.miss=R.miss||{};R.miss[R.ply]=(R.miss[R.ply]||0)+1;B.marks[mv.to]='hint';drawBoard();
+      $('fb').className='feedback bad';$('fb').innerHTML=t('repNotLine','<span class="mono">'+esc(mv.san)+'</span>')+(R.miss[R.ply]>=2?' '+t('repNo',esc(want)):'');
+      later(function(){if(!cur||cur.rep!==R)return;B.chess.undo();B.marks={};var ar=R.miss[R.ply]>=2?arrowFor(fen0,want,'#0E9488'):null;B.arrows=ar?[ar]:[];drawBoard();B.locked=false},1100);
+      return}
     if(drop<REP_OK){
       B.marks[mv.to]='ok';drawBoard();R.hist.push(mv.san);
       var nt=repNote(R.ply);
@@ -1037,12 +1058,12 @@ function onRepMove(mv){
   })});
 }
 function repMistake(mv,fen0,good,a,sAfter,drop){
-  var R=cur.rep;R.err++;cur.first=false;B.marks[mv.to]='bad';drawBoard();
+  var R=cur.rep;R.err++;cur.first=false;B.marks[mv.to]='bad';drawBoard();R.miss=R.miss||{};R.miss[R.ply]=(R.miss[R.ply]||0)+1;var showIt=!R.book||R.miss[R.ply]>=2;
   var why=a?chip(mv.san,drop,sAfter)+' '+explainBad(fen0,mv.san,a.pv,sAfter,R.side,R.hist.length).join(' '):'';
   var nt=R.book?repNote(R.ply):'';
   $('fb').className='feedback bad';
-  $('fb').innerHTML=why+'<br>'+t('repMist','<span class="mono">'+esc(mv.san)+'</span>')+(good?' '+(R.book?t('repNo',esc(good)):t('engineBest','<span class="mono">'+esc(good)+'</span>')):'')+(nt?' '+esc(nt):'');
-  later(function(){B.chess.undo();B.marks={};var ar=good?arrowFor(fen0,good,'#0E9488'):null;B.arrows=ar?[ar]:[];drawBoard();B.locked=false},1000);
+  $('fb').innerHTML=why+'<br>'+t('repMist','<span class="mono">'+esc(mv.san)+'</span>')+(good&&showIt?' '+(R.book?t('repNo',esc(good)):t('engineBest','<span class="mono">'+esc(good)+'</span>')):'')+(nt&&showIt?' '+esc(nt):'');
+  later(function(){B.chess.undo();B.marks={};var ar=good&&showIt?arrowFor(fen0,good,'#0E9488'):null;B.arrows=ar?[ar]:[];drawBoard();B.locked=false},1000);
 }
 function repHint(color){var R=cur.rep,f=B.chess.fen();
   if(R.book){var a=arrowFor(f,R.l.moves[R.ply],color);if(a){B.marks[a.from]='hint';B.arrows=color==='#0E9488'?[a]:[];drawBoard()}return}
@@ -1072,6 +1093,15 @@ function oplanDraw(){
 /* during line practice the notes go in the bubble above the board (they used to land below the buttons, out of sight on phones) */
 function guideNote(html,cls){var el=$('guide');if(!el)return;el.innerHTML='<div class="gtxt '+(cls==='me'?'me':'')+'"><span class="gic">'+(cls==='me'?'✅':cls==='plan'?'🧭':'♟')+'</span><span>'+html+'</span></div>';el.hidden=false}
 /* opening plans (planes_aperturas.js): the idea behind each setup, shown in Repertorio, in the line prompt and when a line is finished */
+/* Nov 23 ("I need connections: many lines are the same plan in another order"): lines that pass through the same position
+   (from move 5 on) are the same thing by another road */
+var SAMEC={};
+function sameAs(op,i){var key=op+':'+i;if(SAMEC[key])return SAMEC[key];
+  /* only a real transposition counts: same position reached by a DIFFERENT move order (lines that just share the first moves are siblings) */
+  var pos=function(l){var c=new Chess(),o={};l.moves.forEach(function(m,p){c.move(m,{sloppy:true});if(p>=8)o[posKey(c.fen())]=l.moves.slice(0,p+1).join(' ')});return o};
+  var L=REP[op].lines,mine=pos(L[i]),out=[];
+  L.forEach(function(l,j){if(j===i||l.off)return;var c=new Chess(),hit=false;l.moves.forEach(function(m,p){c.move(m,{sloppy:true});var k=posKey(c.fen());if(p>=8&&mine[k]&&mine[k]!==l.moves.slice(0,p+1).join(' '))hit=true});if(hit)out.push(j)});
+  return SAMEC[key]=out}
 function planOf(op,i){var o=window.OPLAN&&OPLAN[op];if(!o)return null;return o.groups.filter(function(g){return g.g.indexOf(i)>=0})[0]||null}
 function planBox(g,open){if(!g)return '';var li=function(a){return '<ul>'+tt(a).map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul>'};
   return '<div class="oplan"><b>🧭 '+esc(tt(g.t))+'</b><p class="og">'+esc(tt(g.goal))+'</p><details'+(open?' open':'')+'><summary>'+t('opPlanS')+'</summary><p class="ol">'+t('opPlan')+'</p>'+li(g.plan)+'<p class="ol">'+t('opWatch')+'</p>'+li(g.watch)+'<p class="ol">'+t('opAvoid')+'</p><p>'+esc(tt(g.avoid))+'</p></details></div>'}
@@ -1079,7 +1109,7 @@ function repFinish(){
   var R=cur.rep,st=repState(lineId(R.op,R.i));gradeObj(st,R.err===0);
   $('line').innerHTML=moveLine(R.hist);
   $('fb').className='feedback good';$('fb').innerHTML=(R.err?t('repDone'):t('repDoneClean'))+' '+t('repErrs',R.err);
-  var pg=planOf(R.op,R.i);if(pg){guideNote('<b>'+t('opNow')+'</b> '+esc(tt(pg.goal))+(visSteps(R.op,pg.k)?' <button class="btn" id="gPlan" type="button">🧭 '+t('opSee')+'</button>':''),'plan');if($('gPlan'))$('gPlan').onclick=function(){planGo(R.op,pg.k)}}
+  var pg=planOf(R.op,R.i),sa=sameAs(R.op,R.i);if(pg){guideNote('<b>'+t('opNow')+'</b> '+esc(tt(pg.goal))+(sa.length?'<br>🔗 '+t('repSame',sa.slice(0,2).map(function(j){return '<b>'+esc(tt(REP[R.op].lines[j].name))+'</b>'}).join(', ')):'')+(visSteps(R.op,pg.k)?' <button class="btn" id="gPlan" type="button">🧭 '+t('opSee')+'</button>':''),'plan');if($('gPlan'))$('gPlan').onclick=function(){planGo(R.op,pg.k)}}
   cur.fen=B.chess.fen();cur.anPath=function(){return {start:INIT,moves:R.hist,base:R.hist.length}};itemDone(R.err===0);
 }
 
@@ -1134,9 +1164,14 @@ function renderRep(op){
     var e=lineEnd(x.l);
     return '<button class="lrow rrow" data-i="'+x.i+'"><span class="dotst '+(!st?'new':st.box>=3?'ok':lineDue(x)?'due':'')+'"></span><span class="thumb" data-thumb="'+x.i+'">'+miniBoard(e.fen,REP[x.op].side==='b',e.last)+'</span><span class="lname">'+kind+esc(tt(x.l.name))+
       (sub?'<span class="small">'+sub+'</span>':'')+'</span><span class="small">'+lab+'</span></button>'};
-  var gm=ls.filter(function(x){return x.l.kind==='game'}),bk=ls.filter(function(x){return x.l.kind!=='game'});
-  var OP=window.OPLAN&&OPLAN[repTab],ov=OP?'<details class="oplanall"><summary>🧭 '+t('opHow',esc(tt(REP[repTab].name)))+'</summary>'+OP.groups.map(function(g){return '<button class="oprow" type="button" data-pk="'+g.k+'"><span>'+esc(tt(g.t))+'</span><span class="go">▶</span></button>'}).join('')+'</details>':'';
-  $('repList').innerHTML=ov+(gm.length?'<h3 class="rgroup">'+t('repFromGames')+'</h3><p class="small">'+t('repFromGamesD')+'</p>'+gm.map(row).join(''):'')+'<h3 class="rgroup">'+t('repBook')+'</h3>'+bk.map(row).join('');
+  /* Nov 23 ("I don't want to feel I have to learn 20 openings… help me see the connection"): lines grouped by PLAN —
+     one plan per family, every line under it is another road to it */
+  var OP=window.OPLAN&&OPLAN[repTab],byI={},used={},html='';ls.forEach(function(x){byI[x.i]=x});
+  (OP?OP.groups:[]).forEach(function(g){var xs=g.g.map(function(i){return byI[i]}).filter(Boolean);if(!xs.length)return;xs.forEach(function(x){used[x.i]=1});
+    html+='<section class="pfam"><div class="pfh"><h3 class="rgroup">🧭 '+esc(tt(g.t))+'</h3><p class="og">'+esc(tt(g.goal))+'</p><p class="small">'+t('repFam',xs.length)+'</p>'+
+      (visSteps(repTab,g.k)?'<button class="btn" type="button" data-pk="'+g.k+'">▶ '+t('opSee')+'</button>':'')+'</div>'+xs.map(row).join('')+'</section>'});
+  var rest=ls.filter(function(x){return !used[x.i]});if(rest.length)html+='<section class="pfam"><h3 class="rgroup">'+t('repOther')+'</h3>'+rest.map(row).join('')+'</section>';
+  $('repList').innerHTML=html;
   $('repList').querySelectorAll('.lrow').forEach(function(b){b.onclick=function(ev){var i=+b.getAttribute('data-i');
     { /* tap a line: open a bigger preview right under it, with the moves and a button to practise it */
       var nx=b.nextElementSibling;if(nx&&nx.classList.contains('rprev')){nx.remove();return}
@@ -1160,9 +1195,12 @@ $('bRepGo').onclick=function(){
 /* Nov 19: the tiles run through the WHOLE list — due cards first, then the rest (not seen in the last 20 h, shuffled), then the recent ones.
    He stops with ✕ whenever he wants; every 10 right answers a small 🎉 note. */
 function quickSession(kind){
-  var due=dueList(kind,false),sn=S.seen||{},rec=now()-20*36e5;
-  var rest=cardsOf(kind).filter(function(c){return due.indexOf(c)<0}).map(function(c){return {c:c,k:((c.box||0)>=2?20:0)+((sn[c.id]||0)>rec?10:0)+Math.random()}}).sort(function(a,b){return a.k-b.k}).map(function(x){return x.c});   /* not mastered first, mastered last */
-  startSession(due.concat(rest).map(function(c){return {t:'card',id:c.id}}),kind);X.back='home';X.endless=true;
+  var sn=S.seen||{},rec=now()-20*36e5,due=dueList(kind,false).filter(function(c){return (sn[c.id]||0)<rec});
+  var rest=cardsOf(kind).filter(function(c){return due.indexOf(c)<0&&(c.box||0)<2&&(sn[c.id]||0)<rec}).sort(function(){return Math.random()-.5});
+  /* Nov 23: once his own cards are done, it goes on with NEW puzzles of the same kind (never seen) — no more cards he already knows by heart */
+  var ks=kind==='punish'?['forkd','hang','lines','matek']:weakRank().filter(function(x){return x.k!=='calc'}).map(function(x){return x.k}),bank=[],per=ks.map(function(k){return weakPuz(k,12)});
+  for(var r=0;r<12;r++)per.forEach(function(a){if(a[r])bank.push(a[r])});
+  startSession(due.concat(rest).map(function(c){return {t:'card',id:c.id}}).concat(bank),kind);X.back='home';X.endless=true;
 }
 
 /* ---------- fundamentals: coordinates, notation, concept quiz ---------- */
@@ -1328,11 +1366,12 @@ function planAnswer(i){
 /* drill pools: course puzzles + the drill banks in debiles.js (d_*), positions NOT seen in the last 7 days first (Nov 19: "you always show me the same mate") */
 var DBANK={mate1:'d_mate1',hanging:'d_hang',fork:'d_fork',backrank:'d_back',mate2:'d_mate2'};
 /* Nov 22 ("I'm seeing repeated exercises"): order any pool unseen-first; things seen in the last 7 days go last, oldest-seen first */
-function freshFirst(arr,key){var sn=S.seen||{},wk=now()-7*864e5;return arr.map(function(x){var t=sn[key(x)]||0;return {x:x,k:(t>wk?1e13+t:0)+Math.random()}}).sort(function(a,b){return a.k-b.k}).map(function(o){return o.x})}
+function freshFirst(arr,key){var sn=S.seen||{};return arr.map(function(x){var t=sn[key(x)]||0;return {x:x,k:t?1e13+t:Math.random()}}).sort(function(a,b){return a.k-b.k}).map(function(o){return o.x})}
 function seenPuz(id){if(!id)return;S.seen=S.seen||{};S.seen[id]=now();var k=Object.keys(S.seen);if(k.length>4000){k.sort(function(a,b){return S.seen[a]-S.seen[b]}).slice(0,1000).forEach(function(x){delete S.seen[x]})}}
 function puzPool(ids,maxR){var o=[];CURSO.lessons.forEach(function(l){if(ids.indexOf(l.id)>=0)l.p.forEach(function(p){if(p.r<=maxR)o.push({l:l,p:p})})});
   ids.forEach(function(id){var b=DBANK[id],L=b&&weakL(b);if(L)L.p.forEach(function(p){if(p.r<=maxR)o.push({l:L,p:p})})});
-  var wk=now()-7*864e5,sn=S.seen||{};o.forEach(function(x){x.k=(sn[x.p.id]&&sn[x.p.id]>wk?1:0)+Math.random()});return o.sort(function(a,b){return a.k-b.k})}
+  /* Nov 23: anything already shown (ever) goes after every unseen puzzle, oldest-seen first */
+  var sn=S.seen||{};o.forEach(function(x){var t=sn[x.p.id];x.k=t?1+t/1e13:Math.random()});return o.sort(function(a,b){return a.k-b.k})}
 function afterFirst(p){var c=new Chess(p.fen);var m=c.move(p.m[0],{sloppy:true});return {c:c,m:m}}
 /* Flash */
 function loadFlash(){
@@ -1827,7 +1866,7 @@ function lessonItems(l,max){
   var o=[];if(!S.seenLesson[l.id])o.push({t:'theory',l:l.id});
   return o.concat(ps.map(function(p){return {t:'puz',l:l.id,id:p.id}}));
 }
-function reviewPuz(n){var o=[];CURSO.lessons.forEach(function(l){l.p.forEach(function(p){var s=S.puz[p.id];if(s&&s.lapses&&(s.due||0)<=now())o.push({t:'puz',l:l.id,id:p.id})})});return o.slice(0,n)}
+function reviewPuz(n){var o=[],sn=S.seen||{},old=now()-3*864e5;CURSO.lessons.forEach(function(l){l.p.forEach(function(p){var s=S.puz[p.id];if(s&&s.lapses&&(s.due||0)<=now()&&(sn[p.id]||0)<old)o.push({t:'puz',l:l.id,id:p.id})})});return o.slice(0,n)}
 function renderLearn(){
   var h='<div class="unit"><h3>'+t('unitFund')+'</h3>'+FUND.map(function(f){var sub;
     if(f.id==='quiz'){var k=QUIZ.filter(function(q){return S.quiz[q.id]&&S.quiz[q.id].box>=2}).length;sub=t('learned',k,QUIZ.length)}

@@ -74,6 +74,7 @@ es: {
   demoT: 'Línea nueva: mírala primero.', demoHint: 'Avanza con ▶ y lee por qué se juega cada jugada. Luego te toca jugarla a ti.', bDemoPlay: 'Ahora juégala',
   nameQ: '¿Qué variante es esta posición?', nameWas: 'Era: {0}.', bNameQuiz: '¿Qué variante es?', kName: 'Variante',
   pRepFree: '',
+  pRepExact: 'Juega exactamente la jugada de la línea.', repNotLine: '{0} es jugable, pero no es la de esta línea. Inténtalo otra vez.', repSame: 'Llega a la misma posición que: {0}.', repSib: 'Mismo plan para {0} líneas: aprendes una idea, no {0} aperturas.', repSeq: 'Ver la secuencia', repEndPos: 'En el tablero: así termina la línea.', repStart: '▶ Empezar', repFam: '{0} líneas · un mismo plan', repOther: 'Otras líneas',
   repOwn: 'Bien: {0} también es buena. Tu repertorio sugiere {1}, pero seguimos con tu jugada.',
   repFine: '{0} está bien.', repBack: 'Volviste a una posición de tu repertorio.',
   repMist: '{0} es un error. Prueba otra jugada.', repErrs: 'Errores: {0}.',
@@ -121,7 +122,7 @@ es: {
   sessDone: 'Sesión terminada', sessSum: '{0} de {1} a la primera.', sessHome: 'Volver al inicio', sessEmpty: 'No hay nada pendiente aquí ahora mismo. ¡Bien!',
   // rep screen
   repTitle: 'Repertorio', repPractice: 'Practicar {0}', repLines: 'Líneas', repNew: 'nueva', repDue: 'toca repasar', repOkS: 'aprendida',
-  repIntro: 'La app juega las jugadas de tu rival (las que más te juegan) y tú respondes. Puedes seguir tu repertorio o probar tus propias jugadas: solo te paro si son errores. Cada jugada del repertorio trae su porqué.',
+  repIntro: 'Las líneas están agrupadas por plan: cada grupo es una sola idea, con varios caminos para llegar. Al practicar juegas la jugada exacta de la línea; si juegas otra, vuelves a intentarlo.',
   kindTrap: 'trampa', kindPunish: 'castiga',
   // lists
   mineTitle: 'Mis errores', mineIntro: 'Errores claros de tus partidas que se ven en una o dos jugadas. Primero los de tu repertorio actual.',
@@ -247,6 +248,7 @@ en: {
   demoT: 'New line: watch it first.', demoHint: 'Step through with ▶ and read why each move is played. Then it\'s your turn to play it.', bDemoPlay: 'Now play it',
   nameQ: 'Which variation is this position?', nameWas: 'It was: {0}.', bNameQuiz: 'Which variation?', kName: 'Variation',
   pRepFree: '',
+  pRepExact: 'Play exactly the line\'s move.', repNotLine: '{0} is playable, but it is not this line\'s move. Try again.', repSame: 'Reaches the same position as: {0}.', repSib: 'Same plan for {0} lines: you learn one idea, not {0} openings.', repSeq: 'See the sequence', repEndPos: 'On the board: this is how the line ends.', repStart: '▶ Start', repFam: '{0} lines · one plan', repOther: 'Other lines',
   repOwn: 'Good: {0} works too. Your repertoire suggests {1}, but we continue with your move.',
   repFine: '{0} is fine.', repBack: 'You\'re back in a repertoire position.',
   repMist: '{0} is a mistake. Try another move.', repErrs: 'Mistakes: {0}.',
@@ -287,7 +289,7 @@ en: {
   mat1: 'a pawn', mat2: 'material (about 2 points)', mat3: 'a piece', mat5: 'a rook (or a piece and pawns)', mat9: 'the queen', matN: '{0} points of material',
   sessDone: 'Session complete', sessSum: '{0} of {1} right on the first try.', sessHome: 'Back to start', sessEmpty: 'Nothing due here right now. Nice!',
   repTitle: 'Repertoire', repPractice: 'Practice {0}', repLines: 'Lines', repNew: 'new', repDue: 'due', repOkS: 'learned',
-  repIntro: 'The app plays your opponent\'s moves (the ones you face most) and you answer. Follow your repertoire or try your own moves: I only stop you on mistakes. Every repertoire move comes with its why.',
+  repIntro: 'Lines are grouped by plan: each group is one idea with several roads to it. When you practice, play the line\'s exact move; if you play another one, you try again.',
   kindTrap: 'trap', kindPunish: 'punish',
   mineTitle: 'My mistakes', mineIntro: 'Clear mistakes from your games that show within a move or two. Your current repertoire first.',
   punTitle: 'Punish mistakes', punIntro: 'Positions from your games where your opponent went wrong. The ones marked ✗ you let slip.',
