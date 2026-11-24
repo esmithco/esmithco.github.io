@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=105;
+var APP_VER=106;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -689,7 +689,7 @@ function renderItem(){
   $('line').textContent='';$('trEnd').hidden=true;$('trBody').hidden=false;$('boardwrap').hidden=false;$('choices').classList.remove('grid');boardEl.classList.remove('nocoords');B.onMove=null;
   if(X.past===X.i&&X.revs&&X.revs[X.i]&&X.revs[X.i].length){X.past=null;cur.revs=X.revs[X.i];cur.past=true;cur.answered=true;setBtns({});showRev(cur.revs.length-1);return}
   if(it.t==='card'){var c=S.cards[it.id];if(!c){skip();return}cur.card=c;loadCard(c)}
-  else if(it.t==='line'){if(!REP[it.op]||!REP[it.op].lines[it.i]||REP[it.op].lines[it.i].off){skip();return}loadLine(it.op,it.i)}
+  else if(it.t==='line'){if(!REP[it.op]||!REP[it.op].lines[it.i]||REP[it.op].lines[it.i].off){skip();return}if(it.watch)watchLine(it.op,it.i);else loadLine(it.op,it.i)}
   else if(it.t==='opun'){if(!REP[it.op]||!REP[it.op].lines[it.i]||typeof REP[it.op].lines[it.i].key!=='number'){skip();return}loadOPun(it.op,it.i)}
   else if(it.t==='name'){if(!REP[it.op]||!REP[it.op].lines[it.i]){skip();return}loadName(it.op,it.i)}
   else if(it.t==='theory'){var lt=lessonById(it.l);if(!lt){skip();return}loadTheory(lt)}
@@ -980,25 +980,38 @@ function lineFamily(op,i){var g=planOf(op,i);if(!g)return '';var sib=g.g.filter(
 /* Nov 23 ("at the start it says nothing, I play, and then you say something"): first the line, its plan and its connections; then he plays */
 function lineIntro(op,i,fn){
   var o=REP[op],l=o.lines[i],e=lineEnd(l);anOff();$('trBody').classList.remove('answered');$('fb').innerHTML='';$('fb').className='feedback';$('demoBar').hidden=true;
-  setBoard(e.fen,o.side==='b',e.last?e.last.san:null,fenOf(l.moves.slice(0,-1)));B.locked=true;B.onMove=null;
+  setBoard(new Chess().fen(),o.side==='b');B.locked=true;B.onMove=null;   /* Nov 24: no spoiler — the end position used to be on the board before he played */
   var k=l.kind==='trap'?'trap':l.kind==='punish'?'punish':'rep';
   $('prompt').innerHTML='<div class="op">'+kindPill(k,esc(tt(o.name)))+'</div><div class="bigq">'+esc(tt(l.name))+'</div>'+lineFamily(op,i)+
-    '<details class="lseq"><summary>👀 '+t('repSeq')+'</summary><p class="mono">'+moveLine(l.moves)+'</p></details><p class="lend">'+t('repEndPos')+'</p>';
-  var ch=$('choices');ch.hidden=false;ch.classList.remove('grid');ch.innerHTML='<button class="btn primary gatego" id="bGo" type="button">'+t('repStart')+'</button>';setBtns({});
-  $('bGo').onclick=function(){ch.innerHTML='';ch.hidden=true;fn()};
+    '';
+  var ch=$('choices');ch.hidden=false;ch.classList.remove('grid');ch.innerHTML='<button class="btn primary gatego" id="bGo" type="button">'+t('repStart')+'</button><button class="btn" id="bWatch" type="button">👀 '+t('watchBtn')+'</button>';setBtns({});
+  $('bGo').onclick=function(){ch.innerHTML='';ch.hidden=true;fn()};$('bWatch').onclick=function(){watchLine(op,i)};
 }
-function loadLine(op,i,played){
+function loadLine(op,i,played,stopAt){
   var o=REP[op],l=o.lines[i];
-  if(!played&&!S.rep[lineId(op,i)]){loadDemo(op,i);return}
+  if(!played&&!S.rep[lineId(op,i)]){learnChunk(op,i,0);return}
   if(!played){lineIntro(op,i,function(){loadLine(op,i,true)});return}
   $('demoBar').hidden=true;
-  cur.rep={op:op,i:i,l:l,ply:0,err:0,side:o.side,book:true,hist:[],end:Math.max(l.moves.length,16),map:bookMap(op),reply:null,replyFen:null};
+  cur.rep={op:op,i:i,l:l,ply:0,err:0,side:o.side,book:true,hist:[],end:Math.max(l.moves.length,16),map:bookMap(op),reply:null,replyFen:null,stopAt:stopAt||0,lerr:(cur.learnErr||0)};
   setBoard(new Chess().fen(),o.side==='b');setBar(null,false);
   var k=l.kind==='trap'?'trap':l.kind==='punish'?'punish':'rep'
   $('prompt').innerHTML='<div class="op">'+kindPill(k,esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div>'+(l.kind==='trap'?t('pRepTrap'):l.kind==='punish'?t('pRepPunish'):t('pRep'))+' <span class="small">'+t('pRepExact')+'</span>';
   setBtns({hint:true,show:true});B.onMove=onRepMove;
   var pg0=planOf(op,i);if(pg0)guideNote(esc(tt(pg0.goal)),'plan');
   repStep();
+}
+/* Nov 24 ("learning a new line by watching it all and then playing it all is weird"): LEARN IN CHUNKS — watch only the next two of
+   your moves (with their notes), then play the line FROM THE START up to there from memory; then two more… until the whole line. */
+function learnChunks(l,side){var mine=[];l.moves.forEach(function(_,p){if((p%2===0)===(side==='w'))mine.push(p)});var ends=[];for(var k=1;k<mine.length;k+=2)ends.push(mine[k]+1);if(!ends.length||ends[ends.length-1]<l.moves.length)ends.push(l.moves.length);return ends}
+function watchLine(op,i){var o=REP[op],l=o.lines[i];cur.rep=null;cur.demo={op:op,i:i,l:l,ply:0,side:o.side};setBar(null,false);B.locked=true;B.onMove=null;
+  $('prompt').innerHTML='<div class="op">'+kindPill('rep',esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div><div class="bigq">'+t('watchT')+'</div>';
+  $('choices').innerHTML='';$('choices').hidden=true;$('demoBar').hidden=false;$('bDemoPlay').textContent=t('bDemoPlay');setBtns({});demoShow()}
+function learnChunk(op,i,from){
+  var o=REP[op],l=o.lines[i],ends=learnChunks(l,o.side),to=ends.filter(function(e){return e>from})[0]||l.moves.length,k=ends.indexOf(to)+1;
+  if(from===0)cur.learnErr=0;
+  cur.rep=null;cur.demo={op:op,i:i,l:l,ply:from,side:o.side,from:from,to:to,learn:true};setBar(null,false);B.locked=true;B.onMove=null;
+  $('prompt').innerHTML='<div class="op">'+kindPill('rep',esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div><div class="bigq">'+t('lrnPart',k,ends.length)+'</div><p class="lend">'+t(from?'lrnHint2':'lrnHint')+'</p>'+(from===0?lineFamily(op,i):'');
+  $('demoBar').hidden=false;$('bDemoPlay').textContent=t('lrnPlay');setBtns({});demoShow();
 }
 /* new line: watch it first, move by move with its notes, then play it */
 function loadDemo(op,i){
@@ -1013,13 +1026,13 @@ function demoShow(){
   $('line').innerHTML=moveLine(mv);
   var n=D.ply>0?l.notes[String(D.ply-1)]:null,who=D.ply>0?(((D.ply-1)%2===0)===(D.side==='w')?'me':'opp'):'';
   $('fb').className='feedback';$('fb').innerHTML=D.ply>0?'<span class="mono">'+esc(l.moves[D.ply-1])+'</span>'+(n?' — <span class="'+who+'n">'+esc(tt(n))+'</span>':''):'';
-  $('bDemoPrev').disabled=D.ply===0;$('bDemoNext').disabled=D.ply>=l.moves.length;
-  $('bDemoPlay').classList.toggle('primary',D.ply>=l.moves.length);
+  var lo=D.learn?D.from:0,hi=D.learn?D.to:l.moves.length;$('bDemoPrev').disabled=D.ply<=lo;$('bDemoNext').disabled=D.ply>=hi;
+  $('bDemoPlay').classList.toggle('primary',D.ply>=hi);$('bDemoPlay').disabled=D.learn&&D.ply<hi;
   var dg=planOf(D.op,D.i);if(D.ply>=l.moves.length&&dg){guideNote('<b>'+t('opNow')+'</b> '+esc(tt(dg.goal))+(visSteps(D.op,dg.k)?' <button class="btn" id="gPlan" type="button">🧭 '+t('opSee')+'</button>':''),'plan');if($('gPlan'))$('gPlan').onclick=function(){planGo(D.op,dg.k)}}else $('guide').hidden=true;
 }
-$('bDemoPrev').onclick=function(){if(cur&&cur.demo&&cur.demo.ply>0){cur.demo.ply--;demoShow()}};
-$('bDemoNext').onclick=function(){if(cur&&cur.demo&&cur.demo.ply<cur.demo.l.moves.length){cur.demo.ply++;demoShow()}};
-$('bDemoPlay').onclick=function(){if(!cur||!cur.demo)return;var D=cur.demo;cur.demo=null;$('demoBar').hidden=true;$('fb').innerHTML='';$('note').innerHTML='';loadLine(D.op,D.i,true)};
+$('bDemoPrev').onclick=function(){var D=cur&&cur.demo;if(D&&D.ply>(D.learn?D.from:0)){D.ply--;demoShow()}};
+$('bDemoNext').onclick=function(){var D=cur&&cur.demo;if(D&&D.ply<(D.learn?D.to:D.l.moves.length)){D.ply++;demoShow()}};
+$('bDemoPlay').onclick=function(){if(!cur||!cur.demo)return;var D=cur.demo;cur.demo=null;$('demoBar').hidden=true;$('fb').innerHTML='';$('note').innerHTML='';$('bDemoPlay').disabled=false;$('bDemoPlay').textContent=t('bDemoPlay');loadLine(D.op,D.i,true,D.learn?D.to:0)};
 
 /* which variation is this? final position of a line, pick its name among lines of the same opening */
 function loadName(op,i){
@@ -1046,7 +1059,10 @@ function repRejoin(){var R=cur.rep,k=R.map[posKey(B.chess.fen())];
   if(!R.book&&k){R.book=true;R.l=REP[R.op].lines[k.i];R.ply=k.ply;addNote(t('repBack'),'me')}}
 function repStep(){
   var R=cur.rep;$('line').innerHTML=moveLine(R.hist);
-  if((R.book&&R.ply>=R.l.moves.length)||(!R.book&&R.hist.length>=R.end)||B.chess.game_over()){repFinish();return}
+  if(R.book&&R.stopAt&&R.stopAt<R.l.moves.length&&R.ply>=R.stopAt){B.locked=true;cur.learnErr=(R.lerr||0)+R.err;   /* learn mode: this chunk is done -> 2 new moves */
+    setBtns({});$('fb').className='feedback good';$('fb').innerHTML='✓ '+t('lrnChunkOk');var ch=$('choices');ch.hidden=false;ch.classList.remove('grid');
+    ch.innerHTML='<button class="btn primary" id="bLrnNext" type="button">'+t('lrnNext')+'</button>';tapLock($('bLrnNext'));$('bLrnNext').onclick=function(){ch.innerHTML='';ch.hidden=true;learnChunk(R.op,R.i,R.stopAt)};return}
+  if((R.book&&R.ply>=R.l.moves.length)||(!R.book&&R.hist.length>=R.end)||B.chess.game_over()){if(R.stopAt)R.err+=R.lerr;repFinish();return}
   if(B.chess.turn()===R.side){B.locked=false;drawBoard();return}
   B.locked=true;
   later(function(){pickOpp().then(function(san){
@@ -1234,8 +1250,8 @@ function renderRep(op){
       var nx=b.nextElementSibling;if(nx&&nx.classList.contains('rprev')){nx.remove();return}
       $('repList').querySelectorAll('.rprev').forEach(function(x){x.remove()});
       var l=REP[repTab].lines[i],e=lineEnd(l),d=document.createElement('div');d.className='rprev';
-      d.innerHTML=miniBoard(e.fen,REP[repTab].side==='b',e.last,'mini big')+'<p class="small mono">'+esc(l.moves.join(' '))+'</p>'+(planOf(repTab,i)?'<p class="og">🧭 '+esc(tt(planOf(repTab,i).goal))+'</p><button class="btn" type="button" data-pv="1">🧭 '+t('opSee')+'</button> ':'')+vidBtn(l.video)+' <button class="btn primary" type="button" data-pl="1">'+t('repPlayThis')+'</button>';
-      d.querySelector('[data-pl]').onclick=function(){startSession([{t:'line',op:repTab,i:i}],'rep')};if(d.querySelector('[data-pv]'))d.querySelector('[data-pv]').onclick=function(){planGo(repTab,planOf(repTab,i).k)};b.after(d);d.scrollIntoView({block:'nearest',behavior:'smooth'})}}});
+      d.innerHTML=miniBoard(e.fen,REP[repTab].side==='b',e.last,'mini big')+'<p><button class="btn" type="button" data-w="1">👀 '+t('watchBtn')+'</button></p>'+(planOf(repTab,i)?'<p class="og">🧭 '+esc(tt(planOf(repTab,i).goal))+'</p><button class="btn" type="button" data-pv="1">🧭 '+t('opSee')+'</button> ':'')+vidBtn(l.video)+' <button class="btn primary" type="button" data-pl="1">'+t('repPlayThis')+'</button>';
+      d.querySelector('[data-pl]').onclick=function(){startSession([{t:'line',op:repTab,i:i}],'rep')};d.querySelector('[data-w]').onclick=function(){startSession([{t:'line',op:repTab,i:i,watch:1}],'rep')};if(d.querySelector('[data-pv]'))d.querySelector('[data-pv]').onclick=function(){planGo(repTab,planOf(repTab,i).k)};b.after(d);d.scrollIntoView({block:'nearest',behavior:'smooth'})}}});
   $('repList').querySelectorAll('[data-pk]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();planGo(repTab,b.getAttribute('data-pk'))}});
   $('bRepGo').textContent=t('repPractice',tt(REP[repTab].name));$('bRepQuiz').textContent=t('bNameQuiz');
 }
