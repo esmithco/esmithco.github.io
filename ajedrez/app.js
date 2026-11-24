@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=115;
+var APP_VER=116;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -895,8 +895,9 @@ function guideRender(){
   else if(AN.i===AN.base&&cur.punMiss)h='<div class="gtxt"><span class="gic">⚔</span><span><b>'+esc(t('gHowPunish'))+'</b><small class="gsub">'+esc(t('gStart'))+'</small></span></div>';
   else if(AN.i>=AN.base&&cur.gk&&CONCEPT[cur.gk])h='<div class="gtxt"><span class="gic">📘</span><span><b>'+esc(tt(CONCEPT[cur.gk].t))+'</b> — '+esc(tt(CONCEPT[cur.gk].habit))+'<small class="gsub">'+esc(t('gStart'))+'</small></span></div>';
   else h='<div class="gtxt"><span class="gic">▶</span><span>'+esc(AN.i<AN.base?t('gBefore'):t('gStart'))+'</span></div>';
-  h+='<div class="gnav"><button class="btn" id="gPrev" type="button"'+(AN.i<=0?' disabled':'')+'>◀</button><span class="small">'+(n>0&&k>=0?k+' / '+n:'')+'</span><button class="btn primary" id="gNext" type="button"'+(AN.i>=AN.moves.length?' disabled':'')+'>▶</button>'+
-     ($('why')&&!$('why').hidden&&$('why').innerHTML?'<button class="btn" id="gRead" type="button">📖 '+t('gRead')+'</button>':'')+'</div>';
+  /* Nov 24 ("the arrows move because of the text"): the ◀ ▶ row goes on TOP of the bubble, so the text below never pushes it */
+  h='<div class="gnav"><button class="btn" id="gPrev" type="button"'+(AN.i<=0?' disabled':'')+'>◀</button><span class="small">'+(n>0&&k>=0?k+' / '+n:'')+'</span><button class="btn primary" id="gNext" type="button"'+(AN.i>=AN.moves.length?' disabled':'')+'>▶</button>'+
+     ($('why')&&!$('why').hidden&&$('why').innerHTML?'<button class="btn" id="gRead" type="button">📖 '+t('gRead')+'</button>':'')+'</div>'+h;
   el.innerHTML=h;el.hidden=false;
   $('gPrev').onclick=function(){$('anPrev').click()};$('gNext').onclick=function(){$('anNext').click()};
   if($('gRead'))$('gRead').onclick=function(){var w=$('why'),d=w.querySelector('details');if(d)d.open=true;w.scrollIntoView({behavior:'smooth',block:'start'})};
