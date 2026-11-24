@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=113;
+var APP_VER=114;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1199,6 +1199,9 @@ function osLive(op){var base=window.OSTATS&&OSTATS[op];var o=JSON.parse(JSON.str
 function wdl(a){var n=a[0]+a[1]+a[2];return {n:n,w:a[0],d:a[1],l:a[2],pct:n?Math.round((a[0]+a[1]/2)/n*100):0}}
 function wdlHtml(a,small){var x=wdl(a);if(!x.n)return '';var c=x.pct>=55?'good':x.pct<=45?'bad':'';
   return '<span class="wdl '+c+'">'+t(small?'stLine':'stSec',x.n,x.w,x.d,x.l,x.pct)+'</span>'}
+/* Nov 24 ("I don't remember practising all those lines; a start-over button"): a line counts as done in its section's path only if it
+   was finished after that section's last restart (S.pathReset['op:k'], synced). The practice history (SR) is never deleted. */
+function pathDone(op,i){var st=S.rep[lineId(op,i)];if(!st)return false;var g=planOf(op,i),r=(S.pathReset||{})[op+':'+(g?g.k:'other')]||0;return r?(st.at||0)>r:true}
 function linePath(op){var seq=[],L=REP[op].lines,o=window.OPLAN&&OPLAN[op];(o?o.groups:[]).forEach(function(g){g.g.forEach(function(i){if(L[i]&&!L[i].off&&seq.indexOf(i)<0)seq.push(i)})});
   L.forEach(function(l,i){if(!l.off&&seq.indexOf(i)<0)seq.push(i)});return seq}
 function pathNow(op){var seq=linePath(op);for(var k=0;k<seq.length;k++)if(!S.rep[lineId(op,seq[k])])return seq[k];
@@ -1236,12 +1239,12 @@ function chessTap(txt){if(!B||!B.chess||$('boardwrap').hidden)return;var rings={
   clearTimeout(CL_T);CL_T=setTimeout(function(){B.rings={};B.arrows=(B.arrows||[]).filter(function(a){return a.c!=='#7C3AED'});drawBoard()},4000)}
 document.addEventListener('click',function(ev){var el=ev.target.closest&&ev.target.closest('.cl');if(!el)return;ev.stopPropagation();ev.preventDefault();chessTap(el.getAttribute('data-c'))},true);
 function repFinish(){
-  var R=cur.rep,st=repState(lineId(R.op,R.i));gradeObj(st,R.err===0);
+  var R=cur.rep,st=repState(lineId(R.op,R.i));gradeObj(st,R.err===0);st.at=now();
   $('line').innerHTML=moveLine(R.hist);
   $('fb').className='feedback good';$('fb').innerHTML=(R.err?t('repDone'):t('repDoneClean'))+' '+t('repErrs',R.err);
   var pg=planOf(R.op,R.i),sa=sameAs(R.op,R.i);if(pg){guideNote('<b>'+t('opNow')+'</b> '+esc(tt(pg.goal))+(R.l.video?' '+vidBtn(R.l.video):'')+(sa.length?'<br>🔗 '+t('repSame',sa.slice(0,2).map(function(j){return '<b>'+esc(tt(REP[R.op].lines[j].name))+'</b>'}).join(', ')):'')+'','plan');if($('gPlan'))$('gPlan').onclick=function(){planGo(R.op,pg.k)}}
   cur.fen=B.chess.fen();cur.anPath=function(){return {start:INIT,moves:R.hist,base:R.hist.length}};itemDone(R.err===0);
-  var gcur=planOf(R.op,R.i),nx=X.src==='rep'?pathNext(R.op,R.i):null;if(nx!=null&&gcur&&planOf(R.op,nx)!==gcur){var gl=gcur.g.filter(function(j){var L=REP[R.op].lines[j];return L&&!L.off&&!S.rep[lineId(R.op,j)]});nx=gl.length?gl[0]:nx}
+  var gcur=planOf(R.op,R.i),nx=X.src==='rep'?pathNext(R.op,R.i):null;if(nx!=null&&gcur&&planOf(R.op,nx)!==gcur){var gl=gcur.g.filter(function(j){var L=REP[R.op].lines[j];return L&&!L.off&&!pathDone(R.op,j)});nx=gl.length?gl[0]:nx}
   if(nx!=null){var g0=planOf(R.op,R.i),g1=planOf(R.op,nx),ch=$('choices');ch.hidden=false;ch.classList.remove('grid');
     ch.innerHTML='<button class="btn primary pathnext" id="bPathNext" type="button">'+t('pathNext')+'<small>'+esc(tt(REP[R.op].lines[nx].name))+(g1&&g1!==g0?' · '+t('pathNewPlan'):'')+'</small></button>';tapLock($('bPathNext'));
     $('bPathNext').onclick=function(){X.items.splice(X.i+1,0,{t:'line',op:R.op,i:nx});X.i++;renderItem()}}
@@ -1306,16 +1309,17 @@ function renderRep(op){
     Object.keys(OS.groups).forEach(function(k){var x=wdl(OS.groups[k].all);if(x.n<5)return;if(!best||x.pct>best.p)best={k:k,p:x.pct};if(!worst||x.pct<worst.p)worst={k:k,p:x.pct}})}
   (OP?OP.groups:[]).forEach(function(g){var xs=g.g.map(function(i){return byI[i]}).filter(Boolean);if(!xs.length)return;xs.forEach(function(x){used[x.i]=1});
     /* Nov 24 ("a path per section, not one big 2 of 36"): each plan group has its own dots and its own Continue */
-    var gi=xs.map(function(x){return x.i}),gnow=gi.filter(function(i){return !S.rep[lineId(repTab,i)]})[0];if(gnow==null)gnow=gi.filter(function(i){return (S.rep[lineId(repTab,i)].due||0)<=now()})[0];if(gnow==null)gnow=gi[0];
-    var gdone=gi.filter(function(i){return !!S.rep[lineId(repTab,i)]}).length;
+    var gi=xs.map(function(x){return x.i}),gnow=gi.filter(function(i){return !pathDone(repTab,i)})[0];if(gnow==null)gnow=gi.filter(function(i){return (S.rep[lineId(repTab,i)].due||0)<=now()})[0];if(gnow==null)gnow=gi[0];
+    var gdone=gi.filter(function(i){return pathDone(repTab,i)}).length;
     var gs=OS&&OS.groups[g.k];
     html+='<section class="pfam"><div class="pfh"><h3 class="rgroup">🧭 '+esc(tt(g.t))+'</h3>'+(gs?'<p>'+wdlHtml(gs.all)+(best&&best.k===g.k&&best!==worst?' <span class="pill good">🏆 '+t('secBest')+'</span>':'')+(worst&&worst.k===g.k&&best!==worst?' <span class="pill blun">⚠ '+t('secWorst')+'</span>':'')+'</p>':'')+'<p class="og">'+esc(tt(g.goal))+'</p>'+
-      '<div class="pathdots">'+gi.map(function(i){return '<span class="pd '+(i===gnow?'now':S.rep[lineId(repTab,i)]?'ok':'')+'"></span>'}).join('')+'<span class="small">'+gdone+'/'+gi.length+'</span></div>'+
-      '<button class="btn primary sgo" type="button" data-sg="'+gnow+'">▶ '+t(gdone?'pathGo':'pathStart')+'</button>'+
+      '<div class="pathdots">'+gi.map(function(i){return '<span class="pd '+(i===gnow?'now':pathDone(repTab,i)?'ok':'')+'"></span>'}).join('')+'<span class="small">'+gdone+'/'+gi.length+'</span></div>'+
+      '<button class="btn primary sgo" type="button" data-sg="'+gnow+'">▶ '+t(gdone?'pathGo':'pathStart')+'</button>'+(gdone?'<button class="btn sreset" type="button" data-sr="'+g.k+'">↺ '+t('pathReset')+'</button>':'')+
       (g.vid||[]).map(vidBtn).join(' ')+'</div>'+xs.map(row).join('')+'</section>'});
   var rest=ls.filter(function(x){return !used[x.i]});if(rest.length)html+='<section class="pfam"><h3 class="rgroup">'+t('repOther')+'</h3>'+rest.map(row).join('')+'</section>';
   $('repList').innerHTML=html;
   $('repList').querySelectorAll('[data-sg]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();startSession([{t:'line',op:repTab,i:+b.getAttribute('data-sg')}],'rep')}});
+  $('repList').querySelectorAll('[data-sr]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();S.pathReset=S.pathReset||{};S.pathReset[repTab+':'+b.getAttribute('data-sr')]=now();save();renderRep()}});
   $('repList').querySelectorAll('.lrow').forEach(function(b){b.onclick=function(ev){var i=+b.getAttribute('data-i');
     { /* tap a line: open a bigger preview right under it, with the moves and a button to practise it */
       var nx=b.nextElementSibling;if(nx&&nx.classList.contains('rprev')){nx.remove();return}
@@ -2349,13 +2353,13 @@ function openPush(keep){clearTimeout(clTimer);clBusy=true;clStatus();
 function openPull(){clBusy=true;clStatus();
   return fbGet().then(function(R){if(R)mergeProgress(R);clPulled=now();clErr=''}).catch(function(e){clErr=String(e)})
     .then(function(){clBusy=false;return openPush()}).then(function(){if(!$('s-home').hidden)renderHome()})}
-function prog(o){return {box:o.box||0,due:o.due||0,reps:o.reps||0,lapses:o.lapses||0,last:o.last||0}}
+function prog(o){var r={box:o.box||0,due:o.due||0,reps:o.reps||0,lapses:o.lapses||0,last:o.last||0};if(o.at)r.at=o.at;return r}
 function payload(){
   var cards={},app={},games={};
   Object.keys(S.cards).forEach(function(k){var c=S.cards[k];if(c.src==='app')app[k]=c;else if(c.reps)cards[k]=prog(c)});
   Object.keys(S.games).forEach(function(k){if(S.games[k].src==='app')games[k]=S.games[k]});
   var m=function(o){var r={};Object.keys(o||{}).forEach(function(k){r[k]=prog(o[k])});return r};
-  return {v:1,at:now(),user:S.user,cards:cards,appCards:app,games:games,rep:m(S.rep),ideas:m(S.ideas),puz:m(S.puz),tech:m(S.tech),quiz:m(S.quiz),plan:m(S.plan),opun:m(S.opun),dlog:(S.dlog||[]).slice(-400),drill:S.drill,
+  return {v:1,at:now(),user:S.user,cards:cards,appCards:app,games:games,rep:m(S.rep),ideas:m(S.ideas),puz:m(S.puz),tech:m(S.tech),quiz:m(S.quiz),plan:m(S.plan),opun:m(S.opun),dlog:(S.dlog||[]).slice(-400),pathReset:S.pathReset||{},drill:S.drill,
     seenLesson:S.seenLesson,log:S.log,daily:S.daily,streak:S.streak,days:S.days,lastSync:S.lastSync};
 }
 function newer(a,b){return (a.reps||0)>(b.reps||0)||((a.reps||0)===(b.reps||0)&&(a.due||0)>(b.due||0))}
@@ -2368,6 +2372,7 @@ function mergeProgress(R){
     if(k==='calc'&&a){var seen={},h=(a.h||[]).concat(r.h||[]).filter(function(x){var key=x.join('|');if(seen[key])return false;seen[key]=1;return true});if((r.at||0)>(a.at||0)){a.lvl=r.lvl;a.at=r.at}a.h=h.slice(-60);a.tot=Math.max(a.tot||0,r.tot||0);a.runs=Math.max(a.runs||0,r.runs||0);a.best=Math.max(a.best||0,r.best||0);return}
     if(!a||r.best>a.best||(r.best===a.best&&r.bestT&&r.bestT<a.bestT))S.drill[k]=r});
   ['rep','ideas','puz','tech','quiz','plan','opun'].forEach(function(f){S[f]=S[f]||{};Object.keys(R[f]||{}).forEach(function(k){var a=S[f][k],r=R[f][k];if(!a||newer(r,a))S[f][k]=r})});
+  S.pathReset=S.pathReset||{};Object.keys(R.pathReset||{}).forEach(function(k){if((R.pathReset[k]||0)>(S.pathReset[k]||0))S.pathReset[k]=R.pathReset[k]});
   Object.keys(R.seenLesson||{}).forEach(function(k){S.seenLesson[k]=1});
   var seen={};S.log=(S.log||[]).concat(R.log||[]).filter(function(e){var k=e[0]+e[1];if(seen[k])return false;seen[k]=1;return true}).sort(function(a,b){return a[0]-b[0]}).slice(-4000);
   if(R.dlog){var dk={};S.dlog=(S.dlog||[]).concat(R.dlog).filter(function(e){var k=e[0]+e[2];if(dk[k])return false;dk[k]=1;return true}).sort(function(a,b){return a[0]-b[0]}).slice(-600)}
