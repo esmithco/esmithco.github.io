@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=118;
+var APP_VER=119;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1351,7 +1351,9 @@ function renderRep(op){
       '<button class="btn primary sgo" type="button" data-sg="'+gnow+'" data-sgl="'+(function(){var k0=gi.indexOf(gnow),rest=gi.slice(k0).filter(function(i){return !pathDone(repTab,i)});return (rest.length?rest:gi.slice(k0)).join(',')})()+'">▶ '+t(gdone?'pathGo':'pathStart')+'</button>'+(gdone?'<button class="btn sreset" type="button" data-sr="'+g.k+'">↺ '+t('pathReset')+'</button>':'')+
       (g.vid||[]).map(vidBtn).join(' ')+'</div>'+xs.map(row).join('')+'</section>'});
   var rest=ls.filter(function(x){return !used[x.i]});if(rest.length)html+='<section class="pfam"><h3 class="rgroup">'+t('repOther')+'</h3>'+rest.map(row).join('')+'</section>';
-  $('repList').innerHTML=html;
+  /* Nov 24 ("I'm confused: which defense do I use against what?"): one small map on top, the same in every tab */
+  var mapH='<details class="repmap"><summary>🗺 '+t('mapT')+'</summary><div class="mapg">'+['mapW','mapE4','mapD4','mapOther'].map(function(k){return '<p>'+t(k)+'</p>'}).join('')+'<p class="small">'+t('mapWhy')+'</p></div></details>';
+  $('repList').innerHTML=mapH+html;
   /* Nov 24 ("I finished the first line and it sent me home; the bar said 1 of 1"): Continue starts a session with ALL remaining lines of the section.
      Then ("before it counts as learned I need exercises on each line, and at the end a summary of all of them"): after each line come 2 position
      exercises from THAT line, and the section ends with a mixed review (one position per line + the section's concept questions). */
