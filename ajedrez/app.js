@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=109;
+var APP_VER=111;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1184,6 +1184,10 @@ function planBox(g,open){if(!g)return '';var li=function(a){return '<ul>'+tt(a).
   return '<div class="oplan"><b>🧭 '+esc(tt(g.t))+'</b><p class="og">'+esc(tt(g.goal))+'</p><details'+(open?' open':'')+'><summary>'+t('opPlanS')+'</summary><p class="ol">'+t('opPlan')+'</p>'+li(g.plan)+'<p class="ol">'+t('opWatch')+'</p>'+li(g.watch)+'<p class="ol">'+t('opAvoid')+'</p><p>'+esc(tt(g.avoid))+'</p></details></div>'}
 /* Nov 24 ("like Duolingo: you finished this line, a button, and I continue"): each opening is a PATH — its lines in plan-group order
    (OPLAN), then any others. 'Continuar' starts the first line never practised (else the first one due); finishing a line offers the next. */
+/* Nov 24 ("how much I play each opening, wins/draws/losses, my best and my worst"): estadisticas.js (tools/ostats.py) */
+function wdl(a){var n=a[0]+a[1]+a[2];return {n:n,w:a[0],d:a[1],l:a[2],pct:n?Math.round((a[0]+a[1]/2)/n*100):0}}
+function wdlHtml(a,small){var x=wdl(a);if(!x.n)return '';var c=x.pct>=55?'good':x.pct<=45?'bad':'';
+  return '<span class="wdl '+c+'">'+t(small?'stLine':'stSec',x.n,x.w,x.d,x.l,x.pct)+'</span>'}
 function linePath(op){var seq=[],L=REP[op].lines,o=window.OPLAN&&OPLAN[op];(o?o.groups:[]).forEach(function(g){g.g.forEach(function(i){if(L[i]&&!L[i].off&&seq.indexOf(i)<0)seq.push(i)})});
   L.forEach(function(l,i){if(!l.off&&seq.indexOf(i)<0)seq.push(i)});return seq}
 function pathNow(op){var seq=linePath(op);for(var k=0;k<seq.length;k++)if(!S.rep[lineId(op,seq[k])])return seq[k];
@@ -1279,18 +1283,22 @@ function renderRep(op){
   var ls=repLines(repTab);
   var row=function(x){var st=x.st,lab=!st?t('repNew'):st.box>=3?t('repOkS'):lineDue(x)?t('repDue'):'';
     var kind=x.l.kind==='trap'?'<span class="pill blun">'+t('kindTrap')+'</span> ':x.l.kind==='punish'?'<span class="pill good">'+t('kindPunish')+'</span> ':x.l.surprise?'<span class="pill mist">'+t('kindSurprise')+'</span> ':'';
-    var sub=x.l.kind==='game'&&x.l.stat?t('repStat',x.l.stat.n,Math.round(x.l.stat.score*x.l.stat.n)):'';
+    var ls0=window.OSTATS&&OSTATS[x.op]&&OSTATS[x.op].lines[String(x.i)],sub=ls0&&wdl(ls0.all).n>=2?wdlHtml(ls0.all,1):x.l.kind==='game'&&x.l.stat?t('repStat',x.l.stat.n,Math.round(x.l.stat.score*x.l.stat.n)):'';
     var e=lineEnd(x.l);
     return '<button class="lrow rrow" data-i="'+x.i+'"><span class="dotst '+(!st?'new':st.box>=3?'ok':lineDue(x)?'due':'')+'"></span><span class="thumb" data-thumb="'+x.i+'">'+miniBoard(e.fen,REP[x.op].side==='b',e.last)+'</span><span class="lname">'+kind+esc(tt(x.l.name))+
       (sub?'<span class="small">'+sub+'</span>':'')+'</span><span class="small">'+lab+'</span></button>'};
   /* Nov 23 ("I don't want to feel I have to learn 20 openings… help me see the connection"): lines grouped by PLAN —
      one plan per family, every line under it is another road to it */
   var OP=window.OPLAN&&OPLAN[repTab],byI={},used={},html='';ls.forEach(function(x){byI[x.i]=x});
+  var OS=window.OSTATS&&OSTATS[repTab],best=null,worst=null;
+  if(OS){html+='<div class="ostat">'+wdlHtml(OS.all)+'</div>';
+    Object.keys(OS.groups).forEach(function(k){var x=wdl(OS.groups[k].all);if(x.n<5)return;if(!best||x.pct>best.p)best={k:k,p:x.pct};if(!worst||x.pct<worst.p)worst={k:k,p:x.pct}})}
   (OP?OP.groups:[]).forEach(function(g){var xs=g.g.map(function(i){return byI[i]}).filter(Boolean);if(!xs.length)return;xs.forEach(function(x){used[x.i]=1});
     /* Nov 24 ("a path per section, not one big 2 of 36"): each plan group has its own dots and its own Continue */
     var gi=xs.map(function(x){return x.i}),gnow=gi.filter(function(i){return !S.rep[lineId(repTab,i)]})[0];if(gnow==null)gnow=gi.filter(function(i){return (S.rep[lineId(repTab,i)].due||0)<=now()})[0];if(gnow==null)gnow=gi[0];
     var gdone=gi.filter(function(i){return !!S.rep[lineId(repTab,i)]}).length;
-    html+='<section class="pfam"><div class="pfh"><h3 class="rgroup">🧭 '+esc(tt(g.t))+'</h3><p class="og">'+esc(tt(g.goal))+'</p>'+
+    var gs=OS&&OS.groups[g.k];
+    html+='<section class="pfam"><div class="pfh"><h3 class="rgroup">🧭 '+esc(tt(g.t))+'</h3>'+(gs?'<p>'+wdlHtml(gs.all)+(best&&best.k===g.k&&best!==worst?' <span class="pill good">🏆 '+t('secBest')+'</span>':'')+(worst&&worst.k===g.k&&best!==worst?' <span class="pill blun">⚠ '+t('secWorst')+'</span>':'')+'</p>':'')+'<p class="og">'+esc(tt(g.goal))+'</p>'+
       '<div class="pathdots">'+gi.map(function(i){return '<span class="pd '+(i===gnow?'now':S.rep[lineId(repTab,i)]?'ok':'')+'"></span>'}).join('')+'<span class="small">'+gdone+'/'+gi.length+'</span></div>'+
       '<button class="btn primary sgo" type="button" data-sg="'+gnow+'">▶ '+t(gdone?'pathGo':'pathStart')+'</button>'+
       (g.vid||[]).map(vidBtn).join(' ')+'</div>'+xs.map(row).join('')+'</section>'});
