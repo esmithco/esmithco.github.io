@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=112;
+var APP_VER=113;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -991,7 +991,7 @@ function lineIntro(op,i,fn){
 }
 function loadLine(op,i,played,stopAt){
   var o=REP[op],l=o.lines[i];
-  if(!played&&!S.rep[lineId(op,i)]){learnChunk(op,i,0);return}
+  if(!played&&!S.rep[lineId(op,i)]){loadDemo(op,i);return}   /* Nov 24: back to 'watch it once, then play it' — the learn-in-parts mode (learnChunk) tired him ('watching everything over and over') */
   if(!played){lineIntro(op,i,function(){loadLine(op,i,true)});return}
   $('demoBar').hidden=true;
   cur.rep={op:op,i:i,l:l,ply:0,err:0,side:o.side,book:true,hist:[],end:Math.max(l.moves.length,16),map:bookMap(op),reply:null,replyFen:null,stopAt:stopAt||0,lerr:(cur.learnErr||0)};
@@ -1022,7 +1022,7 @@ function loadDemo(op,i){
   var o=REP[op],l=o.lines[i];cur.demo={op:op,i:i,l:l,ply:0,side:o.side};
   setBar(null,false);B.locked=true;
   $('prompt').innerHTML='<div class="op">'+kindPill('rep',esc(tt(o.name))+' · '+esc(tt(l.name)))+'</div><b>'+t('demoT')+'</b> <span class="small">'+t('demoHint')+'</span>'+lineFamily(op,i);
-  $('demoBar').hidden=false;setBtns({});demoShow();
+  $('demoBar').hidden=false;$('bDemoPlay').textContent=t('bDemoPlay');setBtns({});demoShow();
 }
 function demoShow(){
   var D=cur.demo,l=D.l,mv=l.moves.slice(0,D.ply);
