@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=106;
+var APP_VER=107;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1178,12 +1178,23 @@ function sameAs(op,i){var key=op+':'+i;if(SAMEC[key])return SAMEC[key];
 function planOf(op,i){var o=window.OPLAN&&OPLAN[op];if(!o)return null;return o.groups.filter(function(g){return g.g.indexOf(i)>=0})[0]||null}
 function planBox(g,open){if(!g)return '';var li=function(a){return '<ul>'+tt(a).map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul>'};
   return '<div class="oplan"><b>🧭 '+esc(tt(g.t))+'</b><p class="og">'+esc(tt(g.goal))+'</p><details'+(open?' open':'')+'><summary>'+t('opPlanS')+'</summary><p class="ol">'+t('opPlan')+'</p>'+li(g.plan)+'<p class="ol">'+t('opWatch')+'</p>'+li(g.watch)+'<p class="ol">'+t('opAvoid')+'</p><p>'+esc(tt(g.avoid))+'</p></details></div>'}
+/* Nov 24 ("like Duolingo: you finished this line, a button, and I continue"): each opening is a PATH — its lines in plan-group order
+   (OPLAN), then any others. 'Continuar' starts the first line never practised (else the first one due); finishing a line offers the next. */
+function linePath(op){var seq=[],L=REP[op].lines,o=window.OPLAN&&OPLAN[op];(o?o.groups:[]).forEach(function(g){g.g.forEach(function(i){if(L[i]&&!L[i].off&&seq.indexOf(i)<0)seq.push(i)})});
+  L.forEach(function(l,i){if(!l.off&&seq.indexOf(i)<0)seq.push(i)});return seq}
+function pathNow(op){var seq=linePath(op);for(var k=0;k<seq.length;k++)if(!S.rep[lineId(op,seq[k])])return seq[k];
+  for(k=0;k<seq.length;k++){var st=S.rep[lineId(op,seq[k])];if((st.due||0)<=now())return seq[k]}return seq[0]}
+function pathNext(op,i){var seq=linePath(op),k=seq.indexOf(i);return k>=0&&k<seq.length-1?seq[k+1]:null}
 function repFinish(){
   var R=cur.rep,st=repState(lineId(R.op,R.i));gradeObj(st,R.err===0);
   $('line').innerHTML=moveLine(R.hist);
   $('fb').className='feedback good';$('fb').innerHTML=(R.err?t('repDone'):t('repDoneClean'))+' '+t('repErrs',R.err);
   var pg=planOf(R.op,R.i),sa=sameAs(R.op,R.i);if(pg){guideNote('<b>'+t('opNow')+'</b> '+esc(tt(pg.goal))+(R.l.video?' '+vidBtn(R.l.video):'')+(sa.length?'<br>🔗 '+t('repSame',sa.slice(0,2).map(function(j){return '<b>'+esc(tt(REP[R.op].lines[j].name))+'</b>'}).join(', ')):'')+(visSteps(R.op,pg.k)?' <button class="btn" id="gPlan" type="button">🧭 '+t('opSee')+'</button>':''),'plan');if($('gPlan'))$('gPlan').onclick=function(){planGo(R.op,pg.k)}}
   cur.fen=B.chess.fen();cur.anPath=function(){return {start:INIT,moves:R.hist,base:R.hist.length}};itemDone(R.err===0);
+  var nx=X.src==='rep'?pathNext(R.op,R.i):null;
+  if(nx!=null){var g0=planOf(R.op,R.i),g1=planOf(R.op,nx),ch=$('choices');ch.hidden=false;ch.classList.remove('grid');
+    ch.innerHTML='<button class="btn primary pathnext" id="bPathNext" type="button">'+t('pathNext')+'<small>'+esc(tt(REP[R.op].lines[nx].name))+(g1&&g1!==g0?' · '+t('pathNewPlan'):'')+'</small></button>';tapLock($('bPathNext'));
+    $('bPathNext').onclick=function(){X.items.splice(X.i+1,0,{t:'line',op:R.op,i:nx});X.i++;renderItem()}}
 }
 
 function addNote(html,cls){if(cur&&cur.rep&&!cur.answered){guideNote(html,cls);return}var n=$('note');n.hidden=false;n.insertAdjacentHTML('beforeend','<p class="'+(cls||'')+'">'+html+'</p>');
@@ -1244,7 +1255,11 @@ function renderRep(op){
     html+='<section class="pfam"><div class="pfh"><h3 class="rgroup">🧭 '+esc(tt(g.t))+'</h3><p class="og">'+esc(tt(g.goal))+'</p><p class="small">'+t('repFam',xs.length)+'</p>'+
       (visSteps(repTab,g.k)?'<button class="btn" type="button" data-pk="'+g.k+'">▶ '+t('opSee')+'</button> ':'')+(g.vid||[]).map(vidBtn).join(' ')+'</div>'+xs.map(row).join('')+'</section>'});
   var rest=ls.filter(function(x){return !used[x.i]});if(rest.length)html+='<section class="pfam"><h3 class="rgroup">'+t('repOther')+'</h3>'+rest.map(row).join('')+'</section>';
-  $('repList').innerHTML=html;
+  var seq=linePath(repTab),done=seq.filter(function(i){return !!S.rep[lineId(repTab,i)]}).length,nowI=pathNow(repTab);
+  var path='<div class="pathc"><div class="patht">🛤 '+t('pathT',done,seq.length)+'</div><div class="pathdots">'+seq.map(function(i){var st=S.rep[lineId(repTab,i)];return '<span class="pd '+(i===nowI?'now':st?'ok':'')+'"></span>'}).join('')+'</div>'+
+    '<button class="btn primary" id="bPathGo" type="button">▶ '+t('pathGo')+'<small>'+esc(tt(REP[repTab].lines[nowI].name))+'</small></button></div>';
+  $('repList').innerHTML=path+html;
+  $('bPathGo').onclick=function(){startSession([{t:'line',op:repTab,i:nowI}],'rep')};
   $('repList').querySelectorAll('.lrow').forEach(function(b){b.onclick=function(ev){var i=+b.getAttribute('data-i');
     { /* tap a line: open a bigger preview right under it, with the moves and a button to practise it */
       var nx=b.nextElementSibling;if(nx&&nx.classList.contains('rprev')){nx.remove();return}
