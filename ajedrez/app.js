@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=116;
+var APP_VER=117;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1271,7 +1271,7 @@ function repFinish(){
   $('fb').className='feedback good';$('fb').innerHTML=(R.err?t('repDone'):t('repDoneClean'))+' '+t('repErrs',R.err);
   var pg=planOf(R.op,R.i),sa=sameAs(R.op,R.i);if(pg){guideNote('<b>'+t('opNow')+'</b> '+esc(tt(pg.goal))+(R.l.video?' '+vidBtn(R.l.video):'')+(sa.length?'<br>🔗 '+t('repSame',sa.slice(0,2).map(function(j){return '<b>'+esc(tt(REP[R.op].lines[j].name))+'</b>'}).join(', ')):'')+'','plan');if($('gPlan'))$('gPlan').onclick=function(){planGo(R.op,pg.k)}}
   cur.fen=B.chess.fen();cur.anPath=function(){return {start:INIT,moves:R.hist,base:R.hist.length}};itemDone(R.err===0);
-  var gcur=planOf(R.op,R.i),nx=X.src==='rep'?pathNext(R.op,R.i):null;if(nx!=null&&gcur&&planOf(R.op,nx)!==gcur){var gl=gcur.g.filter(function(j){var L=REP[R.op].lines[j];return L&&!L.off&&!pathDone(R.op,j)});nx=gl.length?gl[0]:nx}
+  var gcur=planOf(R.op,R.i),nx=X.src==='rep'&&X.i>=X.items.length-1?pathNext(R.op,R.i):null;if(nx!=null&&gcur&&planOf(R.op,nx)!==gcur){var gl=gcur.g.filter(function(j){var L=REP[R.op].lines[j];return L&&!L.off&&!pathDone(R.op,j)});nx=gl.length?gl[0]:nx}
   if(nx!=null){var g0=planOf(R.op,R.i),g1=planOf(R.op,nx),ch=$('choices');ch.hidden=false;ch.classList.remove('grid');
     ch.innerHTML='<button class="btn primary pathnext" id="bPathNext" type="button">'+t('pathNext')+'<small>'+esc(tt(REP[R.op].lines[nx].name))+(g1&&g1!==g0?' · '+t('pathNewPlan'):'')+'</small></button>';tapLock($('bPathNext'));
     $('bPathNext').onclick=function(){X.items.splice(X.i+1,0,{t:'line',op:R.op,i:nx});X.i++;renderItem()}}
@@ -1341,11 +1341,12 @@ function renderRep(op){
     var gs=OS&&OS.groups[g.k];
     html+='<section class="pfam"><div class="pfh"><h3 class="rgroup">🧭 '+esc(tt(g.t))+'</h3>'+(gs?'<p>'+wdlHtml(gs.all)+(best&&best.k===g.k&&best!==worst?' <span class="pill good">🏆 '+t('secBest')+'</span>':'')+(worst&&worst.k===g.k&&best!==worst?' <span class="pill blun">⚠ '+t('secWorst')+'</span>':'')+'</p>':'')+'<p class="og">'+esc(tt(g.goal))+'</p>'+
       '<div class="pathdots">'+gi.map(function(i){return '<span class="pd '+(i===gnow?'now':pathDone(repTab,i)?'ok':'')+'"></span>'}).join('')+'<span class="small">'+gdone+'/'+gi.length+'</span></div>'+
-      '<button class="btn primary sgo" type="button" data-sg="'+gnow+'">▶ '+t(gdone?'pathGo':'pathStart')+'</button>'+(gdone?'<button class="btn sreset" type="button" data-sr="'+g.k+'">↺ '+t('pathReset')+'</button>':'')+
+      '<button class="btn primary sgo" type="button" data-sg="'+gnow+'" data-sgl="'+(function(){var k0=gi.indexOf(gnow),rest=gi.slice(k0).filter(function(i){return !pathDone(repTab,i)});return (rest.length?rest:gi.slice(k0)).join(',')})()+'">▶ '+t(gdone?'pathGo':'pathStart')+'</button>'+(gdone?'<button class="btn sreset" type="button" data-sr="'+g.k+'">↺ '+t('pathReset')+'</button>':'')+
       (g.vid||[]).map(vidBtn).join(' ')+'</div>'+xs.map(row).join('')+'</section>'});
   var rest=ls.filter(function(x){return !used[x.i]});if(rest.length)html+='<section class="pfam"><h3 class="rgroup">'+t('repOther')+'</h3>'+rest.map(row).join('')+'</section>';
   $('repList').innerHTML=html;
-  $('repList').querySelectorAll('[data-sg]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();startSession([{t:'line',op:repTab,i:+b.getAttribute('data-sg')}],'rep')}});
+  /* Nov 24 ("I finished the first line and it sent me home; the bar said 1 of 1"): Continue starts a session with ALL remaining lines of the section */
+  $('repList').querySelectorAll('[data-sg]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();var L=(b.getAttribute('data-sgl')||b.getAttribute('data-sg')).split(',').map(Number);startSession(L.map(function(i){return {t:'line',op:repTab,i:i}}),'rep')}});
   $('repList').querySelectorAll('[data-sr]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();S.pathReset=S.pathReset||{};S.pathReset[repTab+':'+b.getAttribute('data-sr')]=now();save();renderRep()}});
   $('repList').querySelectorAll('.lrow').forEach(function(b){b.onclick=function(ev){var i=+b.getAttribute('data-i');
     { /* tap a line: open a bigger preview right under it, with the moves and a button to practise it */
