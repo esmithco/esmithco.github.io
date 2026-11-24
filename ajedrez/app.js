@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=111;
+var APP_VER=112;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1185,6 +1185,17 @@ function planBox(g,open){if(!g)return '';var li=function(a){return '<ul>'+tt(a).
 /* Nov 24 ("like Duolingo: you finished this line, a button, and I continue"): each opening is a PATH — its lines in plan-group order
    (OPLAN), then any others. 'Continuar' starts the first line never practised (else the first one due); finishing a line offers the next. */
 /* Nov 24 ("how much I play each opening, wins/draws/losses, my best and my worst"): estadisticas.js (tools/ostats.py) */
+/* Nov 24 ("yes, automatic"): every new game synced from Chess.com is put in its repertoire section right away (same rule as
+   tools/ostats.py: the deepest repertoire position reached, >= 4 plies) and added on top of estadisticas.js (games newer than OSTATS_AT) */
+var OSMAP={};
+function osMap(op){if(OSMAP[op])return OSMAP[op];var m={};REP[op].lines.forEach(function(l,i){if(l.off)return;var c=new Chess();l.moves.forEach(function(mv,p){c.move(mv,{sloppy:true});var k=posKey(c.fen());if(!m[k]||m[k][1]<p+1)m[k]=[i,p+1]})});return OSMAP[op]=m}
+function osClassify(sans,side){if(!sans||!sans.length)return null;var c=new Chess(),keys=[];for(var p=0;p<sans.length&&p<24;p++){if(!c.move(sans[p],{sloppy:true}))break;keys.push(posKey(c.fen()))}
+  var best=null;Object.keys(REP).forEach(function(op){if(REP[op].side!==side)return;var m=osMap(op);keys.forEach(function(k){var x=m[k];if(x&&x[1]>=4&&(!best||x[1]>best.d))best={op:op,li:x[0],d:x[1]}})});
+  if(!best)return null;var g=planOf(best.op,best.li);return {op:best.op,li:best.li,k:g?g.k:'other'}}
+function osLive(op){var base=window.OSTATS&&OSTATS[op];var o=JSON.parse(JSON.stringify(base||{all:[0,0,0],rec:[0,0,0],groups:{},lines:{}})),at=window.OSTATS_AT||0,rec=now()/1000-60*86400;
+  Object.keys(S.games).forEach(function(id){var g=S.games[id];if(!g.os||g.os.op!==op||(g.date||0)<=at||g.tc!=='rapid')return;var r=g.r==='W'?0:g.r==='L'?2:1,isRec=(g.date||0)>=rec;
+    [o,(o.groups[g.os.k]=o.groups[g.os.k]||{all:[0,0,0],rec:[0,0,0]}),(o.lines[String(g.os.li)]=o.lines[String(g.os.li)]||{all:[0,0,0],rec:[0,0,0]})].forEach(function(x){x.all[r]++;if(isRec)x.rec[r]++})});
+  return o}
 function wdl(a){var n=a[0]+a[1]+a[2];return {n:n,w:a[0],d:a[1],l:a[2],pct:n?Math.round((a[0]+a[1]/2)/n*100):0}}
 function wdlHtml(a,small){var x=wdl(a);if(!x.n)return '';var c=x.pct>=55?'good':x.pct<=45?'bad':'';
   return '<span class="wdl '+c+'">'+t(small?'stLine':'stSec',x.n,x.w,x.d,x.l,x.pct)+'</span>'}
@@ -1283,14 +1294,14 @@ function renderRep(op){
   var ls=repLines(repTab);
   var row=function(x){var st=x.st,lab=!st?t('repNew'):st.box>=3?t('repOkS'):lineDue(x)?t('repDue'):'';
     var kind=x.l.kind==='trap'?'<span class="pill blun">'+t('kindTrap')+'</span> ':x.l.kind==='punish'?'<span class="pill good">'+t('kindPunish')+'</span> ':x.l.surprise?'<span class="pill mist">'+t('kindSurprise')+'</span> ':'';
-    var ls0=window.OSTATS&&OSTATS[x.op]&&OSTATS[x.op].lines[String(x.i)],sub=ls0&&wdl(ls0.all).n>=2?wdlHtml(ls0.all,1):x.l.kind==='game'&&x.l.stat?t('repStat',x.l.stat.n,Math.round(x.l.stat.score*x.l.stat.n)):'';
+    var ls0=OS&&OS.lines[String(x.i)],sub=ls0&&wdl(ls0.all).n>=2?wdlHtml(ls0.all,1):x.l.kind==='game'&&x.l.stat?t('repStat',x.l.stat.n,Math.round(x.l.stat.score*x.l.stat.n)):'';
     var e=lineEnd(x.l);
     return '<button class="lrow rrow" data-i="'+x.i+'"><span class="dotst '+(!st?'new':st.box>=3?'ok':lineDue(x)?'due':'')+'"></span><span class="thumb" data-thumb="'+x.i+'">'+miniBoard(e.fen,REP[x.op].side==='b',e.last)+'</span><span class="lname">'+kind+esc(tt(x.l.name))+
       (sub?'<span class="small">'+sub+'</span>':'')+'</span><span class="small">'+lab+'</span></button>'};
   /* Nov 23 ("I don't want to feel I have to learn 20 openings… help me see the connection"): lines grouped by PLAN —
      one plan per family, every line under it is another road to it */
   var OP=window.OPLAN&&OPLAN[repTab],byI={},used={},html='';ls.forEach(function(x){byI[x.i]=x});
-  var OS=window.OSTATS&&OSTATS[repTab],best=null,worst=null;
+  var OS=window.OSTATS?osLive(repTab):null,best=null,worst=null;
   if(OS){html+='<div class="ostat">'+wdlHtml(OS.all)+'</div>';
     Object.keys(OS.groups).forEach(function(k){var x=wdl(OS.groups[k].all);if(x.n<5)return;if(!best||x.pct>best.p)best={k:k,p:x.pct};if(!worst||x.pct<worst.p)worst={k:k,p:x.pct}})}
   (OP?OP.groups:[]).forEach(function(g){var xs=g.g.map(function(i){return byI[i]}).filter(Boolean);if(!xs.length)return;xs.forEach(function(x){used[x.i]=1});
@@ -2169,7 +2180,7 @@ function syncGames(){
     games.forEach(function(g){var side=g.white.username.toLowerCase()===user?'w':'b',me=side==='w'?g.white:g.black;
       var old=S.games[g.url];if(old){if(old.r==='L'&&old.op&&!old.full&&!S.pend[g.url]&&now()/1000-(old.date||0)<7*86400){var sv=movesOf(g.pgn);if(sv){S.pend[g.url]=sv;added++}}return}var sans=movesOf(g.pgn);
       S.games[g.url]={id:g.url,white:g.white.username,black:g.black.username,date:g.end_time,opening:openingName(g.eco),side:side,r:resultCode(me.result),how:me.result,rt:me.rating,tc:g.time_class,src:'app',op:0};
-      if(sans)S.pend[g.url]=sans;added++});
+      if(sans){S.pend[g.url]=sans;try{S.games[g.url].os=osClassify(sans,side)}catch(e){}}added++});
     S.lastSync=now();save();
     if(!$('s-home').hidden)renderHome();if(!$('s-progress').hidden)renderProgress();
     status(added?'added':'upToDate',added);setRunning(false);
