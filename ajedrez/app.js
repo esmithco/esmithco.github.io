@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=114;
+var APP_VER=115;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -681,7 +681,7 @@ function startSession(items,src,from){X.endless=false;X.snap=progSnap();X.items=
 /* when he leaves an exercise, store the whole time spent on it (answer + reading), so the daily plan fits his real pace */
 function closeItemTime(){if(cur&&cur.logI!=null&&S.log&&S.log[cur.logI]&&cur.t0){S.log[cur.logI][3]=Math.min(300,Math.round((now()-cur.t0)/1000));S.log[cur.logI][4]=1;cur.logI=null;save()}}
 function renderItem(){
-  closeItemTime();stopTimers();dclkStop();window.scrollTo(0,0);anOff();$('demoBar').hidden=true;boardEl.classList.remove('nopieces');
+  if(PEEK)peekOff();closeItemTime();stopTimers();dclkStop();window.scrollTo(0,0);anOff();$('demoBar').hidden=true;boardEl.classList.remove('nopieces');
   if(X.i>=X.items.length){endSession();return}
   $('trBody').classList.remove('answered');  var it=X.items[X.i];cur={it:it,answered:false,first:true,t0:now()};$('bPrevEx').disabled=X.i===0;
   $('trCount').textContent=(X.i+1)+'/'+X.items.length;$('trProg').style.width=(X.i/X.items.length*100)+'%';
@@ -1230,14 +1230,40 @@ function loadLPos(op,i,ply){
 }
 /* Nov 24 ("if you write 'pyramid c3-d4-e3', let me touch it and see it on the board"): squares and moves inside texts are tappable —
    a square gets a ring, a move an arrow (if legal on the board) or a ring on its target square. Applied to ESCAPED plain text only. */
-function chessLinks(h){return String(h).replace(/(O-O-O|O-O|\b[KQRBN][a-h]?[1-8]?x?[a-h][1-8][+#]?|\b[a-h]x[a-h][1-8][+#]?|\b[a-h][1-8]\b[+#]?)/g,function(m){return '<span class="cl" data-c="'+m+'">'+m+'</span>'})}
-var CL_T=0;
-function chessTap(txt){if(!B||!B.chess||$('boardwrap').hidden)return;var rings={},arrows=[],m=null;
-  try{var c=new Chess(B.chess.fen());m=c.move(txt,{sloppy:true});if(!m){var f=B.chess.fen().split(' ');f[1]=f[1]==='w'?'b':'w';f[3]='-';var c2=new Chess();if(c2.load(f.join(' ')))m=c2.move(txt,{sloppy:true})}}catch(e){}
-  if(m){arrows=[{from:m.from,to:m.to,c:'#7C3AED'}];rings[m.to]='g'}else{var sq=(txt.match(/[a-h][1-8]/g)||[]).pop();if(sq)rings[sq]='g'}
+/* Nov 24 ("when I touch 'pyramid' I want to see how the board would be"): CONCEPT words show a position on the board where you can see
+   the idea (a 'peek': the board switches, marked squares, '👀 Así se ve · toca para volver', tap to go back); square CHAINS (c3-d4-e3,
+   h4–h5) light up together; single squares get a ring and moves an arrow. Applied to ESCAPED plain text only. */
+var GLOSS=[
+ {re:/pir[áa]mides?|pyramid/i,op:'london',g:'classic',r:'c3 d4 e3'},
+ {re:/cadenas? de peones|pawn chains?/i,op:'caro',g:'adv',r:'d4 e5'},
+ {re:/fianchetto/i,op:'london',g:'kid',r:'g6 g7'},
+ {re:/enroque largo|long castling/i,op:'london',g:'kid',r:'c1 d1'},
+ {re:/pe[oó]n aislado|isolated (?:d4 |queen.?s )?pawn/i,op:'caro',g:'panov',r:'d4 d5'},
+ {re:/sacrificio griego|greek gift/i,op:'london',li:32,ply:20,r:'h7',a:'d3 h7'},
+ {re:/columna c\b|c-file/i,op:'caro',g:'exch',r:'c8 c3'},
+ {re:/columna h\b|h-file/i,op:'london',g:'kid',r:'h1 h7'},
+ {re:/Ataque 150|150 Attack/i,op:'london',g:'kid',r:'h6 g7'}];
+function glossPos(x){var o=REP[x.op];if(!o)return null;var li=x.li;if(li==null){var g=(OPLAN[x.op]||{groups:[]}).groups.filter(function(y){return y.k===x.g})[0];li=g&&g.g.filter(function(i){return o.lines[i]&&!o.lines[i].off})[0]}
+  if(li==null||!o.lines[li])return null;var mv=o.lines[li].moves.slice(0,x.ply!=null?x.ply:o.lines[li].moves.length);return {fen:fenOf(mv),flip:o.side==='b'}}
+function chessLinks(h){
+  return String(h).replace(/((?:\b[KQRBN]?[a-h][1-8])(?:\s?[-–]\s?(?:[KQRBN]?[a-h][1-8]))+)|(O-O-O|O-O|\b[KQRBN][a-h]?[1-8]?x?[a-h][1-8][+#]?|\b[a-h]x[a-h][1-8][+#]?|\b[a-h][1-8]\b[+#]?)/g,function(m,chain){return '<span class="cl" data-c="'+m+'">'+m+'</span>'})
+    .replace(/(^|>)([^<]+)(?=<|$)/g,function(all,pre,txt){GLOSS.forEach(function(x,gi){txt=txt.replace(x.re,function(w){return '<span class="cl clg" data-g="'+gi+'">'+w+'</span>'})});return pre+txt})}
+var CL_T=0,PEEK=null;
+function peekOff(){if(!PEEK)return;var p=PEEK;PEEK=null;B.chess=new Chess(p.fen);B.flip=p.flip;B.marks=p.marks;B.arrows=p.arrows;B.rings=p.rings;B.badges=p.badges;B.locked=p.locked;B.onMove=p.onMove;
+  if(p.hidden)$('boardwrap').hidden=true;var pb=$('peekBar');if(pb)pb.remove();drawBoard()}
+function peek(gi){var x=GLOSS[gi],pos=x&&glossPos(x);if(!pos)return;if(PEEK)peekOff();
+  PEEK={fen:B.chess.fen(),flip:B.flip,marks:B.marks,arrows:B.arrows,rings:B.rings,badges:B.badges,locked:B.locked,onMove:B.onMove,hidden:$('boardwrap').hidden};
+  $('boardwrap').hidden=false;B.chess=new Chess(pos.fen);B.flip=pos.flip;B.marks={};B.badges={};B.rings={};(x.r||'').split(' ').filter(Boolean).forEach(function(q){B.rings[q]='g'});
+  B.arrows=[];if(x.a){var a=x.a.split(' ');B.arrows=[{from:a[0],to:a[1],c:'#7C3AED'}]}B.locked=true;B.onMove=null;drawBoard();
+  var pb=document.createElement('button');pb.id='peekBar';pb.type='button';pb.className='peekbar';pb.textContent='👀 '+t('peekT');pb.onclick=function(ev){ev.stopPropagation();peekOff()};$('boardwrap').appendChild(pb);
+  $('boardwrap').scrollIntoView({block:'nearest',behavior:'smooth'})}
+function chessTap(txt){if(PEEK)peekOff();if(!B||!B.chess||$('boardwrap').hidden)return;var rings={},arrows=[],m=null,sqs=txt.match(/[a-h][1-8]/g)||[];
+  if(sqs.length>1){sqs.forEach(function(q){rings[q]='g'})}   /* a chain: all its squares at once */
+  else{try{var c=new Chess(B.chess.fen());m=c.move(txt,{sloppy:true});if(!m){var f=B.chess.fen().split(' ');f[1]=f[1]==='w'?'b':'w';f[3]='-';var c2=new Chess();if(c2.load(f.join(' ')))m=c2.move(txt,{sloppy:true})}}catch(e){}
+    if(m){arrows=[{from:m.from,to:m.to,c:'#7C3AED'}];rings[m.to]='g'}else if(sqs[0])rings[sqs[0]]='g'}
   B.rings=Object.assign({},B.rings||{},rings);if(arrows.length)B.arrows=(B.arrows||[]).concat(arrows);drawBoard();
-  clearTimeout(CL_T);CL_T=setTimeout(function(){B.rings={};B.arrows=(B.arrows||[]).filter(function(a){return a.c!=='#7C3AED'});drawBoard()},4000)}
-document.addEventListener('click',function(ev){var el=ev.target.closest&&ev.target.closest('.cl');if(!el)return;ev.stopPropagation();ev.preventDefault();chessTap(el.getAttribute('data-c'))},true);
+  clearTimeout(CL_T);CL_T=setTimeout(function(){if(PEEK)return;B.rings={};B.arrows=(B.arrows||[]).filter(function(a){return a.c!=='#7C3AED'});drawBoard()},4000)}
+document.addEventListener('click',function(ev){var el=ev.target.closest&&ev.target.closest('.cl');if(!el)return;ev.stopPropagation();ev.preventDefault();if(el.hasAttribute('data-g'))peek(+el.getAttribute('data-g'));else chessTap(el.getAttribute('data-c'))},true);
 function repFinish(){
   var R=cur.rep,st=repState(lineId(R.op,R.i));gradeObj(st,R.err===0);st.at=now();
   $('line').innerHTML=moveLine(R.hist);
