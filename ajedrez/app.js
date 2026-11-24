@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=103;
+var APP_VER=104;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1885,7 +1885,7 @@ function tradeNext(){
     var tbl='<div class="trtbl">'+r[1].map(function(o){return '<span class="'+(o===best?'best':'')+'"><b class="mono">'+esc(o[0])+'</b> → '+sg(o[1])+'</span>'}).join('')+'</div>';
     /* step 2 (Nov 20, "I have to be able to hold the material in my head"): the board does NOT move; the winning line is shown as text
        and he must say how he ends up. The ⚖ counter in the bubble only shows afterwards, to check. */
-    var line=best[2].split(' ');if(best[1]<99&&line.length%2===1&&line.length>1)line=line.slice(0,-1);   /* the count is taken after the opponent's last reply */
+    var line=best[2].split(' ');   /* Nov 24: counts are taken when the trade is over (tools/trades_fix.py), so the whole line is shown */
     var val=best[1]>=99?99:best[1],mk=function(v){return v>=99?t('trMate'):v>0?'+'+v:v<0?String(v).replace('-','−'):'='};
     /* Nov 20: "mate" is ALWAYS one of the options and, when the answer is mate, the other options are realistic counts (it used to be the
        only odd one out next to +93/+96) */
