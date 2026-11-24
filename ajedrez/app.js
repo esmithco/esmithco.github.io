@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=117;
+var APP_VER=118;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -690,6 +690,7 @@ function renderItem(){
   if(X.past===X.i&&X.revs&&X.revs[X.i]&&X.revs[X.i].length){X.past=null;cur.revs=X.revs[X.i];cur.past=true;cur.answered=true;setBtns({});showRev(cur.revs.length-1);return}
   if(it.t==='card'){var c=S.cards[it.id];if(!c){skip();return}cur.card=c;loadCard(c)}
   else if(it.t==='line'){if(!REP[it.op]||!REP[it.op].lines[it.i]||REP[it.op].lines[it.i].off){skip();return}if(it.watch)watchLine(it.op,it.i);else loadLine(it.op,it.i)}
+  else if(it.t==='msg'){$('boardwrap').hidden=true;$('prompt').innerHTML='<div class="bigq">'+t(it.k+'T')+'</div><p class="lend">'+t(it.k+'D',esc(it.n||''))+'</p>';cur.answered=true;setBtns({next:true})}
   else if(it.t==='lpos'){if(!REP[it.op]||!REP[it.op].lines[it.i]){skip();return}loadLPos(it.op,it.i,it.ply)}
   else if(it.t==='opun'){if(!REP[it.op]||!REP[it.op].lines[it.i]||typeof REP[it.op].lines[it.i].key!=='number'){skip();return}loadOPun(it.op,it.i)}
   else if(it.t==='name'){if(!REP[it.op]||!REP[it.op].lines[it.i]){skip();return}loadName(it.op,it.i)}
@@ -1203,6 +1204,12 @@ function wdlHtml(a,small){var x=wdl(a);if(!x.n)return '';var c=x.pct>=55?'good':
 /* Nov 24 ("I don't remember practising all those lines; a start-over button"): a line counts as done in its section's path only if it
    was finished after that section's last restart (S.pathReset['op:k'], synced). The practice history (SR) is never deleted. */
 function pathDone(op,i){var st=S.rep[lineId(op,i)];if(!st)return false;var g=planOf(op,i),r=(S.pathReset||{})[op+':'+(g?g.k:'other')]||0;return r?(st.at||0)>r:true}
+function sectionItems(op,L){var it=[];L.forEach(function(i){it.push({t:'line',op:op,i:i});it=it.concat(lposItems(op,i,2))});
+  var g=planOf(op,L[0]),all=g?g.g.filter(function(i){return REP[op].lines[i]&&!REP[op].lines[i].off}):L,rev=[];
+  all.forEach(function(i){var c=lposItems(op,i,6);if(c.length)rev.push(c[Math.floor(Math.random()*c.length)])});
+  rev=rev.sort(function(){return Math.random()-.5}).slice(0,8);
+  var oq=(window.OQUIZ||[]).filter(function(q){return q.op===op&&g&&q.g===g.k}).map(function(q){return {t:'quiz',id:q.id}});
+  if(rev.length>1||oq.length)it=it.concat([{t:'msg',k:'secRev',n:g?tt(g.t):''}],rev,oq);return it}
 function linePath(op){var seq=[],L=REP[op].lines,o=window.OPLAN&&OPLAN[op];(o?o.groups:[]).forEach(function(g){g.g.forEach(function(i){if(L[i]&&!L[i].off&&seq.indexOf(i)<0)seq.push(i)})});
   L.forEach(function(l,i){if(!l.off&&seq.indexOf(i)<0)seq.push(i)});return seq}
 function pathNow(op){var seq=linePath(op);for(var k=0;k<seq.length;k++)if(!S.rep[lineId(op,seq[k])])return seq[k];
@@ -1345,8 +1352,10 @@ function renderRep(op){
       (g.vid||[]).map(vidBtn).join(' ')+'</div>'+xs.map(row).join('')+'</section>'});
   var rest=ls.filter(function(x){return !used[x.i]});if(rest.length)html+='<section class="pfam"><h3 class="rgroup">'+t('repOther')+'</h3>'+rest.map(row).join('')+'</section>';
   $('repList').innerHTML=html;
-  /* Nov 24 ("I finished the first line and it sent me home; the bar said 1 of 1"): Continue starts a session with ALL remaining lines of the section */
-  $('repList').querySelectorAll('[data-sg]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();var L=(b.getAttribute('data-sgl')||b.getAttribute('data-sg')).split(',').map(Number);startSession(L.map(function(i){return {t:'line',op:repTab,i:i}}),'rep')}});
+  /* Nov 24 ("I finished the first line and it sent me home; the bar said 1 of 1"): Continue starts a session with ALL remaining lines of the section.
+     Then ("before it counts as learned I need exercises on each line, and at the end a summary of all of them"): after each line come 2 position
+     exercises from THAT line, and the section ends with a mixed review (one position per line + the section's concept questions). */
+  $('repList').querySelectorAll('[data-sg]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();startSession(sectionItems(repTab,(b.getAttribute('data-sgl')||b.getAttribute('data-sg')).split(',').map(Number)),'rep')}});
   $('repList').querySelectorAll('[data-sr]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();S.pathReset=S.pathReset||{};S.pathReset[repTab+':'+b.getAttribute('data-sr')]=now();save();renderRep()}});
   $('repList').querySelectorAll('.lrow').forEach(function(b){b.onclick=function(ev){var i=+b.getAttribute('data-i');
     { /* tap a line: open a bigger preview right under it, with the moves and a button to practise it */
