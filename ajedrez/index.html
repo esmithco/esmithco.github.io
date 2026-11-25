@@ -3,29 +3,46 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>html,body,button,.board,.btn{touch-action:manipulation}/* Nov 25 ("everything on the home screen without scrolling"): phone home fits one screen (iPhone + Gemini bar ≈ 600 px) */
+<style>html,body,button,.board,.btn{touch-action:manipulation}/* Nov 25 ("everything on the home screen without scrolling… it can be a little bigger, use the space"): the phone home fills exactly the
+   screen between the top bar and the tab bar (iPhone 13 + Chrome + Gemini bar ≈ 667 px); the two tiles take the leftover height */
 @media (max-width:700px){
-  #s-home{gap:8px!important}
-  #s-home .hero{display:grid!important;grid-template-columns:1fr auto;column-gap:10px;row-gap:3px;padding:10px 12px!important;align-items:center}
-  #s-home .hero h2{font-size:1.12rem!important;grid-column:1;margin:0}
-  #s-home .hero p{grid-column:1;font-size:.8rem!important;line-height:1.25;margin:0}
-  #s-home .hero .progress{grid-column:1/-1;margin-top:3px}
-  #s-home .hero #bToday{grid-column:2;grid-row:1/span 3;align-self:center;padding:9px 14px!important}
-  #s-home .hero .streak{grid-column:1/-1;font-size:.78rem;min-height:0}
+  #s-home:not([hidden]){display:flex!important;flex-direction:column;gap:10px!important;min-height:calc(100svh - 160px)}
+  #s-home .hero{display:grid!important;grid-template-columns:1fr auto;column-gap:10px;row-gap:5px;padding:14px 14px!important;align-items:center}
+  #s-home .hero h2{font-size:1.35rem!important;grid-column:1;margin:0}
+  #s-home .hero p{grid-column:1;font-size:.86rem!important;line-height:1.3;margin:0}
+  #s-home .hero .progress{grid-column:1/-1;margin-top:4px}
+  #s-home .hero #bToday{grid-column:2;grid-row:1/span 3;align-self:center;padding:12px 16px!important;font-size:1rem!important}
+  #s-home .hero .streak{grid-column:1/-1;font-size:.84rem;min-height:0}
   #s-home .hero .streak:empty{display:none}
-  #s-home .weakbtn{padding:9px 12px!important;gap:10px;border-radius:14px}
-  #s-home .weakbtn .wi{font-size:1.3rem}
-  #s-home .weakbtn b{font-size:.98rem}
-  #s-home .weakbtn small{font-size:.76rem;line-height:1.25;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #s-home .weakbtn{padding:14px 14px!important;gap:12px;border-radius:16px}
+  #s-home .weakbtn .wi{font-size:1.6rem}
+  #s-home .weakbtn b{font-size:1.08rem}
+  #s-home .weakbtn small{font-size:.82rem;line-height:1.3;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #s-home .weakbtn .wt{min-width:0}
-  #s-home .tiles{gap:8px}
-  #s-home .tile{display:grid!important;grid-template-columns:auto 1fr;column-gap:8px;row-gap:0;align-items:center;padding:9px 10px!important}
-  #s-home .tile .ti{grid-row:1/span 2;width:32px!important;height:32px!important;font-size:1.05rem}
-  #s-home .tile b{font-size:.92rem;line-height:1.15}
-  #s-home .tile em{flex-direction:row!important;align-items:baseline;gap:4px;flex-wrap:wrap;margin:0;font-size:.72rem;line-height:1.1}
-  #s-home .tile em strong{font-size:1.15rem!important}
-  #s-home .tile em small{font-size:.68rem;margin:0}
+  #s-home .tiles{gap:10px;flex:1;min-height:120px}
+  #s-home .tile{display:flex!important;flex-direction:column;justify-content:center;align-items:flex-start;gap:8px;padding:14px 14px!important}
+  #s-home .tile .ti{width:42px!important;height:42px!important;font-size:1.35rem}
+  #s-home .tile b{font-size:1.08rem;line-height:1.15}
+  #s-home .tile em{flex-direction:row!important;align-items:baseline;gap:5px;flex-wrap:wrap;margin:0;font-size:.8rem;line-height:1.15}
+  #s-home .tile em strong{font-size:1.9rem!important}
+  #s-home .tile em small{font-size:.76rem;margin:0}
+  /* Repertorio / Aprender: titles already in the top bar; sections and units start folded */
+  #s-rep>h2,#s-rep>p.small,#s-learn>p.small{display:none!important}
+  #s-rep>.row{gap:6px;flex-wrap:nowrap;overflow-x:auto}#s-rep>.row .btn{padding:8px 10px;font-size:.82rem;white-space:nowrap}
+  .pfam{padding:10px 12px!important;margin:0 0 10px!important}
+  .pfh{display:flex;flex-wrap:wrap;align-items:center;column-gap:8px}
+  .pfh>h3,.pfh>p,.pfh>.pathdots{flex-basis:100%}
+  .pfh .pathdots{margin:2px 0}
+  .pfh .btn{margin:.2em 0!important;padding:8px 12px;font-size:.86rem}
+  .pfh .sgo{flex:1}
+  .wrap:has(#s-train:not([hidden])){padding-bottom:0!important}   /* the tab bar is hidden in exercises: no empty scroll space */
 }
+.plines{display:flex;flex-direction:column;gap:8px;margin-top:8px}.plines[hidden]{display:none!important}
+.pfam:has(.plines[hidden]) .pfh .og{display:none}
+.pfh .stog{background:transparent;border:1px dashed #C9BDF2;color:#6D28D9}
+.uhead{appearance:none;width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;background:none;border:0;padding:6px 2px;cursor:pointer;font:600 .8rem var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--uc,var(--muted));text-align:left}
+.uhead>span:first-child{display:flex;align-items:center;gap:8px}.uhead>span:first-child::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--uc,var(--muted));flex:none}
+.uhead .small{font:600 .8rem var(--f-body);letter-spacing:0;text-transform:none;color:var(--muted);white-space:nowrap}.uhead .chev{color:var(--uc,var(--muted))}
 </style>
 <title>Taller de Aperturas</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%237C3AED'/%3E%3Ctext x='50' y='74' font-family='serif' font-size='66' fill='%23ffffff' text-anchor='middle'%3E%E2%99%9E%3C/text%3E%3C/svg%3E">
@@ -548,7 +565,7 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
   <button data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg><span data-t="navProg"></span></button>
 </nav>
 <script src="chess.js"></script>
-<script src="textos.js?v=89"></script>
+<script src="textos.js?v=90"></script>
 <script src="conceptos.js?v=1"></script>
 <script src="repertorio.js?v=16"></script>
 <script src="planes_aperturas.js?v=9"></script>
@@ -564,6 +581,6 @@ body{background:radial-gradient(620px 420px at 0% -6%,rgba(124,58,237,.16),trans
 <script src="buenas.js?v=2"></script>
 <script src="conv.js?v=3"></script>
 <script src="trades.js?v=3"></script>
-<script src="app.js?v=120"></script>
+<script src="app.js?v=123"></script>
 </body>
 </html>

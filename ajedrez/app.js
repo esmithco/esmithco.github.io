@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=120;
+var APP_VER=123;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -707,9 +707,15 @@ function stopTimers(){if(typeof stopBar==='function')stopBar();timers.forEach(cl
 function startSession(items,src,from){X.endless=false;X.snap=progSnap();X.items=items.slice();X.i=from||0;X.src=src;X.ok=0;X.back=src==='today'?'home':src==='ideas'?'learn':src.split(':')[0];cur=null;go('train')}
 /* when he leaves an exercise, store the whole time spent on it (answer + reading), so the daily plan fits his real pace */
 function closeItemTime(){if(cur&&cur.logI!=null&&S.log&&S.log[cur.logI]&&cur.t0){S.log[cur.logI][3]=Math.min(300,Math.round((now()-cur.t0)/1000));S.log[cur.logI][4]=1;cur.logI=null;save()}}
+/* Nov 25 ("I don't want to scroll… use the space"): on theory screens (text + example board) the board shrinks so text, board,
+   example caption and the Next button all fit on the phone screen. Exercises keep a fixed board size (no jumping). */
+function fitIntro(){if(innerWidth>979||!cur||!cur.it||!/theory$/.test(cur.it.t))return;var bw=$('boardwrap');if(!bw||bw.hidden)return;
+  var top=bw.getBoundingClientRect().top+scrollY,avail=innerHeight-top-150,w=bw.getBoundingClientRect().width;
+  if(avail<w)bw.style.setProperty('max-width',Math.max(200,Math.round(avail))+'px','important')}
 function renderItem(){
   if(PEEK)peekOff();closeItemTime();stopTimers();dclkStop();window.scrollTo(0,0);anOff();$('demoBar').hidden=true;boardEl.classList.remove('nopieces');
   if(X.i>=X.items.length){endSession();return}
+  $('boardwrap').style.removeProperty('max-width');setTimeout(fitIntro,80);
   $('trBody').classList.remove('answered');  var it=X.items[X.i];cur={it:it,answered:false,first:true,t0:now()};$('bPrevEx').disabled=X.i===0;
   $('trCount').textContent=(X.i+1)+'/'+X.items.length;$('trProg').style.width=(X.i/X.items.length*100)+'%';
   ['fb','why','choices','note'].forEach(function(id){$(id).innerHTML='';$(id).className=id==='fb'?'feedback':id;$(id).hidden=id!=='fb'});
@@ -1352,6 +1358,11 @@ function ideaResult(ok,san){
 
 /* ---------- repertoire screen ---------- */
 var repTab='london';
+/* folded sections (Repertorio sections, Aprender units): open state kept while the app is open */
+var FOLD={};
+function foldWire(root){root.querySelectorAll('[data-tg]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();var k=b.getAttribute('data-tg');FOLD[k]=!FOLD[k];
+  var sec=b.closest('.pfam,.unit'),box=sec&&sec.querySelector('.plines');if(box)box.hidden=!FOLD[k];
+  var c=b.querySelector('.chev');if(c)c.textContent=FOLD[k]?'▴':'▾';if(b.classList.contains('stog'))b.textContent=FOLD[k]?t('hideLines'):t('seeLines',box?box.querySelectorAll('.lrow').length:0)}})}
 function renderRep(op){
   if(op&&REP[op])repTab=op;
   $('repTabs').innerHTML=Object.keys(REP).map(function(k){return '<button class="tab" role="tab" aria-selected="'+(k===repTab)+'" data-op="'+k+'">'+esc(tt(REP[k].name))+'</button>'}).join('');
@@ -1377,8 +1388,8 @@ function renderRep(op){
     html+='<section class="pfam"><div class="pfh"><h3 class="rgroup">🧭 '+esc(tt(g.t))+'</h3>'+(gs?'<p>'+wdlHtml(gs.all)+(best&&best.k===g.k&&best!==worst?' <span class="pill good">🏆 '+t('secBest')+'</span>':'')+(worst&&worst.k===g.k&&best!==worst?' <span class="pill blun">⚠ '+t('secWorst')+'</span>':'')+'</p>':'')+'<p class="og">'+esc(tt(g.goal))+'</p>'+
       '<div class="pathdots">'+gi.map(function(i){return '<span class="pd '+(i===gnow?'now':pathDone(repTab,i)?'ok':'')+'"></span>'}).join('')+'<span class="small">'+gdone+'/'+gi.length+'</span></div>'+
       '<button class="btn primary sgo" type="button" data-sg="'+gnow+'" data-sgl="'+(function(){var k0=gi.indexOf(gnow),rest=gi.slice(k0).filter(function(i){return !pathDone(repTab,i)});return (rest.length?rest:gi.slice(k0)).join(',')})()+'">▶ '+t(gdone?'pathGo':'pathStart')+'</button>'+(gdone?'<button class="btn sreset" type="button" data-sr="'+g.k+'">↺ '+t('pathReset')+'</button>':'')+
-      (g.vid||[]).map(vidBtn).join(' ')+'</div>'+xs.map(row).join('')+'</section>'});
-  var rest=ls.filter(function(x){return !used[x.i]});if(rest.length)html+='<section class="pfam"><h3 class="rgroup">'+t('repOther')+'</h3>'+rest.map(row).join('')+'</section>';
+      (g.vid||[]).map(vidBtn).join(' ')+'<button class="btn stog" type="button" data-tg="'+repTab+':'+g.k+'">'+t('seeLines',xs.length)+'</button></div><div class="plines"'+(FOLD[repTab+':'+g.k]?'':' hidden')+'>'+xs.map(row).join('')+'</div></section>'});
+  var rest=ls.filter(function(x){return !used[x.i]});if(rest.length)html+='<section class="pfam"><div class="pfh"><h3 class="rgroup">'+t('repOther')+'</h3><button class="btn stog" type="button" data-tg="'+repTab+':_rest">'+t('seeLines',rest.length)+'</button></div><div class="plines"'+(FOLD[repTab+':_rest']?'':' hidden')+'>'+rest.map(row).join('')+'</div></section>';
   /* Nov 24 ("I'm confused: which defense do I use against what?"): one small map on top, the same in every tab */
   var mapH='<details class="repmap"><summary>🗺 '+t('mapT')+'</summary><div class="mapg">'+['mapW','mapE4','mapD4','mapOther'].map(function(k){return '<p>'+t(k)+'</p>'}).join('')+'<p class="small">'+t('mapWhy')+'</p></div></details>';
   $('repList').innerHTML=mapH+html;
@@ -1386,6 +1397,7 @@ function renderRep(op){
      Then ("before it counts as learned I need exercises on each line, and at the end a summary of all of them"): after each line come 2 position
      exercises from THAT line, and the section ends with a mixed review (one position per line + the section's concept questions). */
   $('repList').querySelectorAll('[data-sg]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();startSession(sectionItems(repTab,(b.getAttribute('data-sgl')||b.getAttribute('data-sg')).split(',').map(Number)),'rep')}});
+  foldWire($('repList'));
   $('repList').querySelectorAll('[data-sr]').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();S.pathReset=S.pathReset||{};S.pathReset[repTab+':'+b.getAttribute('data-sr')]=now();save();renderRep()}});
   $('repList').querySelectorAll('.lrow').forEach(function(b){b.onclick=function(ev){var i=+b.getAttribute('data-i');
     { /* tap a line: open a bigger preview right under it, with the moves and a button to practise it */
@@ -2144,6 +2156,12 @@ function renderLearn(){
   h+='<button class="lrow" data-vocab="1"><span class="dotst '+(vk>=VOCAB.length*.7?'ok':vk?'due':'new')+'"></span><span class="lname">'+t('vocabT')+'<span class="small">'+t('learned',vk,VOCAB.length)+'</span></span></button></div>';
   h+='<div class="unit"><h3>'+t('unitIdeas')+'</h3>'+IDEAS.map(function(x,i){var s=S.ideas[x.id];return '<button class="lrow" data-i="'+i+'"><span class="dotst '+(!s?'new':s.box>=2?'ok':'due')+'"></span><span class="lname">'+esc(tt(x.t))+'<span class="small">'+esc(tt(x.body)[0])+'</span></span></button>'}).join('')+'</div>';
   $('learnList').innerHTML=h;
+  /* Nov 25 ("I have to go down a lot; not everything has to be shown at first"): every unit shows only its title + how many are done; tap to open */
+  $('learnList').querySelectorAll('.unit').forEach(function(u,k){var h3=u.querySelector('h3');if(!h3)return;var rows=[].slice.call(u.children).filter(function(x){return x!==h3}),
+      n=u.querySelectorAll('.lrow').length,ok=u.querySelectorAll('.lrow .dotst.ok').length,key='L:'+k,box=document.createElement('div');box.className='plines';box.hidden=!FOLD[key];
+    rows.forEach(function(x){box.appendChild(x)});u.appendChild(box);
+    var b=document.createElement('button');b.type='button';b.className='uhead';b.setAttribute('data-tg',key);b.innerHTML='<span>'+h3.innerHTML+'</span><span class="small">'+ok+'/'+n+' <span class="chev">'+(FOLD[key]?'▴':'▾')+'</span></span>';h3.replaceWith(b)});
+  foldWire($('learnList'));
   $('learnList').querySelectorAll('[data-l]').forEach(function(b){b.onclick=function(){var l=lessonById(b.getAttribute('data-l'));var it=lessonItems(l,8);if(it.length<2)it=[{t:'theory',l:l.id}].concat(l.p.slice(0,8).map(function(p){return {t:'puz',l:l.id,id:p.id}}));startSession(it,'learn')}});
   $('learnList').querySelectorAll('[data-f]').forEach(function(b){b.onclick=function(){startSession(fundItems(b.getAttribute('data-f')),'learn')}});
   $('learnList').querySelectorAll('[data-s]').forEach(function(b){b.onclick=function(){var id=b.getAttribute('data-s'),it=stratItems(id,6);if(it.length<2)it=plansOf(id).slice(0,6).map(function(_,k){return {t:'plan',s:id,k:k}});startSession(it,'learn')}});
