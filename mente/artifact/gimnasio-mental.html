@@ -628,7 +628,7 @@ function mergeIn(R){if(!R||!R.cards)return;S.qh=S.qh||{};Object.keys(R.qh||{}).f
   S.pairs=S.pairs||{};Object.keys(R.pairs||{}).forEach(function(k){S.pairs[k]=Math.max(S.pairs[k]||0,R.pairs[k])});
   if(R.calc){var c=S.calc||(S.calc={unlocked:1,lvl:{},stats:{},hist:[],lastDay:null}),r=R.calc;c.unlocked=Math.max(c.unlocked||1,r.unlocked||1);Object.keys(r.lvl||{}).forEach(function(k){c.lvl[k]=Math.max(c.lvl[k]||1,r.lvl[k])});
     Object.keys(r.stats||{}).forEach(function(k){if(!c.stats[k]||(r.stats[k].n||0)>(c.stats[k].n||0))c.stats[k]=r.stats[k]});var hd={};(c.hist||[]).forEach(function(h){hd[h.d]=h});(r.hist||[]).forEach(function(h){if(!hd[h.d]||h.score>hd[h.d].score)hd[h.d]=h});c.hist=Object.keys(hd).sort().map(function(d){return hd[d]}).slice(-60);if((r.lastDay||'')>(c.lastDay||''))c.lastDay=r.lastDay}
-  if(R.pure){var pp=S.pure||(S.pure={today:null,hist:[],si:0,ti:0,step:0}),rp=R.pure;pp.step=Math.max(pp.step||0,rp.step||0);var hq={};(pp.hist||[]).forEach(function(h){hq[h.date+h.q.es]=1});(rp.hist||[]).forEach(function(h){if(!hq[h.date+h.q.es])pp.hist.push(h)});pp.hist.sort(function(a,b){return a.date<b.date?1:-1});pp.hist=pp.hist.slice(0,40);if(rp.today&&(!pp.today||rp.today.date>pp.today.date))pp.today=rp.today}
+  if(R.pure){var pp=S.pure||(S.pure={today:null,hist:[],si:0,ti:0,step:0}),rp=R.pure;pp.step=Math.max(pp.step||0,rp.step||0);if((rp.doneDay||'')>(pp.doneDay||''))pp.doneDay=rp.doneDay;var hq={};(pp.hist||[]).forEach(function(h){hq[h.date+h.q.es]=1});(rp.hist||[]).forEach(function(h){if(!hq[h.date+h.q.es])pp.hist.push(h)});pp.hist.sort(function(a,b){return a.date<b.date?1:-1});pp.hist=pp.hist.slice(0,40);if(rp.today&&(!pp.today||rp.today.date>pp.today.date))pp.today=rp.today}
   S.ti=Math.max(S.ti||0,R.ti||0);fixTypos();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 /* known typos in lessons Claude wrote earlier (Nov 17 review) */
 function fixTypos(){(S.lessons||[]).forEach(function(l){if(l.lesson)l.lesson=l.lesson.replace('lo infitas','lo inflas')})}
@@ -750,7 +750,7 @@ function render(){try{render0()}catch(e){var st=$('stage');if(st)st.innerHTML+='
 function render0(){keepCur();ONSTART=!cur;
   stats();steps();var st=$('stage');
   if(!cur){var n=Math.min(1,S.npd,unseen().length),r=Math.min(3-n,dueToday().length),tb=todayBlock(),x=L()==='en'?{2:'one connection',3:'one real-life case',4:'one short lesson'}[tb]:{2:'una conexión',3:'un caso real',4:'una lección corta'}[tb];
-    var VTAG='<p class="small" style="opacity:.6">v16</p>';
+    var VTAG='<p class="small" style="opacity:.6">v17</p>';
     var dbNote=!READY?'<p class="small">⏳ '+(L()==='en'?'Loading your saved progress… you can start now anyway.':'Cargando tu progreso guardado… puedes empezar ya si quieres.')+'</p>':DBST&&DBST!=='ok'?'<p class="small">⚠ '+(L()==='en'?'Could not load your saved progress ('+esc(DBST)+'). You can still practice; it will be saved.':'No pude cargar tu progreso guardado ('+esc(DBST)+'). Puedes practicar igual; se guardará.')+'</p>':'';
     planToday();var tp='<p class="todayp">'+t('todayPlan',{k:(r+n===1?(L()==='en'?'one idea':'una idea'):(r+n)+(L()==='en'?' ideas':' ideas')),nw:(n?(r+n===1?(L()==='en'?' (new)':' (nueva)'):(L()==='en'?', one of them new':', una de ellas nueva')):''),x:x})+'</p>';
     /* Nov 25 (v16, "I don't want to scroll"): the Start button comes right after the day goals; the teacher's plan is folded under one tap */
@@ -917,7 +917,7 @@ function renderApply(st){
   if($('nx'))$('nx').onclick=function(){CHAT=null;cur.ci++;cur.answered=null;if(cur.ci>=cur.cases.length){if(cur.again){cur.block=5}else{nextBlock();if(cur.block===5)return}}render();window.scrollTo(0,0)};
 }
 /* kid-style push (Nov 19, "I'm lazy, push me like a kid"): three small goals for today with checkmarks, the streak, and a trophy when all three are done */
-function dayGoals(){var c=S.calc||{},p=S.pure||{},g=[[S.days.indexOf(today())>=0,'gSess'],[c.lastDay===today(),'gCalc'],[!!(p.hist&&p.hist[0]&&p.hist[0].date===today()),'gMath']],n=g.filter(function(x){return x[0]}).length,st=stats();
+function dayGoals(){var c=S.calc||{},p=S.pure||{},g=[[S.days.indexOf(today())>=0,'gSess'],[c.lastDay===today(),'gCalc'],[p.doneDay===today()||!!(p.hist&&p.hist.some(function(h){return h.date===today()})),'gMath']],n=g.filter(function(x){return x[0]}).length,st=stats();
   return '<div class="goals"><div class="gtop"><span class="flame">🔥 '+st+'</span><span>'+t(st===0?'gStreak0':st===1?'gStreak1':'gStreak',{n:st})+'</span><span class="stars">'+'⭐'.repeat(n)+'<span class="off">'+'☆'.repeat(3-n)+'</span></span></div>'+
     '<div class="glist">'+g.map(function(x){return '<span class="'+(x[0]?'on':'')+'">'+(x[0]?'✅':'⬜')+' '+t(x[1])+'</span>'}).join('')+'</div>'+(n===3?'<p class="gwin">🏆 '+t('gAll')+'</p>':'')+'</div>'}
 function renderDone(st){
@@ -1060,6 +1060,12 @@ var PSTATIC=[
  ['Probabilidad','Probability','Lanzas dos dados. ¿Cuál es la probabilidad de que la suma sea 7?','You roll two dice. What is the probability the sum is 7?','Cuenta pares ordenados.','Count ordered pairs.','Hay 36 resultados igual de probables y 6 suman 7: (1,6), (2,5), (3,4), (4,3), (5,2), (6,1). Probabilidad 6/36 = 1/6.','There are 36 equally likely outcomes and 6 sum to 7: (1,6), (2,5), (3,4), (4,3), (5,2), (6,1). Probability 6/36 = 1/6.'],
  ['Álgebra abstracta','Abstract algebra','Demuestra que todo grupo de orden primo p es cíclico.','Prove that every group of prime order p is cyclic.','Teorema de Lagrange.','Lagrange\'s theorem.','Toma g ≠ e. El subgrupo ⟨g⟩ tiene orden que divide a p (Lagrange) y es mayor que 1, así que es p. Entonces ⟨g⟩ es todo el grupo.','Take g ≠ e. The subgroup ⟨g⟩ has order dividing p (Lagrange) and greater than 1, so it is p. Hence ⟨g⟩ is the whole group.']
 ];
+/* v17 (Nov 25, "I did the math and the Math goal was not checked, sometimes yes, sometimes no"): it only counted when he tapped
+   "show solution", and with the date the card was CREATED (yesterday's card -> never today). Now asking Claude to check, showing the
+   solution, "understood, next topic" or "review again" all mark today's math as done (S.pure.doneDay, merged across devices). */
+function pureDone(tp,mine){var p=pureState();p.doneDay=today();var hs=p.hist||(p.hist=[]);
+  if(tp&&(!hs.length||hs[0].q.es!==tp.q.es))hs.unshift({date:today(),step:tp.step,area:tp.area,q:tp.q,mine:mine||''});
+  else if(hs[0]){hs[0].date=today();if(mine)hs[0].mine=mine}p.hist=hs.slice(0,40);save()}
 function pureState(){if(!S.pure)S.pure={today:null,hist:[],si:0,ti:0};var p=S.pure;if(p.step==null){p.step=0;if(p.today&&p.today.step==null)p.today=null}return p}
 var pureUI={sol:'',fb:null,showHint:false,showSol:false,wait:false,err:false};
 function staticProblem(){var p=pureState();var r=PSTATIC[p.si%PSTATIC.length];p.si++;
@@ -1091,11 +1097,11 @@ function renderPure(){
     (pureUI.showSol&&tp.step!=null?'<div class="row"><button class="btn rate-2" id="padv">'+t('pGot')+'</button><button class="btn rate-1" id="prep">'+t('pRepeat')+'</button></div>':'')+'</div>'+pureSyl()+pureHist();
   el.innerHTML=h;var ta=$('psol');ta.oninput=function(e){pureUI.sol=e.target.value};
   if($('phint'))$('phint').onclick=function(){pureUI.showHint=true;renderPure()};
-  if($('pshow'))$('pshow').onclick=function(){pureUI.showSol=true;var hs=p.hist;if(!hs.length||hs[0].q.es!==tp.q.es){hs.unshift({date:tp.date,step:tp.step,area:tp.area,q:tp.q,mine:pureUI.sol});p.hist=hs.slice(0,40);save()}renderPure()};
+  if($('pshow'))$('pshow').onclick=function(){pureUI.showSol=true;pureDone(tp,pureUI.sol);renderPure()};
   if($('pnew2'))$('pnew2').onclick=function(){p.today=null;pureUI={sol:'',fb:null,showHint:false,showSol:false};newPure()};
-  if($('padv'))$('padv').onclick=function(){if(p.step===tp.step)p.step=Math.min(SYL.length-1,p.step+1);p.today=null;save();pureUI={sol:'',fb:null,showHint:false,showSol:false};renderPure();window.scrollTo(0,0)};
-  if($('prep'))$('prep').onclick=function(){p.today=null;save();pureUI={sol:'',fb:null,showHint:false,showSol:false};newPure()};
-  if($('pcheck'))$('pcheck').onclick=function(){pureUI.sol=ta.value;if(pureUI.sol.trim().length<10)return;pureUI.fb={wait:true,text:t('fbWait')};renderPure();
+  if($('padv'))$('padv').onclick=function(){pureDone(tp,pureUI.sol);if(p.step===tp.step)p.step=Math.min(SYL.length-1,p.step+1);p.today=null;save();pureUI={sol:'',fb:null,showHint:false,showSol:false};renderPure();window.scrollTo(0,0)};
+  if($('prep'))$('prep').onclick=function(){pureDone(tp,pureUI.sol);p.today=null;save();pureUI={sol:'',fb:null,showHint:false,showSol:false};newPure()};
+  if($('pcheck'))$('pcheck').onclick=function(){pureUI.sol=ta.value;if(pureUI.sol.trim().length<10)return;pureDone(tp,pureUI.sol);pureUI.fb={wait:true,text:t('fbWait')};renderPure();
     sample('You are a rigorous but encouraging math professor. Quick question: '+tp.q.en+'\nReference solution: '+tp.sol.en+'\nStudent attempt:\n"""'+pureUI.sol+'"""\nIn 2-4 short sentences: say whether the answer is correct. If it is, say so clearly and stop; do not nitpick. If not, point to the first real gap or error and what would fix it. Do not just paste the reference solution. Plain text with Unicode math, no LaTeX. '+langLine(),{cache:false,modelTier:'default',onText:function(u){var o=$('pfb');pureUI.fb={wait:false,text:u.text};if(o){o.textContent=u.text;o.className='fb'}}})
     .then(function(r){pureUI.fb={wait:false,text:r.text};renderPure()}).catch(function(){pureUI.fb={wait:false,text:t('fbErr')};renderPure()})};
 }
