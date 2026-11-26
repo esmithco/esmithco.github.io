@@ -213,7 +213,7 @@
   <div class="masthead">
     <h1>Mi rutina</h1>
     <div class="subtitle">4 días · 1 hora · fuerte y sano</div>
-    <p>Cada día: calentar 5 min → 4 ejercicios (A, B, C, D), una máquina a la vez → caminata inclinada 10 min → estirar. Menos ejercicios, pero series de verdad.</p>
+    <p>Cada día: caminata inclinada 10 min (cardio y calentamiento a la vez) → 2 min de movilidad → 4 ejercicios (A, B, C, D), una máquina a la vez → estirar. Menos ejercicios, pero series de verdad.</p>
     <p class="cloudst" id="cloudSt">☁ Conectando…</p>
   </div>
 
@@ -339,8 +339,8 @@
   };
   const MG = {pecho:'Pecho', espalda:'Espalda', piernas:'Piernas', gluteo:'Glúteo e isquios', hombro:'Hombro'};
   const WARM = {
-    upper:{n:'Calentamiento', t:'5 min', m:'Movilidad · activa el tren superior', c:'2 min de caminadora o bici, círculos de brazos y apertura dinámica de pecho. Luego 1–2 series ligeras del ejercicio A.', imgs:['Arm_Circles','Dynamic_Chest_Stretch']},
-    lower:{n:'Calentamiento', t:'5 min', m:'Movilidad · activa el tren inferior', c:'2 min de caminadora o bici, movilidad de cadera y 10 sentadillas sin peso. Luego 1–2 series ligeras del ejercicio A.', imgs:['Bodyweight_Squat','Worlds_Greatest_Stretch']}
+    upper:{n:'Movilidad + series ligeras', t:'2–3 min', m:'Prepara hombros y pecho', c:'Ya vienes caliente de la caminata: círculos de brazos y apertura dinámica de pecho, luego 1–2 series ligeras del ejercicio A.', imgs:['Arm_Circles','Dynamic_Chest_Stretch']},
+    lower:{n:'Movilidad + series ligeras', t:'2–3 min', m:'Prepara cadera y rodillas', c:'Ya vienes caliente de la caminata: movilidad de cadera y 10 sentadillas sin peso, luego 1–2 series ligeras del ejercicio A.', imgs:['Bodyweight_Squat','Worlds_Greatest_Stretch']}
   };
   const STRETCH = {
     upper:{n:'Estirar', t:'3 min', m:'Pecho, hombro y espalda', c:'Pecho contra el marco de una puerta, brazo cruzado y dorsal colgando de la barra. 20–30 s cada uno.', imgs:['Shoulder_Stretch','Triceps_Stretch']},
@@ -430,7 +430,7 @@
   function cardioRows(d){
     const id = 'cv' + d;
     const tr = el('tr', 'phase-row cardio');
-    tr.innerHTML = '<td class="chk"><input type="checkbox" class="aux" data-id="' + id + '"></td><td class="ex"><span class="ex-tag">corazón</span><span class="ex-name">Caminata inclinada</span><span class="ex-rest">no te apoyes en las barras</span></td><td class="sr">10 min</td><td class="wt"></td>';
+    tr.innerHTML = '<td class="chk"><input type="checkbox" class="aux" data-id="' + id + '"></td><td class="ex"><span class="ex-tag">primero · corazón y calentamiento</span><span class="ex-name">Caminata inclinada</span><span class="ex-rest">los 2 primeros min más suave · no te apoyes en las barras</span></td><td class="sr">10 min</td><td class="wt"></td>';
     const det = el('tr', 'cv-detail');
     det.innerHTML = '<td colspan="4"><div class="cvbox">' +
       '<label>km/h<input class="cv-input" type="text" inputmode="decimal" data-wid="' + id + '_v" placeholder="5.5"></label>' +
@@ -478,13 +478,14 @@
         opts.innerHTML = '<span class="focus">Enfoque: <b>' + D.focus + '</b></span><label class="shortsw"><input type="checkbox" class="aux sw" data-id="short' + D.d + '"> Día corto: sin D (~45 min)</label>';
         body.appendChild(opts);
         const t = el('table');
+        /* Nov 25: the walk goes FIRST (he likes it as his warm-up, and it saves the separate 5-min warm-up) */
+        t.append(...cardioRows(D.d));
         t.append(...phaseRows('d' + D.d + '_warm', WARM[D.kind], 'warm'));
         t.append(secRow('<b>A</b> · el principal: aquí va tu mejor energía'), ...exRows(D.A, 'A'));
         t.append(...exRows(D.B, 'B'));
         t.append(...exRows(D.C[0], 'C', 'c1'));
         t.append(...exRows(D.C[1], 'D', 'c2'));
         t.append(secRow('<b>+5 min</b> · opcional, solo si te sobra tiempo', 'optsec'), ...exRows(D.opt, '+', 'opt'));
-        t.append(...cardioRows(D.d));
         t.append(...phaseRows('d' + D.d + '_stretch', STRETCH[D.kind], 'stretch'));
         body.appendChild(t);
       }
