@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=123;
+var APP_VER=124;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -646,7 +646,7 @@ function renderHome(){
   $('bToday').textContent=d.done?t('todaySecond'):d.idx>0?t('todayCont',d.idx,n):t('todayStart');
   syncStreak();$('hStreak').textContent=S.streak.n>0?'🔥 '+t(S.streak.n===1?'streak1':'streak',S.streak.n):'';
   var cm=counts('mine'),cp=counts('punish');
-  $('tMineN').innerHTML=fmtCount(cm);$('tPunN').innerHTML=fmtCount(cp);
+  $('tMineN').innerHTML=fmtCount('mine');$('tPunN').innerHTML=fmtCount('punish');
   if(!running&&!$('syncStatus').textContent)$('syncStatus').textContent=S.lastSync?t('lastSync',new Date(S.lastSync).toLocaleDateString(LANG)):t('syncHint');
 }
 function hintsUI(){var c=$('optHints');if(!c)return;c.checked=HINTS;c.onchange=function(){HINTS=c.checked;try{localStorage.setItem('taller-aperturas.hints',HINTS?'1':'0')}catch(e){}}}
@@ -692,7 +692,17 @@ function renderCoach(){
   if($('bCoachLast'))$('bCoachLast').onclick=function(){startSession(lg.cards.slice(0,10).map(function(c){return {t:'card',id:c.id}}),'mine');X.back='home'};
 }
 /* Nov 20: the tile shows what the session really contains — left to master out of the whole list (it used to show only today's due cards) */
-function fmtCount(c){var es=LANG==='es';return '<strong>'+c.todo+'</strong>'+(es?'por resolver':'to solve')+'<small>'+(es?'de ':'of ')+c.all+'</small>'}
+/* Nov 25 ("it says 4 of 49 — do I have 4 or 49? then it says 1/48 and gives me problems that are not my mistakes"): the tile shows ONE number —
+   his own cards to solve right now — and the session is exactly those cards (no bank puzzles after them). Cards he got wrong today come
+   back tomorrow ("+N mañana"); when nothing is left to solve, due reviews of solved cards; else "al día". */
+function tileState(kind){var sn=S.seen||{},rec=now()-20*36e5,cs=cardsOf(kind),fresh=function(c){return (sn[c.id]||0)<rec};
+  var todo=cs.filter(function(c){return c.last!==1}),nowL=cardQueue(kind).filter(function(c){return c.last!==1}),
+      rev=cardQueue(kind).filter(function(c){return c.last===1});
+  return {now:nowL,later:todo.length-nowL.length,rev:rev}}
+function fmtCount(kind){var es=LANG==='es',st=tileState(kind);
+  if(st.now.length)return '<strong>'+st.now.length+'</strong>'+(es?'por resolver':'to solve')+(st.later?'<small>+'+st.later+(es?' mañana':' tomorrow')+'</small>':'');
+  if(st.rev.length)return '<strong>'+st.rev.length+'</strong>'+(es?'para repasar':'to review');
+  return '<strong>✓</strong>'+(es?'al día':'all done')+(st.later?'<small>'+st.later+(es?' vuelven mañana':' back tomorrow')+'</small>':'')}
 $('bToday').onclick=function(){
   var d=dailyNow();if(d.done){buildToday((d.n||1)+1);d=S.daily}
   startSession(d.items,'today',d.idx);
@@ -1423,11 +1433,10 @@ $('bRepGo').onclick=function(){
 /* Nov 19: the tiles run through the WHOLE list — due cards first, then the rest (not seen in the last 20 h, shuffled), then the recent ones.
    He stops with ✕ whenever he wants; every 10 right answers a small 🎉 note. */
 function quickSession(kind){
-  var due=cardQueue(kind),rest=[];
-  /* Nov 23: once his own cards are done, it goes on with NEW puzzles of the same kind (never seen) — no more cards he already knows by heart */
-  var ks=kind==='punish'?['forkd','hang','lines','matek']:weakRank().filter(function(x){return x.k!=='calc'}).map(function(x){return x.k}),bank=[],per=ks.map(function(k){return weakPuz(k,12)});
-  for(var r=0;r<12;r++)per.forEach(function(a){if(a[r])bank.push(a[r])});
-  startSession(due.concat(rest).map(function(c){return {t:'card',id:c.id}}).concat(bank),kind);X.back='home';X.endless=true;
+  /* Nov 25: only HIS cards (the Nov 23 bank puzzles after them confused him: "these are not my mistakes"). Unsolved first; if none, due reviews. */
+  var st=tileState(kind),L=st.now.length?st.now:st.rev;
+  if(!L.length){startSession([{t:'msg',k:kind==='punish'?'noPun':'noMine',n:st.later?(LANG==='es'?st.later+' que fallaste vuelven mañana.':st.later+' you missed come back tomorrow.'):''}],kind);X.back='home';return}
+  startSession(L.map(function(c){return {t:'card',id:c.id}}),kind);X.back='home';X.endless=true;
 }
 
 /* ---------- fundamentals: coordinates, notation, concept quiz ---------- */
