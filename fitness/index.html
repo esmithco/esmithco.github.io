@@ -315,7 +315,7 @@
   const EX = {
     d1e7:{n:'Press inclinado con barra', s:3, r:'6–10', rest:'2 min', mg:{pecho:1}, m:'Pecho superior · hombro · tríceps', c:'Banco a 30°, no más. Agarre un poco más ancho que los hombros, escápulas juntas contra el banco. Baja la barra al pecho alto (bajo la clavícula) con los codos a ~45°. Solo: pon los topes de seguridad justo debajo del pecho, sin seguros en los discos, y para con 1–2 reps en el tanque.', img:'Barbell_Incline_Bench_Press_-_Medium_Grip', alt:{n:'Press inclinado en Smith (lo más seguro solo)', img:'Smith_Machine_Incline_Bench_Press'}},
     d4e2:{n:'Jalón al pecho', s:3, r:'8–12', rest:'90 s', mg:{espalda:1}, m:'Dorsal ancho · espalda · bíceps', c:'Agarre algo más ancho que los hombros. Lleva la barra al pecho tirando con los codos hacia abajo, pecho arriba y sin balancearte.', img:'Wide-Grip_Lat_Pulldown', alt:{n:'Dominadas asistidas', img:'Pullups'}},
-    d1e5:{n:'Press de banca con mancuernas', s:3, r:'8–12', mg:{pecho:1}, m:'Pecho · hombro · tríceps', c:'Banco plano. Baja las mancuernas al pecho con los codos a ~45° y empuja arriba sin bloquear.', img:'Dumbbell_Bench_Press', alt:{n:'Press de banca con barra', img:'Barbell_Bench_Press_-_Medium_Grip'}},
+    d1e5:{n:'Press de banca con mancuernas', s:3, r:'8–12', rest:'90 s', mg:{pecho:1}, m:'Pecho · hombro · tríceps', c:'Banco plano. Baja las mancuernas al pecho con los codos a ~45° y empuja arriba sin bloquear.', img:'Dumbbell_Bench_Press', alt:{n:'Press de banca con barra', img:'Barbell_Bench_Press_-_Medium_Grip'}},
     d1e2:{n:'Remo en máquina (apoyo en pecho)', s:3, r:'10–12', mg:{espalda:1}, m:'Espalda media · dorsal · bíceps', c:'Pecho apoyado, tira del agarre hacia ti juntando las escápulas. Baja controlando.', img:'Leverage_High_Row', alt:{n:'Remo con barra', img:'Bent_Over_Barbell_Row'}},
     d1e4:{n:'Curl de bíceps', s:2, r:'10–12', mg:{}, m:'Bíceps', c:'Sube la mancuerna sin mover el codo y baja despacio.', img:'Dumbbell_Bicep_Curl', alt:{n:'Curl con barra', img:'Barbell_Curl'}},
 
@@ -347,7 +347,7 @@
     lower:{n:'Estirar', t:'3 min', m:'Isquios, cadera y cuádriceps', c:'Isquios sentado, flexor de cadera de rodillas y cuádriceps de pie. 20–30 s por lado.', imgs:['Seated_Floor_Hamstring_Stretch','Kneeling_Hip_Flexor']}
   };
   const DAYS = [
-    {d:1, name:'Lunes', lab:'Upper A', color:'blue', kind:'upper', focus:'Pecho', A:'d1e7', B:'d4e2', C:['d1e5','d1e2'], opt:'d1e4'},
+    {d:1, name:'Lunes', lab:'Upper A', color:'blue', kind:'upper', focus:'Pecho', A:'d1e7', B:'d1e5', C:['d4e2','d1e2'], opt:'d1e4'},   /* Nov 25: chest first, then back (machines on different floors) */
     {d:2, name:'Martes', lab:'Lower A', color:'red', kind:'lower', focus:'Piernas', A:'d2e1', B:'d2e2', C:['d2e3','d5e4'], opt:'d2e5'},
     {d:3, name:'Miércoles', rest:'Descanso', text:'Descansa. Si quieres, una caminata tranquila con el perro: también cuenta para el corazón.'},
     {d:4, name:'Jueves', lab:'Upper B', color:'yellow', kind:'upper', focus:'Pecho y espalda', A:'d4e1', B:'d4e6', C:['d1e6','d4e4'], opt:'d1e3'},
