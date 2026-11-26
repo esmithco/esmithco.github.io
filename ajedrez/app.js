@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=124;
+var APP_VER=125;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -2330,7 +2330,8 @@ function renderProgress(){
   var rl=allLines(),rok=rl.filter(function(x){return x.st&&x.st.box>=3}).length;rows.push([t('tRep'),rok,rl.length]);
   var ik=IDEAS.filter(function(x){return S.ideas[x.id]&&S.ideas[x.id].box>=2}).length;rows.push([t('unitIdeas'),ik,IDEAS.length]);
   var sp=0,sn=0;STRAT.forEach(function(x){var p=planProg(x.id);sp+=p.ok;sn+=p.n});rows.push([t('unitStrat'),sp,sn]);
-  var cm=judgeCards().filter(function(c){return !c.hide}),cp=cardsOf('punish');rows.unshift([t('tPun'),cp.filter(function(c){return (c.box||0)>=2}).length,cp.length]);rows.unshift([t('tMine'),cm.filter(function(c){return (c.box||0)>=2}).length,cm.length]);
+  /* Nov 25 (screenshot: the tile said 'nothing to solve' while this bar said x/101): same cards and same rule as the home tiles — his usable cards, solved = last answer right */
+  var cm=cardsOf('mine'),cp=cardsOf('punish'),solved=function(L){return L.filter(function(c){return c.last===1}).length};rows.unshift([t('tPun'),solved(cp),cp.length]);rows.unshift([t('tMine'),solved(cm),cm.length]);
   rows.unshift([t('unitFund'),QUIZ.filter(function(q){return S.quiz[q.id]&&S.quiz[q.id].box>=2}).length,QUIZ.length]);
   rows.splice(2,0,rows.shift());   /* your mistakes and punish first */
   $('chCourse').innerHTML=rows.map(function(r){return '<div><div class="small" style="display:flex;justify-content:space-between"><span>'+esc(r[0])+'</span><span>'+r[1]+'/'+r[2]+'</span></div><div class="bar2"><span style="width:'+(r[2]?Math.round(r[1]/r[2]*100):0)+'%"></span></div></div>'}).join('');
