@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=128;
+var APP_VER=129;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -2044,7 +2044,11 @@ function convNext(){
       var why=ok?'':(pv&&pv.length?fold(t('cvWhy','<b class="mono">'+esc(mv.san)+'</b>'),story(fen,[mv.san].concat(pv).slice(0,5),me,5)):'')+fold(t('stBest',esc(r[2])),story(fen,r[3].split(' '),me,5));
       /* Nov 26 (his screenshot: "it says I'm still winning, but was that the best? I tried moves and don't know the good one"):
          a right-but-different move now also shows the best move (teal arrow + eval) */
-      var isBest=mv.san.replace(/[+#]/g,'')===r[2].replace(/[+#]/g,''),bestTxt=ok&&!r[10]?(isBest?' '+t('cvIsBest'):' '+t('cvBestWas','<b class="mono">'+esc(r[2])+'</b>',evalTxt(r[1]))):'';
+      var isBest=mv.san.replace(/[+#]/g,'')===r[2].replace(/[+#]/g,'');
+      /* Nov 26 ("before the move I'm +4, after the best move my advantage drops"): the bar used a quick 1.2 s browser look (+2.7) while the
+         verdict used the deep offline eval (+4.0). Seed the deep numbers so the bar shows the same value as the verdict. */
+      try{var fa=B.chess.fen();AN.ev[fen]={w:toW(r[1],me),pv:r[3].split(' ')};if(isBest)AN.ev[fa]={w:toW(r[1],me),pv:r[3].split(' ').slice(1)};else if(after!=null&&after!==300)AN.ev[fa]={w:toW(after,me),pv:pv||[]}}catch(e){}
+      var bestTxt=ok&&!r[10]?(isBest?' '+t('cvIsBest'):' '+t('cvBestWas','<b class="mono">'+esc(r[2])+'</b>',evalTxt(r[1]))):'';
       pauseReview(fen,[mv.san].concat(pv||[]).slice(0,6),ok,(ok?'✓ '+(r[10]?t('cvOkB'):t('cvOk',evalTxt(after)))+bestTxt:'✗ '+(r[10]?t('cvBadB','<b class="mono">'+esc(r[2])+'</b>'):t('cvBad',evalTxt(after),'<b class="mono">'+esc(r[2])+'</b>')))+(r[9]?' <span class="small">'+t('cvGame','<b class="mono">'+esc(r[9])+'</b>')+'</span>':''),(ok&&isBest)||!ba?[]:[ba],convNext,why)};
     if(mv.san.replace(/[+#]/g,'')===r[2].replace(/[+#]/g,'')||(r[11]&&B.chess.in_checkmate())){fin(true,r[1],r[3].split(' ').slice(1));return}
     if((r[6]||[]).indexOf(mv.san)>=0){fin(true,300,null);return}
