@@ -332,7 +332,7 @@
     d1e3:{n:'Elevaciones laterales', s:2, r:'12–15', mg:{hombro:1}, m:'Hombro (deltoides lateral)', c:'Sube los brazos por los lados hasta la altura del hombro, codo algo flexionado y sin impulso.', img:'Side_Lateral_Raise', alt:{n:'Press de hombro en máquina', img:'Leverage_Shoulder_Press'}},
 
     d5e2:{n:'Prensa de piernas', s:3, r:'10–12', rest:'2 min', mg:{piernas:1}, m:'Cuádriceps · glúteo', c:'Pies al ancho de cadera. Baja hasta ~90° sin despegar la espalda baja del respaldo y empuja con todo el pie.', img:'Leg_Press', alt:{n:'Sentadilla hack', img:'Hack_Squat'}},
-    d5e3:{n:'Hip thrust', s:3, r:'8–12', rest:'90–120 s', mg:{gluteo:1}, m:'Glúteo', c:'Espalda alta apoyada en el banco. Empuja la cadera arriba y aprieta el glúteo 1 s.', img:'Barbell_Hip_Thrust', alt:{n:'Puente de glúteo', img:'Barbell_Glute_Bridge'}},
+    d5e3:{n:'Hip thrust', s:2, r:'10–12', rest:'90 s', mg:{gluteo:1}, m:'Glúteo', c:'Espalda alta apoyada en el banco. Empuja la cadera arriba y aprieta el glúteo 1 s.', img:'Barbell_Hip_Thrust', alt:{n:'Puente de glúteo', img:'Barbell_Glute_Bridge'}},
     d2e4:{n:'Curl femoral', s:3, r:'10–12', mg:{gluteo:1}, m:'Isquios (parte de atrás del muslo)', c:'Flexiona la rodilla llevando el talón hacia el glúteo y baja despacio.', img:'Lying_Leg_Curls', alt:{n:'Curl femoral sentado', img:'Seated_Leg_Curl'}},
     d5e5:{n:'Dead bug', s:3, r:'10', mg:{}, m:'Core · abdomen', c:'Espalda baja pegada al suelo. Extiende brazo y pierna contrarios despacio sin arquear la espalda.', img:'Dead_Bug', alt:{n:'Plancha', img:'Plank'}},
     d5e6:{n:'Extensión de cuádriceps', s:2, r:'12–15', mg:{piernas:1}, m:'Cuádriceps', c:'Estira las rodillas hasta casi bloquear, pausa 1 s y baja lento.', img:'Leg_Extensions'}
@@ -348,10 +348,11 @@
   };
   const DAYS = [
     {d:1, name:'Lunes', lab:'Upper A', color:'blue', kind:'upper', focus:'Pecho', A:'d1e7', B:'d1e5', C:['d4e2','d1e2'], opt:'d1e4'},   /* Nov 25: chest first, then back (machines on different floors) */
-    {d:2, name:'Martes', lab:'Lower A', color:'red', kind:'lower', focus:'Piernas', A:'d2e1', B:'d2e2', C:['d2e3','d5e4'], opt:'d2e5'},
+    /* Nov 25 ("squats and lunges take all my time, with a bit of calves, and I'm done"): Tuesday = 3 exercises; the Romanian deadlift moved to Friday */
+    {d:2, name:'Martes', lab:'Lower A', color:'red', kind:'lower', focus:'Piernas', A:'d2e1', B:'d2e3', C:['d5e4'], opt:'d2e5', mins:'~50 min'},
     {d:3, name:'Miércoles', rest:'Descanso', text:'Descansa. Si quieres, una caminata tranquila con el perro: también cuenta para el corazón.'},
     {d:4, name:'Jueves', lab:'Upper B', color:'yellow', kind:'upper', focus:'Pecho y espalda', A:'d4e1', B:'d4e6', C:['d1e6','d4e4'], opt:'d1e3'},
-    {d:5, name:'Viernes', lab:'Lower B', color:'green', kind:'lower', focus:'Piernas y glúteo', A:'d5e2', B:'d5e3', C:['d2e4','d5e5'], opt:'d5e6'},
+    {d:5, name:'Viernes', lab:'Lower B', color:'green', kind:'lower', focus:'Piernas y glúteo', A:'d5e2', B:'d2e2', C:['d2e4','d5e5'], opt:'d5e3'},
     {d:6, name:'Sábado', rest:'Caminar', walk:true, text:'Caminata a buen paso, bici o salir con el perro. 20–30 min suman al cardio de la semana.'},
     {d:7, name:'Domingo', rest:'Caminar', walk:true, text:'Descanso activo: caminar, movilidad. Lo que hagas suma al cardio de la semana.'}
   ];
@@ -475,7 +476,7 @@
         }
       } else {
         const opts = el('div', 'dayopts');
-        opts.innerHTML = '<span class="focus">Enfoque: <b>' + D.focus + '</b></span><label class="shortsw"><input type="checkbox" class="aux sw" data-id="short' + D.d + '"> Día corto: sin D (~45 min)</label>';
+        opts.innerHTML = '<span class="focus">Enfoque: <b>' + D.focus + '</b></span>' + (D.C[1] ? '' : '<span class="small">Día de 3: hazlos bien y listo</span>') + '<label class="shortsw"' + (D.C[1] ? '' : ' style="display:none"') + '><input type="checkbox" class="aux sw" data-id="short' + D.d + '"> Día corto: sin D (~45 min)</label>';
         body.appendChild(opts);
         const t = el('table');
         /* Nov 25: the walk goes FIRST (he likes it as his warm-up, and it saves the separate 5-min warm-up) */
@@ -484,7 +485,7 @@
         t.append(secRow('<b>A</b> · el principal: aquí va tu mejor energía'), ...exRows(D.A, 'A'));
         t.append(...exRows(D.B, 'B'));
         t.append(...exRows(D.C[0], 'C', 'c1'));
-        t.append(...exRows(D.C[1], 'D', 'c2'));
+        if(D.C[1]) t.append(...exRows(D.C[1], 'D', 'c2'));
         t.append(secRow('<b>+5 min</b> · opcional, solo si te sobra tiempo', 'optsec'), ...exRows(D.opt, '+', 'opt'));
         t.append(...phaseRows('d' + D.d + '_stretch', STRETCH[D.kind], 'stretch'));
         body.appendChild(t);
@@ -514,13 +515,13 @@
     renderCardio(); renderWeek();
   }
   function refresh(){ applyState(); }
-  function lifts(D, s){ return [D.A, D.B, D.C[0]].concat(s['short' + D.d] ? [] : [D.C[1]]); }
+  function lifts(D, s){ return [D.A, D.B, D.C[0]].concat(s['short' + D.d] || !D.C[1] ? [] : [D.C[1]]); }
   function updateProgress(){
     const s = loadState();
     DAYS.filter(D=>!D.rest).forEach(D=>{
       const L = lifts(D, s), done = L.filter(id=>s[id]).length;
       const p = document.getElementById('prog' + D.d); if(p) p.textContent = done + '/' + L.length;
-      const m = document.getElementById('mins' + D.d); if(m) m.textContent = s['short' + D.d] ? '~45 min' : '~60 min';
+      const m = document.getElementById('mins' + D.d); if(m) m.textContent = s['short' + D.d] ? '~45 min' : (D.mins || '~60 min');
     });
   }
 
