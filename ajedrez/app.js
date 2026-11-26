@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=125;
+var APP_VER=126;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -725,7 +725,7 @@ function fitIntro(){if(innerWidth>979||!cur||!cur.it||!/theory$/.test(cur.it.t))
 function renderItem(){
   if(PEEK)peekOff();closeItemTime();stopTimers();dclkStop();window.scrollTo(0,0);anOff();$('demoBar').hidden=true;boardEl.classList.remove('nopieces');
   if(X.i>=X.items.length){endSession();return}
-  $('boardwrap').style.removeProperty('max-width');setTimeout(fitIntro,80);
+  $('boardwrap').style.removeProperty('max-width');setTimeout(fitIntro,80);$('s-train').classList.remove('msgonly');
   $('trBody').classList.remove('answered');  var it=X.items[X.i];cur={it:it,answered:false,first:true,t0:now()};$('bPrevEx').disabled=X.i===0;
   $('trCount').textContent=(X.i+1)+'/'+X.items.length;$('trProg').style.width=(X.i/X.items.length*100)+'%';
   ['fb','why','choices','note'].forEach(function(id){$(id).innerHTML='';$(id).className=id==='fb'?'feedback':id;$(id).hidden=id!=='fb'});
@@ -733,6 +733,16 @@ function renderItem(){
   if(X.past===X.i&&X.revs&&X.revs[X.i]&&X.revs[X.i].length){X.past=null;cur.revs=X.revs[X.i];cur.past=true;cur.answered=true;setBtns({});showRev(cur.revs.length-1);return}
   if(it.t==='card'){var c=S.cards[it.id];if(!c){skip();return}cur.card=c;loadCard(c)}
   else if(it.t==='line'){if(!REP[it.op]||!REP[it.op].lines[it.i]||REP[it.op].lines[it.i].off){skip();return}if(it.watch)watchLine(it.op,it.i);else loadLine(it.op,it.i)}
+  else if(it.t==='msg'&&(it.k==='noMine'||it.k==='noPun')){
+    /* Nov 25 (his screenshot: a 'nothing left' notice dressed as a session, with an empty bar, 1/1, Anterior, Terminar and Siguiente):
+       a plain card — the message, a button to the OTHER tile when it has cards to solve, and Volver */
+    $('s-train').classList.add('msgonly');$('boardwrap').hidden=true;var oth=it.k==='noMine'?'punish':'mine',os=tileState(oth),on=os.now.length||os.rev.length;
+    $('prompt').innerHTML='<div class="bigq">'+t(it.k+'T')+'</div><p class="lend">'+t(it.k+'D',esc(it.n||''))+'</p><div class="row msgbtns">'+
+      (on?'<button class="btn primary" id="bMsgOther" type="button">'+(oth==='punish'?'⚔️ ':'🎯 ')+t(oth==='punish'?'tPun':'tMine')+': '+on+' '+t(os.now.length?'toSolve':'toReview')+' ▶</button>':'')+
+      '<button class="btn" id="bMsgBack" type="button">'+t('backHome')+'</button></div>';
+    cur.answered=true;setBtns({});
+    if($('bMsgOther'))$('bMsgOther').onclick=function(){$('s-train').classList.remove('msgonly');quickSession(oth)};
+    $('bMsgBack').onclick=function(){$('s-train').classList.remove('msgonly');X.items=[];go('home')}}
   else if(it.t==='msg'){$('boardwrap').hidden=true;$('prompt').innerHTML='<div class="bigq">'+t(it.k+'T')+'</div><p class="lend">'+t(it.k+'D',esc(it.n||''))+'</p>';cur.answered=true;setBtns({next:true})}
   else if(it.t==='lpos'){if(!REP[it.op]||!REP[it.op].lines[it.i]){skip();return}loadLPos(it.op,it.i,it.ply)}
   else if(it.t==='opun'){if(!REP[it.op]||!REP[it.op].lines[it.i]||typeof REP[it.op].lines[it.i].key!=='number'){skip();return}loadOPun(it.op,it.i)}
