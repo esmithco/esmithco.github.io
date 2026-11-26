@@ -187,7 +187,7 @@
   tr.sec td b{color:var(--accent);font-size:11.5px}
   tr.sec + tr{border-top:none}
   td.ex .blk{display:inline-block;min-width:22px;margin-right:6px;padding:1px 5px;border-radius:5px;background:var(--accent);color:#fff;font:600 10px 'JetBrains Mono',monospace;text-align:center;vertical-align:middle}
-  tr.c1 td.ex .blk,tr.c2 td.ex .blk{background:#7C3AED}tr.opt td.ex .blk{background:var(--gray)}
+  tr.opt td.ex .blk{background:var(--gray)}
   tr.c1{border-top:none}
   tr.opt td.ex .ex-name{color:var(--steel)}
   .day.short tr.c2,.day.short tr.opt,.day.short tr.optsec{display:none}
@@ -213,7 +213,7 @@
   <div class="masthead">
     <h1>Mi rutina</h1>
     <div class="subtitle">4 días · 1 hora · fuerte y sano</div>
-    <p>Cada día: calentar 5 min → 4 ejercicios (A, B y una superserie C) → caminata inclinada 10 min → estirar. Menos ejercicios, pero series de verdad.</p>
+    <p>Cada día: calentar 5 min → 4 ejercicios (A, B, C, D), una máquina a la vez → caminata inclinada 10 min → estirar. Menos ejercicios, pero series de verdad.</p>
     <p class="cloudst" id="cloudSt">☁ Conectando…</p>
   </div>
 
@@ -307,11 +307,13 @@
 
 
   /* ---------- the routine (Nov 25 rebuild: 1 hour, 4 exercises, incline walk, health first, a bit more chest and legs) ----------
-     Each day: warm-up 5 min -> A (main) -> B -> C1 <-> C2 superset -> optional +5 min -> incline walk 10 min -> stretch.
-     Exercise ids are the OLD ids where the exercise is the same, so his saved weights carry over. "Día corto" hides C2 + optional. */
+     Each day: warm-up 5 min -> A (main) -> B -> C -> D (one machine at a time: no supersets, he found two machines at once hard in a busy gym)
+     -> optional +5 min -> incline walk 10 min -> stretch. Exercise ids are the OLD ids where the exercise is the same, so saved weights carry over
+     (Monday A became the incline BARBELL press, new id d1e7: lifting heavy dumbbells into position alone was hard on his shoulders).
+     "Día corto" hides D + optional. */
   const IMG_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
   const EX = {
-    d1e1:{n:'Press inclinado con mancuernas', s:3, r:'6–10', rest:'2 min', mg:{pecho:1}, m:'Pecho superior · hombro · tríceps', c:'Banco a ~30°. Baja las mancuernas al pecho alto con los codos a ~45° y empuja arriba sin bloquear de golpe.', img:'Incline_Dumbbell_Press', alt:{n:'Press inclinado en máquina', img:'Leverage_Incline_Chest_Press'}},
+    d1e7:{n:'Press inclinado con barra', s:3, r:'6–10', rest:'2 min', mg:{pecho:1}, m:'Pecho superior · hombro · tríceps', c:'Banco a 30°, no más. Agarre un poco más ancho que los hombros, escápulas juntas contra el banco. Baja la barra al pecho alto (bajo la clavícula) con los codos a ~45°. Solo: pon los topes de seguridad justo debajo del pecho, sin seguros en los discos, y para con 1–2 reps en el tanque.', img:'Barbell_Incline_Bench_Press_-_Medium_Grip', alt:{n:'Press inclinado en Smith (lo más seguro solo)', img:'Smith_Machine_Incline_Bench_Press'}},
     d4e2:{n:'Jalón al pecho', s:3, r:'8–12', rest:'90 s', mg:{espalda:1}, m:'Dorsal ancho · espalda · bíceps', c:'Agarre algo más ancho que los hombros. Lleva la barra al pecho tirando con los codos hacia abajo, pecho arriba y sin balancearte.', img:'Wide-Grip_Lat_Pulldown', alt:{n:'Dominadas asistidas', img:'Pullups'}},
     d1e5:{n:'Press de banca con mancuernas', s:3, r:'8–12', mg:{pecho:1}, m:'Pecho · hombro · tríceps', c:'Banco plano. Baja las mancuernas al pecho con los codos a ~45° y empuja arriba sin bloquear.', img:'Dumbbell_Bench_Press', alt:{n:'Press de banca con barra', img:'Barbell_Bench_Press_-_Medium_Grip'}},
     d1e2:{n:'Remo en máquina (apoyo en pecho)', s:3, r:'10–12', mg:{espalda:1}, m:'Espalda media · dorsal · bíceps', c:'Pecho apoyado, tira del agarre hacia ti juntando las escápulas. Baja controlando.', img:'Leverage_High_Row', alt:{n:'Remo con barra', img:'Bent_Over_Barbell_Row'}},
@@ -345,7 +347,7 @@
     lower:{n:'Estirar', t:'3 min', m:'Isquios, cadera y cuádriceps', c:'Isquios sentado, flexor de cadera de rodillas y cuádriceps de pie. 20–30 s por lado.', imgs:['Seated_Floor_Hamstring_Stretch','Kneeling_Hip_Flexor']}
   };
   const DAYS = [
-    {d:1, name:'Lunes', lab:'Upper A', color:'blue', kind:'upper', focus:'Pecho', A:'d1e1', B:'d4e2', C:['d1e5','d1e2'], opt:'d1e4'},
+    {d:1, name:'Lunes', lab:'Upper A', color:'blue', kind:'upper', focus:'Pecho', A:'d1e7', B:'d4e2', C:['d1e5','d1e2'], opt:'d1e4'},
     {d:2, name:'Martes', lab:'Lower A', color:'red', kind:'lower', focus:'Piernas', A:'d2e1', B:'d2e2', C:['d2e3','d5e4'], opt:'d2e5'},
     {d:3, name:'Miércoles', rest:'Descanso', text:'Descansa. Si quieres, una caminata tranquila con el perro: también cuenta para el corazón.'},
     {d:4, name:'Jueves', lab:'Upper B', color:'yellow', kind:'upper', focus:'Pecho y espalda', A:'d4e1', B:'d4e6', C:['d1e6','d4e4'], opt:'d1e3'},
@@ -386,7 +388,7 @@
     tr.dataset.ex = id;
     tr.innerHTML = '<td class="chk"><input type="checkbox" data-id="' + id + '"></td>' +
       '<td class="ex has-info"><span class="blk">' + blk + '</span><span class="ex-name">' + esc(x.n) + '</span><span class="ex-i">i</span>' +
-      '<span class="ex-rest">' + (x.rest ? 'descanso ' + x.rest : extraCls === 'c1' ? 'sin pausa → C2' : extraCls === 'c2' ? 'luego descansa 60–90 s' : 'descanso 60–90 s') + '</span></td>' +
+      '<span class="ex-rest">descanso ' + (x.rest || '60–90 s') + '</span></td>' +
       '<td class="sr">' + x.s + ' × ' + x.r + '</td>' +
       '<td class="wt"><input class="weight-input" type="text" inputmode="decimal" data-wid="' + id + '" placeholder="—" aria-label="Peso en kilogramos"></td>';
     const det = el('tr', 'ex-detail' + (extraCls ? ' ' + extraCls : ''));
@@ -473,13 +475,14 @@
         }
       } else {
         const opts = el('div', 'dayopts');
-        opts.innerHTML = '<span class="focus">Enfoque: <b>' + D.focus + '</b></span><label class="shortsw"><input type="checkbox" class="aux sw" data-id="short' + D.d + '"> Día corto (~45 min)</label>';
+        opts.innerHTML = '<span class="focus">Enfoque: <b>' + D.focus + '</b></span><label class="shortsw"><input type="checkbox" class="aux sw" data-id="short' + D.d + '"> Día corto: sin D (~45 min)</label>';
         body.appendChild(opts);
         const t = el('table');
         t.append(...phaseRows('d' + D.d + '_warm', WARM[D.kind], 'warm'));
         t.append(secRow('<b>A</b> · el principal: aquí va tu mejor energía'), ...exRows(D.A, 'A'));
-        t.append(secRow('<b>B</b>'), ...exRows(D.B, 'B'));
-        t.append(secRow('<b>C</b> · superserie: C1 y luego C2 sin pausa, descansa al terminar los dos'), ...exRows(D.C[0], 'C1', 'c1'), ...exRows(D.C[1], 'C2', 'c2'));
+        t.append(...exRows(D.B, 'B'));
+        t.append(...exRows(D.C[0], 'C', 'c1'));
+        t.append(...exRows(D.C[1], 'D', 'c2'));
         t.append(secRow('<b>+5 min</b> · opcional, solo si te sobra tiempo', 'optsec'), ...exRows(D.opt, '+', 'opt'));
         t.append(...cardioRows(D.d));
         t.append(...phaseRows('d' + D.d + '_stretch', STRETCH[D.kind], 'stretch'));
