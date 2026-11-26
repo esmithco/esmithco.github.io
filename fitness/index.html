@@ -170,6 +170,7 @@
     .head{padding:14px 14px;}
     .head h2{font-size:16px;}
   }
+.cloudst{font-size:.78rem;opacity:.75;margin-top:6px}
 </style>
 </head>
 <body>
@@ -184,6 +185,7 @@
       <h1>My routine plan</h1>
       <div class="subtitle">4 days of hell</div>
       <p>Tren superior e inferior, 2 veces por semana cada uno. Progresa el peso cuando completes todas las series con buena técnica.</p>
+      <p class="cloudst" id="cloudSt">☁ Conectando…</p>
     </div>
   </div>
 
@@ -292,8 +294,67 @@
   const TIMER_KEY = 'rutina4dias_timer_v1';
   const HINT_KEY = 'rutina4dias_hint_dismissed';
 
+  /* ---------- cloud save (Nov 25, "save my progress like the other ones, not only on my phone or the browser") ----------
+     Same open Firebase as the chess app: /progress/fitness.json holds ONE JSON string {v, s: checkboxes, w: weights, ts: {s:{id:time}, w:{id:time}}}.
+     Every change stamps its key; merging keeps, per key, the value with the newer stamp. Pull on start and when the page comes back,
+     push (read -> merge -> write) 1.5 s after a change, keepalive write when the page hides. Local testing uses fitness_test.json. */
+  const TS_KEY = 'rutina4dias_ts_v1';
+  const LOCAL = /^(localhost|127\.|\[::1\])/.test(location.hostname);
+  const CLOUD_URL = 'https://chess-3ce3f-default-rtdb.firebaseio.com/progress/' + (LOCAL ? 'fitness_test' : 'fitness') + '.json';
+  function loadTs(){ try { const t = JSON.parse(localStorage.getItem(TS_KEY)) || {}; t.s = t.s || {}; t.w = t.w || {}; return t; } catch(e){ return {s:{}, w:{}}; } }
+  function stamp(kind, before, after){
+    const ts = loadTs(), now = Date.now();
+    Object.keys(after).forEach(k=>{ if(before[k] !== after[k]) ts[kind][k] = now; });
+    localStorage.setItem(TS_KEY, JSON.stringify(ts));
+  }
+  function localPayload(){
+    let s = {}, w = {};
+    try { s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e){}
+    try { w = JSON.parse(localStorage.getItem(WEIGHT_KEY)) || {}; } catch(e){}
+    return {v:1, s, w, ts: loadTs()};
+  }
+  function mergePayload(a, b){
+    const out = {v:1, s:{}, w:{}, ts:{s:{}, w:{}}};
+    ['s','w'].forEach(kind=>{
+      const A = a[kind]||{}, B = b[kind]||{}, TA = (a.ts&&a.ts[kind])||{}, TB = (b.ts&&b.ts[kind])||{};
+      new Set(Object.keys(A).concat(Object.keys(B))).forEach(k=>{
+        const useB = !(k in A) || ((k in B) && (TB[k]||0) > (TA[k]||0));
+        out[kind][k] = useB ? B[k] : A[k];
+        out.ts[kind][k] = Math.max(TA[k]||0, TB[k]||0);
+      });
+    });
+    return out;
+  }
+  function setCloudStatus(txt){ const el = document.getElementById('cloudSt'); if(el) el.textContent = txt; }
+  function writeLocal(p){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(p.s)); localStorage.setItem(WEIGHT_KEY, JSON.stringify(p.w)); localStorage.setItem(TS_KEY, JSON.stringify(p.ts));
+    applyState(); applyWeights();
+  }
+  async function cloudGet(){ const r = await fetch(CLOUD_URL, {cache:'no-store'}); if(!r.ok) throw new Error(r.status); const j = await r.json(); return typeof j === 'string' ? JSON.parse(j) : null; }
+  let cloudBusy = false, cloudTimer = null;
+  async function cloudSync(){
+    if(cloudBusy){ cloudSoon(); return; }
+    cloudBusy = true;
+    try {
+      const remote = await cloudGet(), local = localPayload();
+      const merged = remote ? mergePayload(local, remote) : local;
+      if(JSON.stringify(merged.s) !== JSON.stringify(local.s) || JSON.stringify(merged.w) !== JSON.stringify(local.w)) writeLocal(merged);
+      else localStorage.setItem(TS_KEY, JSON.stringify(merged.ts));
+      merged.at = Date.now();
+      const r = await fetch(CLOUD_URL, {method:'PUT', body: JSON.stringify(JSON.stringify(merged))});
+      if(!r.ok) throw new Error(r.status);
+      setCloudStatus('☁ Guardado en la nube · ' + new Date().toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'}));
+    } catch(e){ setCloudStatus('☁ Sin conexión: guardado en este teléfono, se sube después'); }
+    cloudBusy = false;
+  }
+  function cloudSoon(){ clearTimeout(cloudTimer); cloudTimer = setTimeout(cloudSync, 1500); }
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible') cloudSync();
+    else { try { const p = localPayload(); p.at = Date.now(); if(cloudTimer){ clearTimeout(cloudTimer); cloudTimer = null; fetch(CLOUD_URL, {method:'PUT', body: JSON.stringify(JSON.stringify(p)), keepalive:true}); } } catch(e){} }
+  });
+
   function loadState(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e){ return {}; } }
-  function saveState(s){ localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+  function saveState(s){ stamp('s', loadState(), s); localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); cloudSoon(); }
   function applyState(){
     const state = loadState();
     document.querySelectorAll('input[type=checkbox]').forEach(cb=>{
@@ -321,7 +382,7 @@
   });
 
   function loadWeights(){ try { return JSON.parse(localStorage.getItem(WEIGHT_KEY)) || {}; } catch(e){ return {}; } }
-  function saveWeights(w){ localStorage.setItem(WEIGHT_KEY, JSON.stringify(w)); }
+  function saveWeights(w){ stamp('w', loadWeights(), w); localStorage.setItem(WEIGHT_KEY, JSON.stringify(w)); cloudSoon(); }
   document.querySelectorAll('.weight-input').forEach(inp=>{
     inp.type = 'text';
     inp.inputMode = 'decimal';
@@ -347,8 +408,10 @@
 
   function resetWeek(){
     if(confirm('¿Reiniciar casillas y pesos marcados?')){
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(WEIGHT_KEY);
+      /* clear by writing empty values (with fresh time stamps) so the reset also reaches the cloud and other devices */
+      const s0 = loadState(), w0 = loadWeights();
+      Object.keys(s0).forEach(k=> s0[k] = false); Object.keys(w0).forEach(k=> w0[k] = '');
+      saveState(s0); saveWeights(w0);
       applyState();
       applyWeights();
       document.querySelectorAll('.weight-input').forEach(i=> i.value='');
@@ -734,6 +797,7 @@
   setupExerciseInfo();
   injectPhases();
   estimateTimes();
+  cloudSync();
 </script>
 </body>
 </html>
