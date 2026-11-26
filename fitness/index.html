@@ -171,6 +171,36 @@
     .head h2{font-size:16px;}
   }
 .cloudst{font-size:.78rem;opacity:.75;margin-top:6px}
+
+  /* Nov 25 rebuild: week card, blocks, superset, short day, incline-walk pulse */
+  .masthead{margin-bottom:14px;padding-bottom:12px}
+  .week{background:var(--panel);border:1px solid var(--panel-line);border-radius:14px;padding:12px 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;box-shadow:0 5px 15px rgba(24,39,56,.035)}
+  .week .wrow{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13.5px}
+  .week .wdots{display:flex;gap:5px}.week .wd{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--panel-line);display:flex;align-items:center;justify-content:center;font:600 11px 'JetBrains Mono',monospace;color:var(--steel-dim)}
+  .week .wd.half{border-color:var(--accent);color:var(--accent)}.week .wd.ok{background:var(--green);border-color:var(--green);color:#fff}
+  .week .wbar{position:relative;height:8px;border-radius:5px;background:#E6ECF2;overflow:visible}.week .wbar span{display:block;height:100%;border-radius:5px;background:var(--red)}.week .wbar i{position:absolute;top:-3px;width:2px;height:14px;background:var(--steel-dim)}
+  .week .chips{display:flex;flex-wrap:wrap;gap:6px}.week .chip{font-size:12px;border:1px solid var(--panel-line);border-radius:99px;padding:3px 9px;color:var(--steel)}.week .chip.mid{border-color:var(--yellow);color:#8A5D00}.week .chip.ok{background:#E7F5EC;border-color:var(--green);color:var(--green)}
+  .small{font-size:11.5px;color:var(--steel-dim)}
+  .dayopts{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:2px 18px 10px;font-size:12.5px;color:var(--steel);flex-wrap:wrap}
+  .shortsw{display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+  tr.sec td{padding:10px 18px 4px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--steel-dim);border-top:1px solid var(--panel-line)}
+  tr.sec td b{color:var(--accent);font-size:11.5px}
+  tr.sec + tr{border-top:none}
+  td.ex .blk{display:inline-block;min-width:22px;margin-right:6px;padding:1px 5px;border-radius:5px;background:var(--accent);color:#fff;font:600 10px 'JetBrains Mono',monospace;text-align:center;vertical-align:middle}
+  tr.c1 td.ex .blk,tr.c2 td.ex .blk{background:#7C3AED}tr.opt td.ex .blk{background:var(--gray)}
+  tr.c1{border-top:none}
+  tr.opt td.ex .ex-name{color:var(--steel)}
+  .day.short tr.c2,.day.short tr.opt,.day.short tr.optsec{display:none}
+  .phase-row.cardio td.ex .ex-tag{color:var(--red)}
+  tr.cv-detail td{padding:0 18px 12px;border-top:none}
+  .cvbox{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;background:#FFF4F3;border:1px solid #F5D0CD;border-radius:10px;padding:10px 12px}
+  .cvbox label{display:flex;flex-direction:column;gap:3px;font:600 9.5px 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;color:var(--steel-dim)}
+  .cv-input{width:62px;background:#fff;border:1px solid var(--panel-line);color:var(--chalk);font:500 14px 'JetBrains Mono',monospace;text-align:center;border-radius:6px;padding:6px 2px}
+  .cv-input:focus{outline:none;border-color:var(--accent)}
+  .cvres{flex-basis:100%;display:flex;flex-direction:column;gap:4px;font-size:13px}
+  .cvres .z{font-weight:600}.cvres .z.vig{color:var(--green)}.cvres .z.mod{color:var(--accent)}.cvres .z.low{color:#8A5D00}.cvres .z.hi{color:var(--red)}
+  .cvres .tip{font-size:12.5px;color:var(--steel)}
+  .rest{padding:0 18px 14px}
 </style>
 </head>
 <body>
@@ -181,12 +211,10 @@
   </a>
 
   <div class="masthead">
-    <div>
-      <h1>My routine plan</h1>
-      <div class="subtitle">4 days of hell</div>
-      <p>Tren superior e inferior, 2 veces por semana cada uno. Progresa el peso cuando completes todas las series con buena técnica.</p>
-      <p class="cloudst" id="cloudSt">☁ Conectando…</p>
-    </div>
+    <h1>Mi rutina</h1>
+    <div class="subtitle">4 días · 1 hora · fuerte y sano</div>
+    <p>Cada día: calentar 5 min → 4 ejercicios (A, B y una superserie C) → caminata inclinada 10 min → estirar. Menos ejercicios, pero series de verdad.</p>
+    <p class="cloudst" id="cloudSt">☁ Conectando…</p>
   </div>
 
   <div class="stopwatch">
@@ -200,90 +228,14 @@
     </div>
   </div>
 
-  <div class="day" id="day1" data-day="1">
-    <div class="bar blue"></div>
-    <button class="head" onclick="toggleDay('day1')"><h2>Lunes</h2><div class="tag"><span id="prog1"></span><span>Upper A</span><span class="chev">⌄</span></div></button>
-    <div class="body">
-      <div class="caution">⚠ Press: si sientes dolor en el pectoral, para y sustituye por máquina o remo extra. Quédate 2-3 reps antes del fallo.</div>
-      <table>
-        <tr class="col-heads"><td></td><td class="ex"></td><td class="sr"></td><td class="wt">kg</td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d1e1"></td><td class="ex">Press inclinado con mancuernas</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e1" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d1e5"></td><td class="ex">Press de banca con mancuernas</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e5" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d1e2"></td><td class="ex">Remo en máquina (apoyo en pecho)</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e2" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d1e6"></td><td class="ex">Aperturas con mancuernas</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e6" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d1e3"></td><td class="ex">Elevaciones laterales</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e3" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d1e4"></td><td class="ex">Curl de bíceps con mancuerna</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d1e4" placeholder="—"></td></tr>
-      </table>
-    </div>
-  </div>
+  <div class="week" id="week"></div>
 
-  <div class="day" id="day2" data-day="2">
-    <div class="bar red"></div>
-    <button class="head" onclick="toggleDay('day2')"><h2>Martes</h2><div class="tag"><span id="prog2"></span><span>Lower A</span><span class="chev">⌄</span></div></button>
-    <div class="body">
-      <table>
-        <tr class="col-heads"><td></td><td class="ex"></td><td class="sr"></td><td class="wt">kg</td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d2e1"></td><td class="ex">Sentadilla (barra o goblet)</td><td class="sr">4 x 8</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d2e1" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d2e2"></td><td class="ex">Peso muerto rumano</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d2e2" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d2e3"></td><td class="ex">Zancadas</td><td class="sr">3 x 10 c/pierna</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d2e3" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d2e4"></td><td class="ex">Curl femoral o hip thrust</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d2e4" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d2e5"></td><td class="ex">Plancha</td><td class="sr">3 x 30-40s</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d2e5" placeholder="—"></td></tr>
-      </table>
-    </div>
-  </div>
-
-  <div class="day" id="day3" data-day="3">
-    <div class="bar gray"></div>
-    <button class="head" onclick="toggleDay('day3')"><h2>Miércoles</h2><div class="tag"><span>Descanso</span><span class="chev">⌄</span></div></button>
-    <div class="body"><div class="rest">Caminata ligera + estiramiento de pectoral y cadera. Nada de carga.</div></div>
-  </div>
-
-  <div class="day" id="day4" data-day="4">
-    <div class="bar yellow"></div>
-    <button class="head" onclick="toggleDay('day4')"><h2>Jueves</h2><div class="tag"><span id="prog4"></span><span>Upper B</span><span class="chev">⌄</span></div></button>
-    <div class="body">
-      <div class="caution">⚠ Mismo cuidado con el press militar: si duele el pectoral, sustituye o baja el peso.</div>
-      <table>
-        <tr class="col-heads"><td></td><td class="ex"></td><td class="sr"></td><td class="wt">kg</td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d4e1"></td><td class="ex">Press de pecho en máquina o banca</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e1" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d4e2"></td><td class="ex">Jalón al pecho (agarre ancho)</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e2" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d4e6"></td><td class="ex">Remo sentado en polea</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e6" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d4e3"></td><td class="ex">Press militar con mancuernas</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e3" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d4e4"></td><td class="ex">Face pull (a la cara)</td><td class="sr">3 x 15</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e4" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d4e5"></td><td class="ex">Fondos en máquina (tríceps)</td><td class="sr">3 x 12</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d4e5" placeholder="—"></td></tr>
-      </table>
-    </div>
-  </div>
-
-  <div class="day" id="day5" data-day="5">
-    <div class="bar green"></div>
-    <button class="head" onclick="toggleDay('day5')"><h2>Viernes</h2><div class="tag"><span id="prog5"></span><span>Lower B</span><span class="chev">⌄</span></div></button>
-    <div class="body">
-      <table>
-        <tr class="col-heads"><td></td><td class="ex"></td><td class="sr"></td><td class="wt">kg</td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d5e1"></td><td class="ex">Peso muerto convencional o sumo</td><td class="sr">4 x 6-8</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d5e1" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d5e2"></td><td class="ex">Prensa o sentadilla búlgara</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d5e2" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d5e3"></td><td class="ex">Hip thrust</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d5e3" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d5e4"></td><td class="ex">Elevación de talones</td><td class="sr">3 x 15</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d5e4" placeholder="—"></td></tr>
-        <tr><td class="chk"><input type="checkbox" data-id="d5e5"></td><td class="ex">Core (rueda abdominal o dead bug)</td><td class="sr">3 x 10</td><td class="wt"><input class="weight-input" type="number" inputmode="decimal" data-wid="d5e5" placeholder="—"></td></tr>
-      </table>
-    </div>
-  </div>
-
-  <div class="day" id="day6" data-day="6">
-    <div class="bar gray"></div>
-    <button class="head" onclick="toggleDay('day6')"><h2>Sábado</h2><div class="tag"><span>Descanso activo</span><span class="chev">⌄</span></div></button>
-    <div class="body"><div class="rest">Caminar, movilidad, estirar pectoral y cadera. Base de pasos diarios (7-8k).</div></div>
-  </div>
-
-  <div class="day" id="day7" data-day="7">
-    <div class="bar gray"></div>
-    <button class="head" onclick="toggleDay('day7')"><h2>Domingo</h2><div class="tag"><span>Descanso activo</span><span class="chev">⌄</span></div></button>
-    <div class="body"><div class="rest">Caminar, movilidad, estirar pectoral y cadera. Base de pasos diarios (7-8k).</div></div>
-  </div>
+  <div id="days"></div>
 
   <div class="foot">
-    <b>Progresión:</b> sube peso cuando completes todas las series/reps con buena forma.
+    <b>Cómo progresar:</b> termina cada serie con 1–2 repeticiones "en el tanque". Cuando llegues al número alto del rango en todas las series, sube un poco el peso la próxima vez.<br>
+    <b>Lo que hace crecer:</b> subir peso o reps poco a poco, series cerca del fallo, proteína ≈ 1,6 g por kg al día (≈ 115 g para ti) y dormir 7–8 h.<br>
+    <b>Cardio:</b> la OMS pide 150 min moderados por semana (1 min vigoroso = 2 moderados). Con 75 ya tienes gran parte del beneficio. Las casillas se reinician cada lunes; los pesos se quedan.
   </div>
 
 </div>
@@ -353,81 +305,247 @@
     else { try { const p = localPayload(); p.at = Date.now(); if(cloudTimer){ clearTimeout(cloudTimer); cloudTimer = null; fetch(CLOUD_URL, {method:'PUT', body: JSON.stringify(JSON.stringify(p)), keepalive:true}); } } catch(e){} }
   });
 
+
+  /* ---------- the routine (Nov 25 rebuild: 1 hour, 4 exercises, incline walk, health first, a bit more chest and legs) ----------
+     Each day: warm-up 5 min -> A (main) -> B -> C1 <-> C2 superset -> optional +5 min -> incline walk 10 min -> stretch.
+     Exercise ids are the OLD ids where the exercise is the same, so his saved weights carry over. "Día corto" hides C2 + optional. */
+  const IMG_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
+  const EX = {
+    d1e1:{n:'Press inclinado con mancuernas', s:3, r:'6–10', rest:'2 min', mg:{pecho:1}, m:'Pecho superior · hombro · tríceps', c:'Banco a ~30°. Baja las mancuernas al pecho alto con los codos a ~45° y empuja arriba sin bloquear de golpe.', img:'Incline_Dumbbell_Press', alt:{n:'Press inclinado en máquina', img:'Leverage_Incline_Chest_Press'}},
+    d4e2:{n:'Jalón al pecho', s:3, r:'8–12', rest:'90 s', mg:{espalda:1}, m:'Dorsal ancho · espalda · bíceps', c:'Agarre algo más ancho que los hombros. Lleva la barra al pecho tirando con los codos hacia abajo, pecho arriba y sin balancearte.', img:'Wide-Grip_Lat_Pulldown', alt:{n:'Dominadas asistidas', img:'Pullups'}},
+    d1e5:{n:'Press de banca con mancuernas', s:3, r:'8–12', mg:{pecho:1}, m:'Pecho · hombro · tríceps', c:'Banco plano. Baja las mancuernas al pecho con los codos a ~45° y empuja arriba sin bloquear.', img:'Dumbbell_Bench_Press', alt:{n:'Press de banca con barra', img:'Barbell_Bench_Press_-_Medium_Grip'}},
+    d1e2:{n:'Remo en máquina (apoyo en pecho)', s:3, r:'10–12', mg:{espalda:1}, m:'Espalda media · dorsal · bíceps', c:'Pecho apoyado, tira del agarre hacia ti juntando las escápulas. Baja controlando.', img:'Leverage_High_Row', alt:{n:'Remo con barra', img:'Bent_Over_Barbell_Row'}},
+    d1e4:{n:'Curl de bíceps', s:2, r:'10–12', mg:{}, m:'Bíceps', c:'Sube la mancuerna sin mover el codo y baja despacio.', img:'Dumbbell_Bicep_Curl', alt:{n:'Curl con barra', img:'Barbell_Curl'}},
+
+    d2e1:{n:'Sentadilla', s:3, r:'6–10', rest:'2–3 min', mg:{piernas:1}, m:'Cuádriceps · glúteo · core', c:'Baja como si te sentaras, rodillas hacia afuera y espalda recta, hasta que los muslos queden paralelos. Con barra o goblet (mancuerna al pecho).', img:'Barbell_Squat', alt:{n:'Sentadilla goblet', img:'Goblet_Squat'}},
+    d2e2:{n:'Peso muerto rumano', s:3, r:'8–10', rest:'2 min', mg:{gluteo:1}, m:'Isquios · glúteo · espalda baja', c:'Lleva la cadera atrás con las piernas casi rectas y la espalda recta. Baja hasta media espinilla y sube apretando el glúteo.', img:'Romanian_Deadlift', alt:{n:'Hiperextensiones', img:'Hyperextensions_With_No_Hyperextension_Bench'}},
+    d2e3:{n:'Zancadas', s:3, r:'8 c/pierna', mg:{piernas:1}, m:'Cuádriceps · glúteo', c:'Paso al frente y baja la rodilla de atrás hacia el suelo. Torso recto y rodilla alineada con el pie.', img:'Dumbbell_Lunges', alt:{n:'Sentadilla búlgara', img:'Split_Squat_with_Dumbbells'}},
+    d5e4:{n:'Elevación de talones', s:3, r:'12–15', mg:{}, m:'Gemelos (pantorrilla)', c:'Sube sobre las puntas lo más alto posible, pausa 1 s arriba y baja lento.', img:'Rocking_Standing_Calf_Raise', alt:{n:'Talones sentado', img:'Seated_Calf_Raise'}},
+    d2e5:{n:'Plancha', s:2, r:'30–40 s', mg:{}, m:'Core · abdomen', c:'Cuerpo recto sobre los antebrazos. Aprieta abdomen y glúteo; no hundas ni subas la cadera.', img:'Plank', alt:{n:'Rueda abdominal', img:'Ab_Roller'}},
+
+    d4e1:{n:'Press de pecho en máquina', s:3, r:'8–12', rest:'2 min', mg:{pecho:1}, m:'Pecho · hombro · tríceps', c:'Empuja hasta casi estirar los brazos y controla la vuelta. Hombros atrás y pecho arriba.', img:'Machine_Bench_Press', alt:{n:'Press de banca con mancuernas', img:'Dumbbell_Bench_Press'}},
+    d4e6:{n:'Remo sentado en polea', s:3, r:'8–12', rest:'90 s', mg:{espalda:1}, m:'Espalda media · dorsal · bíceps', c:'Tira del agarre hacia el abdomen juntando las escápulas. Pecho arriba, sin encorvarte ni usar impulso.', img:'Seated_Cable_Rows', alt:{n:'Remo con mancuerna a una mano', img:'One-Arm_Dumbbell_Row'}},
+    d1e6:{n:'Aperturas en máquina (pec-deck)', s:3, r:'12–15', mg:{pecho:1}, m:'Pecho (pectoral)', c:'Brazos casi estirados. Junta los agarres al frente apretando el pecho y abre despacio hasta sentir el estiramiento.', img:'Butterfly', alt:{n:'Aperturas con mancuernas', img:'Dumbbell_Flyes'}},
+    d4e4:{n:'Face pull (a la cara)', s:3, r:'12–15', mg:{hombro:1}, m:'Hombro posterior · espalda alta', c:'Polea a la altura de la cara. Tira de la cuerda hacia la frente abriendo los codos. Ligero y controlado: es salud de hombro.', img:'Face_Pull', alt:{n:'Pájaros en polea', img:'Cable_Rear_Delt_Fly'}},
+    d1e3:{n:'Elevaciones laterales', s:2, r:'12–15', mg:{hombro:1}, m:'Hombro (deltoides lateral)', c:'Sube los brazos por los lados hasta la altura del hombro, codo algo flexionado y sin impulso.', img:'Side_Lateral_Raise', alt:{n:'Press de hombro en máquina', img:'Leverage_Shoulder_Press'}},
+
+    d5e2:{n:'Prensa de piernas', s:3, r:'10–12', rest:'2 min', mg:{piernas:1}, m:'Cuádriceps · glúteo', c:'Pies al ancho de cadera. Baja hasta ~90° sin despegar la espalda baja del respaldo y empuja con todo el pie.', img:'Leg_Press', alt:{n:'Sentadilla hack', img:'Hack_Squat'}},
+    d5e3:{n:'Hip thrust', s:3, r:'8–12', rest:'90–120 s', mg:{gluteo:1}, m:'Glúteo', c:'Espalda alta apoyada en el banco. Empuja la cadera arriba y aprieta el glúteo 1 s.', img:'Barbell_Hip_Thrust', alt:{n:'Puente de glúteo', img:'Barbell_Glute_Bridge'}},
+    d2e4:{n:'Curl femoral', s:3, r:'10–12', mg:{gluteo:1}, m:'Isquios (parte de atrás del muslo)', c:'Flexiona la rodilla llevando el talón hacia el glúteo y baja despacio.', img:'Lying_Leg_Curls', alt:{n:'Curl femoral sentado', img:'Seated_Leg_Curl'}},
+    d5e5:{n:'Dead bug', s:3, r:'10', mg:{}, m:'Core · abdomen', c:'Espalda baja pegada al suelo. Extiende brazo y pierna contrarios despacio sin arquear la espalda.', img:'Dead_Bug', alt:{n:'Plancha', img:'Plank'}},
+    d5e6:{n:'Extensión de cuádriceps', s:2, r:'12–15', mg:{piernas:1}, m:'Cuádriceps', c:'Estira las rodillas hasta casi bloquear, pausa 1 s y baja lento.', img:'Leg_Extensions'}
+  };
+  const MG = {pecho:'Pecho', espalda:'Espalda', piernas:'Piernas', gluteo:'Glúteo e isquios', hombro:'Hombro'};
+  const WARM = {
+    upper:{n:'Calentamiento', t:'5 min', m:'Movilidad · activa el tren superior', c:'2 min de caminadora o bici, círculos de brazos y apertura dinámica de pecho. Luego 1–2 series ligeras del ejercicio A.', imgs:['Arm_Circles','Dynamic_Chest_Stretch']},
+    lower:{n:'Calentamiento', t:'5 min', m:'Movilidad · activa el tren inferior', c:'2 min de caminadora o bici, movilidad de cadera y 10 sentadillas sin peso. Luego 1–2 series ligeras del ejercicio A.', imgs:['Bodyweight_Squat','Worlds_Greatest_Stretch']}
+  };
+  const STRETCH = {
+    upper:{n:'Estirar', t:'3 min', m:'Pecho, hombro y espalda', c:'Pecho contra el marco de una puerta, brazo cruzado y dorsal colgando de la barra. 20–30 s cada uno.', imgs:['Shoulder_Stretch','Triceps_Stretch']},
+    lower:{n:'Estirar', t:'3 min', m:'Isquios, cadera y cuádriceps', c:'Isquios sentado, flexor de cadera de rodillas y cuádriceps de pie. 20–30 s por lado.', imgs:['Seated_Floor_Hamstring_Stretch','Kneeling_Hip_Flexor']}
+  };
+  const DAYS = [
+    {d:1, name:'Lunes', lab:'Upper A', color:'blue', kind:'upper', focus:'Pecho', A:'d1e1', B:'d4e2', C:['d1e5','d1e2'], opt:'d1e4'},
+    {d:2, name:'Martes', lab:'Lower A', color:'red', kind:'lower', focus:'Piernas', A:'d2e1', B:'d2e2', C:['d2e3','d5e4'], opt:'d2e5'},
+    {d:3, name:'Miércoles', rest:'Descanso', text:'Descansa. Si quieres, una caminata tranquila con el perro: también cuenta para el corazón.'},
+    {d:4, name:'Jueves', lab:'Upper B', color:'yellow', kind:'upper', focus:'Pecho y espalda', A:'d4e1', B:'d4e6', C:['d1e6','d4e4'], opt:'d1e3'},
+    {d:5, name:'Viernes', lab:'Lower B', color:'green', kind:'lower', focus:'Piernas y glúteo', A:'d5e2', B:'d5e3', C:['d2e4','d5e5'], opt:'d5e6'},
+    {d:6, name:'Sábado', rest:'Caminar', walk:true, text:'Caminata a buen paso, bici o salir con el perro. 20–30 min suman al cardio de la semana.'},
+    {d:7, name:'Domingo', rest:'Caminar', walk:true, text:'Descanso activo: caminar, movilidad. Lo que hagas suma al cardio de la semana.'}
+  ];
+  const ZONE = {mod:122, vig:147, top:178};   // 29 years: max HR ≈ 191; CDC moderate 64–76 %, vigorous 77–93 %
+
   function loadState(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e){ return {}; } }
   function saveState(s){ stamp('s', loadState(), s); localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); cloudSoon(); }
-  function applyState(){
-    const state = loadState();
-    document.querySelectorAll('input[type=checkbox]').forEach(cb=>{
-      cb.checked = !!state[cb.dataset.id];
-      cb.closest('tr').classList.toggle('done', cb.checked);
-    });
-    updateProgress();
-  }
-  function updateProgress(){
-    [1,2,4,5].forEach(d=>{
-      const boxes = document.querySelectorAll('#day'+d+' input[type=checkbox]:not(.aux)');
-      const done = [...boxes].filter(b=>b.checked).length;
-      const el = document.getElementById('prog'+d);
-      if(el) el.textContent = done + '/' + boxes.length;
-    });
-  }
-  document.querySelectorAll('input[type=checkbox]').forEach(cb=>{
-    cb.addEventListener('change', ()=>{
-      const state = loadState();
-      state[cb.dataset.id] = cb.checked;
-      saveState(state);
-      cb.closest('tr').classList.toggle('done', cb.checked);
-      updateProgress();
-    });
-  });
-
   function loadWeights(){ try { return JSON.parse(localStorage.getItem(WEIGHT_KEY)) || {}; } catch(e){ return {}; } }
   function saveWeights(w){ stamp('w', loadWeights(), w); localStorage.setItem(WEIGHT_KEY, JSON.stringify(w)); cloudSoon(); }
-  document.querySelectorAll('.weight-input').forEach(inp=>{
-    inp.type = 'text';
-    inp.inputMode = 'decimal';
-    inp.pattern = '[0-9]+([,.][0-9]+)?';
-    inp.setAttribute('aria-label', 'Peso en kilogramos');
-  });
-  function applyWeights(){
+  function setCheck(id, v){ const s = loadState(); s[id] = v; saveState(s); }
+  function setVal(id, v){ const w = loadWeights(); w[id] = v; saveWeights(w); }
+
+  /* new week (Monday) -> checkboxes, short-day switches, pulses and weekend minutes start empty; weights and speeds stay */
+  function mondayKey(){ const d = new Date(); const k = (d.getDay() + 6) % 7; d.setDate(d.getDate() - k); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  function weekRollover(){
+    const s = loadState(), wk = mondayKey();
+    if(s._wk === wk) return;
+    if(s._wk !== undefined || Object.keys(s).length){
+      Object.keys(s).forEach(k=>{ if(k !== '_wk') s[k] = false; });
+      const w = loadWeights(); let ch = false;
+      Object.keys(w).forEach(k=>{ if(/^cv\d_(p|m)$/.test(k) && w[k] !== ''){ w[k] = ''; ch = true; } });
+      if(ch) saveWeights(w);
+    }
+    s._wk = wk; saveState(s);
+  }
+
+  function el(tag, cls, html){ const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; }
+  function esc(t){ return String(t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  /* one checkable row + its tap-to-open detail (muscles, cue, two photos, an alternative) */
+  function exRows(id, blk, extraCls){
+    const x = EX[id];
+    const tr = el('tr', 'exrow' + (extraCls ? ' ' + extraCls : ''));
+    tr.dataset.ex = id;
+    tr.innerHTML = '<td class="chk"><input type="checkbox" data-id="' + id + '"></td>' +
+      '<td class="ex has-info"><span class="blk">' + blk + '</span><span class="ex-name">' + esc(x.n) + '</span><span class="ex-i">i</span>' +
+      '<span class="ex-rest">' + (x.rest ? 'descanso ' + x.rest : extraCls === 'c1' ? 'sin pausa → C2' : extraCls === 'c2' ? 'luego descansa 60–90 s' : 'descanso 60–90 s') + '</span></td>' +
+      '<td class="sr">' + x.s + ' × ' + x.r + '</td>' +
+      '<td class="wt"><input class="weight-input" type="text" inputmode="decimal" data-wid="' + id + '" placeholder="—" aria-label="Peso en kilogramos"></td>';
+    const det = el('tr', 'ex-detail' + (extraCls ? ' ' + extraCls : ''));
+    det.innerHTML = '<td colspan="4"><div class="inner"><div class="card"><div class="imgs"></div><span class="muscles"></span><span class="cue"></span>' +
+      (x.alt ? '<div class="alt"><span class="alt-h">Alternativa · si la máquina está ocupada</span><button class="alt-name" type="button"><span class="alt-label"></span><span class="alt-see">ver fotos ▾</span></button><div class="alt-imgs" hidden></div></div>' : '') +
+      '</div></div></td>';
+    det.querySelector('.muscles').textContent = x.m;
+    det.querySelector('.cue').textContent = x.c;
+    const imgs = det.querySelector('.imgs');
+    let loaded = false;
+    const pics = (box, img)=> [0,1].forEach(i=>{ const im = el('img'); im.alt = ''; im.decoding = 'async'; im.src = IMG_BASE + img + '/' + i + '.jpg'; box.appendChild(im); });
+    tr.querySelector('td.ex').addEventListener('click', ()=>{
+      const open = det.classList.toggle('open'); tr.classList.toggle('info-open', open);
+      if(open && !loaded){ loaded = true; pics(imgs, x.img); }
+    });
+    if(x.alt){
+      det.querySelector('.alt-label').textContent = x.alt.n;
+      const b = det.querySelector('.alt-name'), box = det.querySelector('.alt-imgs'); let al = false;
+      b.addEventListener('click', ()=>{ const show = box.hidden; if(show && !al){ al = true; pics(box, x.alt.img); } box.hidden = !show; b.querySelector('.alt-see').textContent = show ? 'ocultar ▴' : 'ver fotos ▾'; });
+    }
+    return [tr, det];
+  }
+  function phaseRows(id, p, cls){
+    const tr = el('tr', 'phase-row ' + cls);
+    tr.innerHTML = '<td class="chk"><input type="checkbox" class="aux" data-id="' + id + '"></td><td class="ex has-info"><span class="ex-tag">' + (cls === 'warm' ? 'antes' : 'después') + '</span><span class="ex-name">' + p.n + '</span> <span class="ex-i">i</span></td><td class="sr">' + p.t + '</td><td class="wt"></td>';
+    const det = el('tr', 'ex-detail');
+    det.innerHTML = '<td colspan="4"><div class="inner"><div class="card"><div class="imgs"></div><span class="muscles"></span><span class="cue"></span></div></div></td>';
+    det.querySelector('.muscles').textContent = p.m; det.querySelector('.cue').textContent = p.c;
+    let loaded = false;
+    tr.querySelector('td.ex').addEventListener('click', ()=>{
+      const open = det.classList.toggle('open'); tr.classList.toggle('info-open', open);
+      if(open && !loaded){ loaded = true; p.imgs.forEach(img=>{ const im = el('img'); im.alt=''; im.decoding='async'; im.src = IMG_BASE + img + '/0.jpg'; det.querySelector('.imgs').appendChild(im); }); }
+    });
+    return [tr, det];
+  }
+  function secRow(txt, cls){ const tr = el('tr', 'sec' + (cls ? ' ' + cls : '')); tr.innerHTML = '<td colspan="4">' + txt + '</td>'; return tr; }
+
+  /* incline walk: checkbox + speed / incline / pulse in 10 s -> bpm and zone */
+  function cardioRows(d){
+    const id = 'cv' + d;
+    const tr = el('tr', 'phase-row cardio');
+    tr.innerHTML = '<td class="chk"><input type="checkbox" class="aux" data-id="' + id + '"></td><td class="ex"><span class="ex-tag">corazón</span><span class="ex-name">Caminata inclinada</span><span class="ex-rest">no te apoyes en las barras</span></td><td class="sr">10 min</td><td class="wt"></td>';
+    const det = el('tr', 'cv-detail');
+    det.innerHTML = '<td colspan="4"><div class="cvbox">' +
+      '<label>km/h<input class="cv-input" type="text" inputmode="decimal" data-wid="' + id + '_v" placeholder="5.5"></label>' +
+      '<label>incl. %<input class="cv-input" type="text" inputmode="decimal" data-wid="' + id + '_i" placeholder="10"></label>' +
+      '<label>pulso 10 s<input class="cv-input" type="text" inputmode="numeric" data-wid="' + id + '_p" placeholder="25"></label>' +
+      '<div class="cvres" data-res="' + id + '"></div></div></td>';
+    return [tr, det];
+  }
+  function zoneOf(p){
+    const bpm = p * 6;
+    if(bpm > ZONE.top) return {bpm, k:'hi', t:'muy alta: baja un poco'};
+    if(bpm >= ZONE.vig) return {bpm, k:'vig', t:'vigorosa (cuenta doble)'};
+    if(bpm >= ZONE.mod) return {bpm, k:'mod', t:'moderada'};
+    return {bpm, k:'low', t:'suave: sube velocidad o inclinación'};
+  }
+  function renderCardio(){
     const w = loadWeights();
-    document.querySelectorAll('.weight-input').forEach(inp=>{
-      const id = inp.dataset.wid;
-      if(w[id] !== undefined && w[id] !== '') inp.value = w[id];
+    document.querySelectorAll('[data-res]').forEach(box=>{
+      const id = box.dataset.res, p = parseFloat(String(w[id + '_p'] || '').replace(',', '.'));
+      if(!p){ box.innerHTML = '<span class="small">Cuenta tu pulso 10 s (dos dedos al lado de la tráquea) y escribe el número.</span>'; return; }
+      const z = zoneOf(p), v = parseFloat(String(w[id + '_v'] || '5.5').replace(',', '.')) || 5.5;
+      box.innerHTML = '<b class="z ' + z.k + '">' + Math.round(z.bpm) + ' lpm · ' + z.t + '</b>' + (p <= 23 ? '<span class="tip">💡 Se siente más fácil: la próxima vez prueba ' + (v + 0.5).toFixed(1) + ' km/h.</span>' : '');
     });
   }
-  document.querySelectorAll('.weight-input').forEach(inp=>{
-    inp.addEventListener('click', e=> e.stopPropagation());
-    inp.addEventListener('input', ()=>{
-      const w = loadWeights();
-      w[inp.dataset.wid] = inp.value;
-      saveWeights(w);
-    });
-  });
-  document.querySelectorAll('input[type=checkbox]').forEach(cb=> cb.addEventListener('click', e=> e.stopPropagation()));
 
-  function resetWeek(){
-    if(confirm('¿Reiniciar casillas y pesos marcados?')){
-      /* clear by writing empty values (with fresh time stamps) so the reset also reaches the cloud and other devices */
-      const s0 = loadState(), w0 = loadWeights();
-      Object.keys(s0).forEach(k=> s0[k] = false); Object.keys(w0).forEach(k=> w0[k] = '');
-      saveState(s0); saveWeights(w0);
-      applyState();
-      applyWeights();
-      document.querySelectorAll('.weight-input').forEach(i=> i.value='');
-    }
+  function buildDays(){
+    const root = document.getElementById('days');
+    DAYS.forEach(D=>{
+      const card = el('div', 'day'); card.id = 'day' + D.d; card.dataset.day = D.d;
+      card.appendChild(el('div', 'bar ' + (D.color || 'gray')));
+      const head = el('button', 'head');
+      head.innerHTML = '<h2>' + D.name + '</h2><div class="tag">' + (D.rest ? '<span>' + D.rest + '</span>' : '<span id="prog' + D.d + '"></span><span class="mins" id="mins' + D.d + '">~60 min</span><span>' + D.lab + '</span>') + '<span class="chev">⌄</span></div>';
+      head.addEventListener('click', ()=> card.classList.toggle('expanded'));
+      card.appendChild(head);
+      const body = el('div', 'body');
+      if(D.rest){
+        body.appendChild(el('div', 'rest', esc(D.text)));
+        if(D.walk){
+          const t = el('table'); const tr = el('tr', 'phase-row cardio');
+          tr.innerHTML = '<td class="chk"><input type="checkbox" class="aux" data-id="cv' + D.d + '"></td><td class="ex"><span class="ex-tag">corazón</span><span class="ex-name">Caminata o bici</span></td><td class="sr">min</td><td class="wt"><input class="cv-input" type="text" inputmode="numeric" data-wid="cv' + D.d + '_m" placeholder="30"></td>';
+          t.appendChild(tr); body.appendChild(t);
+        }
+      } else {
+        const opts = el('div', 'dayopts');
+        opts.innerHTML = '<span class="focus">Enfoque: <b>' + D.focus + '</b></span><label class="shortsw"><input type="checkbox" class="aux sw" data-id="short' + D.d + '"> Día corto (~45 min)</label>';
+        body.appendChild(opts);
+        const t = el('table');
+        t.append(...phaseRows('d' + D.d + '_warm', WARM[D.kind], 'warm'));
+        t.append(secRow('<b>A</b> · el principal: aquí va tu mejor energía'), ...exRows(D.A, 'A'));
+        t.append(secRow('<b>B</b>'), ...exRows(D.B, 'B'));
+        t.append(secRow('<b>C</b> · superserie: C1 y luego C2 sin pausa, descansa al terminar los dos'), ...exRows(D.C[0], 'C1', 'c1'), ...exRows(D.C[1], 'C2', 'c2'));
+        t.append(secRow('<b>+5 min</b> · opcional, solo si te sobra tiempo', 'optsec'), ...exRows(D.opt, '+', 'opt'));
+        t.append(...cardioRows(D.d));
+        t.append(...phaseRows('d' + D.d + '_stretch', STRETCH[D.kind], 'stretch'));
+        body.appendChild(t);
+      }
+      card.appendChild(body);
+      root.appendChild(card);
+    });
+    document.querySelectorAll('#days input[type=checkbox]').forEach(cb=>{
+      cb.addEventListener('click', e=> e.stopPropagation());
+      cb.addEventListener('change', ()=>{ setCheck(cb.dataset.id, cb.checked); refresh(); });
+    });
+    document.querySelectorAll('#days [data-wid]').forEach(inp=>{
+      inp.addEventListener('click', e=> e.stopPropagation());
+      inp.addEventListener('input', ()=>{ setVal(inp.dataset.wid, inp.value); renderCardio(); renderWeek(); });
+    });
+  }
+
+  function applyState(){
+    const s = loadState();
+    document.querySelectorAll('#days input[type=checkbox]').forEach(cb=>{ cb.checked = !!s[cb.dataset.id]; const tr = cb.closest('tr'); if(tr) tr.classList.toggle('done', cb.checked); });
+    DAYS.forEach(D=>{ const c = document.getElementById('day' + D.d); if(c && !D.rest) c.classList.toggle('short', !!s['short' + D.d]); });
+    updateProgress(); renderWeek();
+  }
+  function applyWeights(){
+    const w = loadWeights();
+    document.querySelectorAll('#days [data-wid]').forEach(inp=>{ const v = w[inp.dataset.wid]; if(document.activeElement !== inp) inp.value = (v === undefined ? '' : v); });
+    renderCardio(); renderWeek();
+  }
+  function refresh(){ applyState(); }
+  function lifts(D, s){ return [D.A, D.B, D.C[0]].concat(s['short' + D.d] ? [] : [D.C[1]]); }
+  function updateProgress(){
+    const s = loadState();
+    DAYS.filter(D=>!D.rest).forEach(D=>{
+      const L = lifts(D, s), done = L.filter(id=>s[id]).length;
+      const p = document.getElementById('prog' + D.d); if(p) p.textContent = done + '/' + L.length;
+      const m = document.getElementById('mins' + D.d); if(m) m.textContent = s['short' + D.d] ? '~45 min' : '~60 min';
+    });
+  }
+
+  /* week card: days done, cardio minutes (vigorous count double) vs 75 / 150, hard sets per muscle */
+  function renderWeek(){
+    const s = loadState(), w = loadWeights(), box = document.getElementById('week'); if(!box) return;
+    let eq = 0;
+    DAYS.forEach(D=>{
+      const id = 'cv' + D.d; if(!s[id]) return;
+      if(D.rest){ eq += parseFloat(w[id + '_m']) || 30; return; }
+      const p = parseFloat(String(w[id + '_p'] || '').replace(',', '.'));
+      eq += p && p * 6 >= ZONE.vig ? 20 : 10;
+    });
+    const sets = {}; Object.keys(MG).forEach(k=> sets[k] = 0);
+    Object.keys(EX).forEach(id=>{ if(s[id]) Object.keys(EX[id].mg).forEach(k=> sets[k] += EX[id].s); });
+    const dots = DAYS.filter(D=>!D.rest).map(D=>{ const L = lifts(D, s), n = L.filter(id=>s[id]).length; return '<span class="wd ' + (n === L.length ? 'ok' : n ? 'half' : '') + '">' + D.name.slice(0,1) + '</span>'; }).join('');
+    const pct = Math.min(100, eq / 150 * 100);
+    box.innerHTML = '<div class="wrow"><b>Esta semana</b><span class="wdots">' + dots + '</span></div>' +
+      '<div class="wrow"><span>❤️ Cardio <b>' + Math.round(eq) + '</b> / 150 min' + (eq >= 75 ? ' · meta mínima ✓' : '') + '</span></div>' +
+      '<div class="wbar"><span style="width:' + pct + '%"></span><i style="left:50%"></i></div>' +
+      '<div class="chips">' + Object.keys(MG).map(k=>'<span class="chip' + (sets[k] >= 10 ? ' ok' : sets[k] >= 4 ? ' mid' : '') + '">' + MG[k] + ' <b>' + sets[k] + '</b></span>').join('') + '</div>' +
+      '<div class="small">Series fuertes por músculo: 4–6 para salud, 10+ para que crezca.</div>';
   }
 
   let timerInterval = null;
   function loadTimer(){ try { return JSON.parse(localStorage.getItem(TIMER_KEY)) || {running:false, startedAt:null, elapsed:0}; } catch(e){ return {running:false, startedAt:null, elapsed:0}; } }
   function saveTimer(t){ localStorage.setItem(TIMER_KEY, JSON.stringify(t)); }
   function currentElapsed(t){ return t.elapsed + (t.running ? (Date.now() - t.startedAt)/1000 : 0); }
-  function formatTime(sec){
-    sec = Math.floor(sec);
-    const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
-    const pad = n => String(n).padStart(2,'0');
-    return h>0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
-  }
+  function formatTime(sec){ sec = Math.floor(sec); const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60; const pad = n => String(n).padStart(2,'0'); return h>0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`; }
   function renderTimer(){
     const t = loadTimer();
     document.getElementById('swDisplay').textContent = formatTime(currentElapsed(t));
@@ -436,367 +554,29 @@
     else { btn.textContent='Start'; btn.classList.remove('pause'); btn.classList.add('start'); }
     document.querySelector('.stopwatch').classList.toggle('pinned', t.running);
   }
-  function toggleTimer(){
-    const t = loadTimer();
-    if(t.running){ t.elapsed = currentElapsed(t); t.running=false; t.startedAt=null; }
-    else { t.running=true; t.startedAt=Date.now(); }
-    saveTimer(t); renderTimer();
-  }
+  function toggleTimer(){ const t = loadTimer(); if(t.running){ t.elapsed = currentElapsed(t); t.running=false; t.startedAt=null; } else { t.running=true; t.startedAt=Date.now(); } saveTimer(t); renderTimer(); }
   function resetTimer(){ saveTimer({running:false, startedAt:null, elapsed:0}); renderTimer(); }
   let _tzToggle = false;
-  function paintTime(text){
-    const el = document.getElementById('swDisplay');
-    el.textContent = text;
-    // Force iOS to repaint the pinned (position:sticky) clock: nudging the
-    // element's own transform each tick makes the compositor redraw it. The
-    // change is on the Z axis only, so nothing moves visually.
-    _tzToggle = !_tzToggle;
-    el.style.transform = _tzToggle ? 'translateZ(0.01px)' : 'translateZ(0)';
-  }
-  function tickTimer(){
-    const t = loadTimer();
-    if(t.running) paintTime(formatTime(currentElapsed(t)));
-  }
+  function paintTime(text){ const el2 = document.getElementById('swDisplay'); el2.textContent = text; _tzToggle = !_tzToggle; el2.style.transform = _tzToggle ? 'translateZ(0.01px)' : 'translateZ(0)'; }   // forces iOS to repaint the sticky clock
+  function tickTimer(){ const t = loadTimer(); if(t.running) paintTime(formatTime(currentElapsed(t))); }
   timerInterval = setInterval(tickTimer, 1000);
 
-  function toggleDay(id){
-    document.getElementById(id).classList.toggle('expanded');
-  }
-  function expandDay(id){
-    document.querySelectorAll('.day').forEach(d=> d.id!==id && d.classList.remove('expanded'));
-    const el = document.getElementById(id);
-    el.classList.add('expanded');
-    setTimeout(()=> el.scrollIntoView({behavior:'smooth', block:'start'}), 100);
-  }
-
   function markToday(){
-    const jsDay = new Date().getDay();
-    const map = {1:1,2:2,3:3,4:4,5:5,6:6,0:7};
-    const today = map[jsDay];
-    const todayCard = document.getElementById('day'+today);
-    if(todayCard){
-      todayCard.classList.add('today','expanded');
-      const h2 = todayCard.querySelector('h2');
-      if(h2 && !h2.querySelector('.hoy')){
-        const badge = document.createElement('span');
-        badge.className='hoy'; badge.textContent='HOY';
-        h2.after(badge);
-      }
-      setTimeout(()=> todayCard.scrollIntoView({behavior:'smooth', block:'start'}), 300);
-    }
+    const map = {1:1,2:2,3:3,4:4,5:5,6:6,0:7}, today = map[new Date().getDay()];
+    const card = document.getElementById('day' + today);
+    if(!card) return;
+    card.classList.add('today','expanded');
+    const h2 = card.querySelector('h2');
+    if(h2 && !card.querySelector('.hoy')){ const b = document.createElement('span'); b.className='hoy'; b.textContent='HOY'; h2.after(b); }
+    setTimeout(()=> card.scrollIntoView({behavior:'smooth', block:'start'}), 300);
   }
 
-
-  // Tap an exercise name to reveal muscles + a short form cue below it.
-  const EX_INFO = {
-    d1e1: ['Pecho superior · hombro · tríceps', 'Banco a ~30°. Baja las mancuernas al pecho alto con los codos a ~45° y empuja arriba sin bloquear de golpe.'],
-    d1e2: ['Espalda media · dorsal · bíceps', 'Pecho apoyado, tira del agarre hacia ti juntando las escápulas. Cargas más y sientes mejor la espalda que con mancuerna.'],
-    d1e3: ['Hombro · deltoides lateral', 'Sube los brazos por los lados hasta la altura del hombro, codo algo flexionado y sin impulso.'],
-    d1e4: ['Bíceps', 'Sube la mancuerna sin mover el codo y baja despacio controlando el peso.'],
-    d1e5: ['Pecho · hombro · tríceps', 'Tumbado en banco plano, baja las mancuernas al pecho con los codos a ~45° y empuja arriba sin bloquear. Cubre el pecho medio.'],
-    d1e6: ['Pecho (pectoral)', 'Tumbado en banco, brazos casi estirados. Baja las mancuernas en arco abriendo el pecho y ciérralas arriba apretando, sin bloquear el codo.'],
-
-    d2e1: ['Cuádriceps · glúteo · core', 'Baja como si te sentaras, rodillas hacia afuera y espalda recta, hasta que los muslos queden paralelos.'],
-    d2e2: ['Isquios · glúteo', 'Lleva la cadera atrás con las piernas casi rectas y espalda recta. Baja hasta media espinilla.'],
-    d2e3: ['Cuádriceps · glúteo', 'Paso al frente y baja la rodilla trasera hacia el suelo. Torso recto y rodilla alineada con el pie.'],
-    d2e4: ['Isquios / glúteo', 'Curl femoral: flexiona la rodilla llevando el talón al glúteo. Hip thrust: empuja la cadera arriba apretando el glúteo.'],
-    d2e5: ['Core · abdomen', 'Cuerpo recto sobre los antebrazos. Aprieta abdomen y glúteo; no hundas ni subas la cadera.'],
-
-    d4e1: ['Pecho · hombro · tríceps', 'Empuja hasta casi estirar los brazos y controla la vuelta. Hombros hacia atrás y pecho arriba.'],
-    d4e2: ['Dorsal ancho · espalda · bíceps', 'Agarre ancho. Lleva la barra al pecho tirando con los codos hacia abajo, pecho arriba y sin balancearte.'],
-    d4e3: ['Hombro · tríceps', 'Empuja las mancuernas arriba sin arquear la espalda. Core apretado y glúteo firme.'],
-    d4e4: ['Deltoides posterior · espalda alta', 'Polea a la altura de la cara. Tira de la cuerda hacia la frente abriendo los codos y juntando las escápulas. Ligero y controlado.'],
-    d4e5: ['Tríceps', 'Sentado en la máquina de fondos, empuja las asas hacia abajo estirando los codos y controla la subida sin soltar la tensión.'],
-    d4e6: ['Espalda media · dorsal · bíceps', 'Sentado, tira del agarre hacia el abdomen juntando las escápulas. Pecho arriba, sin encorvar la espalda ni usar impulso.'],
-
-    d5e1: ['Glúteo · isquios · espalda', 'Espalda recta y pecho arriba. Empuja el suelo con los pies; sube cadera y pecho a la vez.'],
-    d5e2: ['Cuádriceps · glúteo', 'Baja controlado con la rodilla alineada al pie. En búlgara, pie trasero elevado y torso algo adelante.'],
-    d5e3: ['Glúteo', 'Espalda alta apoyada en el banco. Empuja la cadera arriba y aprieta el glúteo un segundo.'],
-    d5e4: ['Gemelos', 'Sube sobre las puntas lo más alto posible, pausa arriba y baja lento.'],
-    d5e5: ['Core · abdomen', 'Mantén la zona lumbar pegada al suelo. Extiende brazo/pierna despacio sin arquear la espalda.']
-  };
-  // Two demo photos (start / end position) per exercise — free-exercise-db (public domain).
-  // Recommended rest between sets — longer for heavy compounds, shorter for isolation/core.
-  const EX_REST = {
-    d1e1: '90–120 s', d1e2: '90–120 s', d1e3: '60–90 s', d1e4: '60–90 s', d1e5: '90–120 s', d1e6: '60–90 s',
-    d2e1: '2–3 min', d2e2: '2–3 min', d2e3: '90–120 s', d2e4: '90 s', d2e5: '45–60 s',
-    d4e1: '90–120 s', d4e2: '90–120 s', d4e3: '90–120 s', d4e4: '60–90 s', d4e5: '60–90 s', d4e6: '90–120 s',
-    d5e1: '2–3 min', d5e2: '2 min', d5e3: '90–120 s', d5e4: '45–60 s', d5e5: '45–60 s'
-  };
-  const IMG_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
-  const EX_IMG = {
-    d1e1: 'Incline_Dumbbell_Press', d1e2: 'Leverage_High_Row', d1e3: 'Side_Lateral_Raise', d1e4: 'Dumbbell_Bicep_Curl', d1e5: 'Dumbbell_Bench_Press', d1e6: 'Dumbbell_Flyes',
-    d2e1: 'Barbell_Squat', d2e2: 'Romanian_Deadlift', d2e3: 'Dumbbell_Lunges', d2e4: 'Lying_Leg_Curls', d2e5: 'Plank',
-    d4e1: 'Machine_Bench_Press', d4e2: 'Wide-Grip_Lat_Pulldown', d4e3: 'Dumbbell_Shoulder_Press', d4e4: 'Face_Pull', d4e5: 'Dip_Machine', d4e6: 'Seated_Cable_Rows',
-    d5e1: 'Barbell_Deadlift', d5e2: 'Leg_Press', d5e3: 'Barbell_Hip_Thrust', d5e4: 'Rocking_Standing_Calf_Raise', d5e5: 'Ab_Roller'
-  };
-  // If the machine/bench is busy — one quick alternative per exercise (same muscle), with a photo.
-  const EX_ALT = {
-    d1e1: {name:'Press inclinado en máquina', img:'Leverage_Incline_Chest_Press'},
-    d1e5: {name:'Press de banca con barra', img:'Barbell_Bench_Press_-_Medium_Grip'},
-    d1e2: {name:'Remo con barra', img:'Bent_Over_Barbell_Row'},
-    d1e6: {name:'Aperturas en máquina (pec-deck)', img:'Butterfly'},
-    d1e3: {name:'Press de hombro en máquina', img:'Leverage_Shoulder_Press'},
-    d1e4: {name:'Curl con barra', img:'Barbell_Curl'},
-    d2e1: {name:'Prensa de piernas', img:'Leg_Press'},
-    d2e2: {name:'Hiperextensiones (banco romano)', img:'Hyperextensions_With_No_Hyperextension_Bench'},
-    d2e3: {name:'Zancadas con barra', img:'Barbell_Lunge'},
-    d2e4: {name:'Puente de glúteo', img:'Barbell_Glute_Bridge'},
-    d2e5: {name:'Rueda abdominal', img:'Ab_Roller'},
-    d4e1: {name:'Press de pecho con mancuernas', img:'Dumbbell_Bench_Press'},
-    d4e2: {name:'Dominadas asistidas', img:'Pullups'},
-    d4e6: {name:'Remo con mancuerna a una mano', img:'One-Arm_Dumbbell_Row'},
-    d4e4: {name:'Pájaros / rear-delt en polea', img:'Cable_Rear_Delt_Fly'},
-    d4e3: {name:'Press militar con barra', img:'Standing_Military_Press'},
-    d4e5: {name:'Extensión de tríceps en polea', img:'Triceps_Pushdown'},
-    d5e1: {name:'Peso muerto rumano', img:'Romanian_Deadlift'},
-    d5e2: {name:'Zancadas con mancuernas', img:'Dumbbell_Lunges'},
-    d5e3: {name:'Puente de glúteo', img:'Barbell_Glute_Bridge'},
-    d5e4: {name:'Elevación de talones sentado', img:'Seated_Calf_Raise'},
-    d5e5: {name:'Plancha', img:'Plank'}
-  };
-  function setupExerciseInfo(){
-    document.querySelectorAll('table tr').forEach(row=>{
-      const cb = row.querySelector('input[type=checkbox][data-id]');
-      const cell = row.querySelector('td.ex');
-      if(!cb || !cell) return;
-      const info = EX_INFO[cb.dataset.id];
-      if(!info) return;
-
-      const name = cell.textContent.trim();
-      cell.textContent = '';
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'ex-name';
-      nameSpan.textContent = name;
-      const badge = document.createElement('span');
-      badge.className = 'ex-i';
-      badge.textContent = 'i';
-      cell.append(nameSpan, badge);
-
-      const rest = EX_REST[cb.dataset.id];
-      if (rest) {
-        const restLine = document.createElement('span');
-        restLine.className = 'ex-rest';
-        restLine.textContent = 'descanso ' + rest;
-        cell.appendChild(restLine);
-      }
-
-      cell.classList.add('has-info');
-
-      const detail = document.createElement('tr');
-      detail.className = 'ex-detail';
-      detail.innerHTML =
-        '<td colspan="4"><div class="inner"><div class="card">' +
-        '<div class="imgs"></div>' +
-        '<span class="muscles"></span><span class="cue"></span>' +
-        '<div class="alt" hidden>' +
-          '<span class="alt-h">Alternativa · si la máquina está ocupada</span>' +
-          '<button class="alt-name" type="button" aria-expanded="false"><span class="alt-label"></span><span class="alt-see">ver fotos ▾</span></button>' +
-          '<div class="alt-imgs" hidden></div>' +
-        '</div>' +
-        '</div></div></td>';
-      detail.querySelector('.muscles').textContent = info[0];
-      detail.querySelector('.cue').textContent = info[1];
-      row.after(detail);
-
-      const imgId = EX_IMG[cb.dataset.id];
-      const imgsBox = detail.querySelector('.imgs');
-      if(!imgId) imgsBox.remove();
-
-      // Alternative: show only its name; reveal its two photos on a second tap.
-      const alt = EX_ALT[cb.dataset.id];
-      if(alt){
-        detail.querySelector('.alt-label').textContent = alt.name;
-        detail.querySelector('.alt').hidden = false;
-        const altBtn = detail.querySelector('.alt-name');
-        const altBox = detail.querySelector('.alt-imgs');
-        if(alt.img){
-          let altLoaded = false;
-          altBtn.addEventListener('click', ()=>{
-            const show = altBox.hidden;
-            if(show && !altLoaded){
-              altLoaded = true;
-              [0,1].forEach(i=>{
-                const im = document.createElement('img');
-                im.alt = ''; im.decoding = 'async';
-                im.src = IMG_BASE + alt.img + '/' + i + '.jpg';
-                altBox.appendChild(im);
-              });
-            }
-            altBox.hidden = !show;
-            altBtn.setAttribute('aria-expanded', String(show));
-            altBtn.querySelector('.alt-see').textContent = show ? 'ocultar ▴' : 'ver fotos ▾';
-          });
-        } else if(alt.desc){
-          // No public-domain photo for this machine: show a text setup instead.
-          altBtn.querySelector('.alt-see').remove();
-          altBtn.style.cursor = 'default';
-          altBox.hidden = false;
-          altBox.className = 'alt-desc';
-          altBox.textContent = alt.desc;
-        }
-      }
-
-      let imgsLoaded = false;
-      function loadImages(){
-        if(imgsLoaded) return;
-        imgsLoaded = true;
-        if(imgId) [0,1].forEach(i=>{
-          const im = document.createElement('img');
-          im.alt = ''; im.decoding = 'async';
-          im.src = IMG_BASE + imgId + '/' + i + '.jpg';
-          imgsBox.appendChild(im);
-        });
-      }
-
-      cell.addEventListener('click', ()=>{
-        const open = detail.classList.toggle('open');
-        row.classList.toggle('info-open', open);
-        if(open) loadImages();
-      });
-    });
-  }
-
-  // Warm-up and stretch as checkable rows, adapted per day (upper vs lower), with images.
-  const UPPER_WARM = {name:'Calentamiento', time:'5–8 min', tag:'antes', muscles:'Movilidad · activa el tren superior',
-    desc:'3 min de trote suave, círculos de brazos y apertura dinámica de pecho. Termina con 1–2 series de aproximación ligeras del primer ejercicio.',
-    imgs:['Arm_Circles','Dynamic_Chest_Stretch']};
-  const UPPER_STRETCH = {name:'Estiramiento', time:'5–10 min', tag:'después', muscles:'Enfría · hombro, pecho y tríceps',
-    desc:'Estira hombro, pecho y tríceps. Sin material: cruza el brazo y lleva la mano tras la nuca. Mantén 20–30 s por lado, sin rebotes.',
-    imgs:['Shoulder_Stretch','Triceps_Stretch']};
-  const LOWER_WARM = {name:'Calentamiento', time:'5–8 min', tag:'antes', muscles:'Movilidad · activa el tren inferior',
-    desc:'3 min de trote suave, movilidad de cadera, sentadillas sin peso y la "world’s greatest". Termina con 1–2 series ligeras del primer ejercicio.',
-    imgs:['Bodyweight_Squat','Worlds_Greatest_Stretch']};
-  const LOWER_STRETCH = {name:'Estiramiento', time:'5–10 min', tag:'después', muscles:'Enfría · isquios, cadera y cuádriceps',
-    desc:'Estira isquios (sentado en el suelo), flexores de cadera y cuádriceps. Sin material. Mantén 20–30 s por lado.',
-    imgs:['Seated_Floor_Hamstring_Stretch','Kneeling_Hip_Flexor']};
-  const PHASES = {
-    '1':{warm:UPPER_WARM, stretch:UPPER_STRETCH},
-    '2':{warm:LOWER_WARM, stretch:LOWER_STRETCH},
-    '4':{warm:UPPER_WARM, stretch:UPPER_STRETCH},
-    '5':{warm:LOWER_WARM, stretch:LOWER_STRETCH}
-  };
-
-  function makePhaseRow(day, data, kind){
-    const dataId = 'd' + day + '_' + kind;
-    const tr = document.createElement('tr');
-    tr.className = 'phase-row ' + kind;
-    tr.innerHTML =
-      '<td class="chk"><input type="checkbox" class="aux"></td>' +
-      '<td class="ex has-info"></td>' +
-      '<td class="sr"></td><td class="wt"></td>';
-
-    const cb = tr.querySelector('input');
-    cb.dataset.id = dataId;
-
-    const cell = tr.querySelector('td.ex');
-    const tagEl = document.createElement('span');
-    tagEl.className = 'ex-tag';
-    tagEl.textContent = data.tag;
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'ex-name';
-    nameSpan.textContent = data.name;
-    const badge = document.createElement('span');
-    badge.className = 'ex-i';
-    badge.textContent = 'i';
-    cell.append(tagEl, nameSpan, ' ', badge);
-    tr.querySelector('td.sr').textContent = data.time;
-
-    const detail = document.createElement('tr');
-    detail.className = 'ex-detail';
-    detail.innerHTML =
-      '<td colspan="4"><div class="inner"><div class="card">' +
-      '<div class="imgs"></div><span class="muscles"></span><span class="cue"></span>' +
-      '</div></div></td>';
-    detail.querySelector('.muscles').textContent = data.muscles;
-    detail.querySelector('.cue').textContent = data.desc;
-
-    const imgsBox = detail.querySelector('.imgs');
-    let loaded = false;
-    function loadImages(){
-      if(loaded) return; loaded = true;
-      data.imgs.forEach(id=>{
-        const im = document.createElement('img');
-        im.alt = ''; im.decoding = 'async';
-        im.src = IMG_BASE + id + '/0.jpg';
-        imgsBox.appendChild(im);
-      });
-    }
-
-    cell.addEventListener('click', ()=>{
-      const open = detail.classList.toggle('open');
-      tr.classList.toggle('info-open', open);
-      if(open) loadImages();
-    });
-
-    const state = loadState();
-    cb.checked = !!state[dataId];
-    tr.classList.toggle('done', cb.checked);
-    cb.addEventListener('click', e=> e.stopPropagation());
-    cb.addEventListener('change', ()=>{
-      const s = loadState();
-      s[dataId] = cb.checked;
-      saveState(s);
-      tr.classList.toggle('done', cb.checked);
-    });
-
-    return { row: tr, detail };
-  }
-
-  function injectPhases(){
-    Object.keys(PHASES).forEach(day=>{
-      const table = document.querySelector('#day' + day + ' .body table');
-      if(!table) return;
-      const colHeads = table.querySelector('tr.col-heads');
-      const warm = makePhaseRow(day, PHASES[day].warm, 'warm');
-      const stretch = makePhaseRow(day, PHASES[day].stretch, 'stretch');
-      if(colHeads) colHeads.after(warm.row, warm.detail);
-      else table.prepend(warm.detail, warm.row);
-      table.append(stretch.row, stretch.detail);
-    });
-  }
-
-  // Expected time per workout day, as a RANGE. Everything is a range:
-  // warm-up 5–8 min, stretch 5–10 min, work ~30–45 s/set, and each rest low–high.
-  const WORK_MIN = 30, WORK_MAX = 45;   // seconds of effort per set
-  function parseRestRange(s){
-    const nums = (String(s).match(/\d+/g) || []).map(Number);
-    if(!nums.length) return [75, 75];
-    const unit = /min/.test(String(s)) ? 60 : 1;   // seconds
-    return [Math.min(...nums) * unit, Math.max(...nums) * unit];
-  }
-  function estimateTimes(){
-    [1,2,4,5].forEach(d=>{
-      const day = document.getElementById('day'+d);
-      if(!day) return;
-      let lo = (5 + 5) * 60;    // warm-up min 5 + stretch min 5
-      let hi = (8 + 10) * 60;   // warm-up max 8 + stretch max 10
-      day.querySelectorAll('table tr').forEach(tr=>{
-        const cb = tr.querySelector('input[type=checkbox]:not(.aux)[data-id]');
-        if(!cb) return;
-        const sets = parseInt((tr.querySelector('td.sr')?.textContent || '3'), 10) || 3;
-        const [rMin, rMax] = parseRestRange(EX_REST[cb.dataset.id]);
-        lo += sets * (WORK_MIN + rMin);
-        hi += sets * (WORK_MAX + rMax);
-      });
-      const a = Math.round(lo/60/5)*5, b = Math.round(hi/60/5)*5;
-      const tag = day.querySelector('.head .tag');
-      if(tag && !tag.querySelector('.mins')){
-        const span = document.createElement('span');
-        span.className = 'mins';
-        span.textContent = a + '–' + b + ' min';
-        tag.insertBefore(span, tag.firstChild);
-      }
-    });
-  }
-
+  weekRollover();
+  buildDays();
   applyState();
   applyWeights();
   renderTimer();
   markToday();
-  setupExerciseInfo();
-  injectPhases();
-  estimateTimes();
   cloudSync();
 </script>
 </body>
