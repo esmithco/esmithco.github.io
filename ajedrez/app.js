@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=126;
+var APP_VER=127;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1223,6 +1223,9 @@ function loadOPun(op,i){
     cur.anPath=function(){return {start:INIT,moves:l.moves,i:k+1,base:k}};itemDone(ok)};
   B.onMove=function(mv){var a=mv.san.replace(/[+#]/g,''),b=want.replace(/[+#]/g,'');
     if(a===b){done(cur.first,'✓ '+t('opunOk','<b class="mono">'+esc(want)+'</b>'));return}
+    /* Nov 26 (his screenshot: Qxh5 took a free knight and was marked wrong because the line plays Bxb8): moves the engine rates as good as
+       the line's punishment (depth 18, within 0.6 and ≥ +1.5; tools: opun alternatives, stored as l.ka) also count */
+    if((l.ka||[]).some(function(x){return x.replace(/[+#]/g,'')===a})){done(cur.first,'✓ '+t('opunAlt','<b class="mono">'+esc(mv.san)+'</b>','<b class="mono">'+esc(want)+'</b>'));return}
     cur.first=false;B.chess.undo();done(false,'✗ '+t('opunBad','<b class="mono">'+esc(mv.san)+'</b>','<b class="mono">'+esc(want)+'</b>'))};
   cur.show=function(){cur.first=false;done(false,t('opunShow','<b class="mono">'+esc(want)+'</b>'))};
 }
