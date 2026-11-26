@@ -235,7 +235,7 @@
   <div class="foot">
     <b>Cómo progresar:</b> termina cada serie con 1–2 repeticiones "en el tanque". Cuando llegues al número alto del rango en todas las series, sube un poco el peso la próxima vez.<br>
     <b>Lo que hace crecer:</b> subir peso o reps poco a poco, series cerca del fallo, proteína ≈ 1,6 g por kg al día (≈ 115 g para ti) y dormir 7–8 h.<br>
-    <b>Cardio:</b> la OMS pide 150 min moderados por semana (1 min vigoroso = 2 moderados). Con 75 ya tienes gran parte del beneficio. Las casillas se reinician cada lunes; los pesos se quedan.
+    <b>Cardio:</b> tu meta es 4 caminatas inclinadas de 10 min a ritmo vigoroso = 80 min "moderados" (1 min vigoroso cuenta como 2). Eso ya pasa los ~75 min ligados a ~23 % menos riesgo de muerte prematura; lo que camines el fin de semana es extra. Las casillas se reinician cada lunes; los pesos se quedan.
   </div>
 
 </div>
@@ -536,10 +536,10 @@
     const sets = {}; Object.keys(MG).forEach(k=> sets[k] = 0);
     Object.keys(EX).forEach(id=>{ if(s[id]) Object.keys(EX[id].mg).forEach(k=> sets[k] += EX[id].s); });
     const dots = DAYS.filter(D=>!D.rest).map(D=>{ const L = lifts(D, s), n = L.filter(id=>s[id]).length; return '<span class="wd ' + (n === L.length ? 'ok' : n ? 'half' : '') + '">' + D.name.slice(0,1) + '</span>'; }).join('');
-    const pct = Math.min(100, eq / 150 * 100);
+    const pct = Math.min(100, eq / 80 * 100);   /* Nov 25: his realistic goal is 4 × 10 vigorous min = 80 moderate-equivalent; 150 is a bonus, not a failure line */
     box.innerHTML = '<div class="wrow"><b>Esta semana</b><span class="wdots">' + dots + '</span></div>' +
-      '<div class="wrow"><span>❤️ Cardio <b>' + Math.round(eq) + '</b> / 150 min' + (eq >= 75 ? ' · meta mínima ✓' : '') + '</span></div>' +
-      '<div class="wbar"><span style="width:' + pct + '%"></span><i style="left:50%"></i></div>' +
+      '<div class="wrow"><span>❤️ Cardio <b>' + Math.round(eq) + '</b> / 80 min' + (eq >= 80 ? ' · ¡meta cumplida! ✓' : '') + (eq >= 150 ? ' · nivel OMS completo 🏆' : '') + '</span></div>' +
+      '<div class="wbar"><span style="width:' + pct + '%"></span></div>' +
       '<div class="chips">' + Object.keys(MG).map(k=>'<span class="chip' + (sets[k] >= 10 ? ' ok' : sets[k] >= 4 ? ' mid' : '') + '">' + MG[k] + ' <b>' + sets[k] + '</b></span>').join('') + '</div>' +
       '<div class="small">Series fuertes por músculo: 4–6 para salud, 10+ para que crezca.</div>';
   }
