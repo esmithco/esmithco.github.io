@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=130;
+var APP_VER=132;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -719,8 +719,9 @@ function startSession(items,src,from){X.endless=false;X.snap=progSnap();X.items=
 function closeItemTime(){if(cur&&cur.logI!=null&&S.log&&S.log[cur.logI]&&cur.t0){S.log[cur.logI][3]=Math.min(300,Math.round((now()-cur.t0)/1000));S.log[cur.logI][4]=1;cur.logI=null;save()}}
 /* Nov 25 ("I don't want to scroll… use the space"): on theory screens (text + example board) the board shrinks so text, board,
    example caption and the Next button all fit on the phone screen. Exercises keep a fixed board size (no jumping). */
-function fitIntro(){if(innerWidth>979||!cur||!cur.it||!/theory$/.test(cur.it.t))return;var bw=$('boardwrap');if(!bw||bw.hidden)return;
-  var top=bw.getBoundingClientRect().top+scrollY,avail=innerHeight-top-150,w=bw.getBoundingClientRect().width;
+function fitIntro(){var db=$('demoBar'),demo=db&&!db.hidden;if(innerWidth>979||!cur||!cur.it||!(/theory$/.test(cur.it.t)||demo))return;var bw=$('boardwrap');if(!bw||bw.hidden)return;
+  /* Nov 27: also on the line demo ("I can't see the board": the fixed ◀ ▶ bar covered it) — the board shrinks to end above that bar */
+  var top=bw.getBoundingClientRect().top+scrollY,avail=innerHeight-top-(demo?db.offsetHeight+80:150),w=bw.getBoundingClientRect().width;
   if(avail<w)bw.style.setProperty('max-width',Math.max(200,Math.round(avail))+'px','important')}
 function renderItem(){
   if(PEEK)peekOff();closeItemTime();stopTimers();dclkStop();window.scrollTo(0,0);anOff();$('demoBar').hidden=true;boardEl.classList.remove('nopieces');
