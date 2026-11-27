@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=133;
+var APP_VER=134;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -366,7 +366,7 @@ function visOf(c){
    once answered; the verdict keeps the question's height so the board stays exactly where it was */
 (function(){var lastPH=0;function lock(){var tb=$('trBody'),fb=$('fb'),pr=$('prompt');if(!tb||!fb||!pr)return;
   if(innerWidth>979){fb.style.minHeight='';return}
-  if(tb.classList.contains('answered'))fb.style.minHeight=lastPH?lastPH+'px':'';else{fb.style.minHeight='';if(pr.offsetHeight)lastPH=pr.offsetHeight}}
+  if(tb.classList.contains('answered'))fb.style.minHeight=lastPH?Math.min(96,lastPH)+'px':'';/* capped: a tall demo prompt once left a 215 px gap */else{fb.style.minHeight='';if(pr.offsetHeight)lastPH=pr.offsetHeight}}
   function init(){var tb=$('trBody'),pr=$('prompt');if(!tb||!pr)return setTimeout(init,200);
     new MutationObserver(lock).observe(tb,{attributes:true,attributeFilter:['class']});
     if(window.ResizeObserver)new ResizeObserver(function(){if(!tb.classList.contains('answered')&&pr.offsetHeight)lastPH=pr.offsetHeight}).observe(pr)}
@@ -967,7 +967,7 @@ function guideRender(){
 function anRender(keepArrows){
   var c=anChess(AN.i),arr=keepArrows?B.arrows:[];B.chess=c;B.sel=null;B.targets=[];B.marks={};B.arrows=arr;B.drag=null;
   var h=c.history({verbose:true}),last=h[h.length-1];if(last){B.marks[last.from]='last';B.marks[last.to]='last'}
-  B.locked=cur&&!cur.answered?AN.i!==AN.base:false;$('anCont').hidden=!!(cur&&!cur.answered);
+  B.locked=cur&&!cur.answered?AN.i!==AN.base:false;$('anCont').hidden=!!(cur&&(!cur.answered||cur.noCont));
   drawBoard();anList();
   $('anFirst').disabled=$('anPrev').disabled=AN.i===0;$('anNext').disabled=$('anLast').disabled=AN.i>=AN.moves.length;
   $('anBase').hidden=AN.i===AN.base||AN.base>AN.moves.length;
@@ -1098,7 +1098,7 @@ function demoShow(){
 }
 $('bDemoPrev').onclick=function(){var D=cur&&cur.demo;if(D&&D.ply>(D.learn?D.from:0)){D.ply--;demoShow()}};
 $('bDemoNext').onclick=function(){var D=cur&&cur.demo;if(D&&D.ply<(D.learn?D.to:D.l.moves.length)){D.ply++;demoShow()}};
-$('bDemoPlay').onclick=function(){if(!cur||!cur.demo)return;var D=cur.demo;cur.demo=null;$('demoBar').hidden=true;$('fb').innerHTML='';$('note').innerHTML='';$('bDemoPlay').disabled=false;$('bDemoPlay').textContent=t('bDemoPlay');loadLine(D.op,D.i,true,D.learn?D.to:0)};
+$('bDemoPlay').onclick=function(){if(!cur||!cur.demo)return;var D=cur.demo;cur.demo=null;$('demoBar').hidden=true;$('fb').innerHTML='';$('note').innerHTML='';$('bDemoPlay').disabled=false;$('bDemoPlay').textContent=t('bDemoPlay');$('boardwrap').style.removeProperty('max-width');/* Nov 27: the demo's smaller board stayed small while playing */loadLine(D.op,D.i,true,D.learn?D.to:0)};
 
 /* which variation is this? final position of a line, pick its name among lines of the same opening */
 function loadName(op,i){
@@ -1343,7 +1343,7 @@ function repFinish(){
   cur.fen=B.chess.fen();cur.anPath=function(){return {start:INIT,moves:R.hist,base:R.hist.length}};itemDone(R.err===0);
   var gcur=planOf(R.op,R.i),nx=X.src==='rep'&&X.i>=X.items.length-1?pathNext(R.op,R.i):null;if(nx!=null&&gcur&&planOf(R.op,nx)!==gcur){var gl=gcur.g.filter(function(j){var L=REP[R.op].lines[j];return L&&!L.off&&!pathDone(R.op,j)});nx=gl.length?gl[0]:nx}
   if(nx!=null){var g0=planOf(R.op,R.i),g1=planOf(R.op,nx),ch=$('choices');ch.hidden=false;ch.classList.remove('grid');
-    ch.innerHTML='<button class="btn primary pathnext" id="bPathNext" type="button">'+t('pathNext')+'<small>'+esc(tt(REP[R.op].lines[nx].name))+(g1&&g1!==g0?' · '+t('pathNewPlan'):'')+'</small></button>';tapLock($('bPathNext'));
+    ch.innerHTML='<button class="btn primary pathnext" id="bPathNext" type="button">'+t('pathNext')+'<small>'+esc(tt(REP[R.op].lines[nx].name))+(g1&&g1!==g0?' · '+t('pathNewPlan'):'')+'</small></button>';tapLock($('bPathNext'));$('bNext').hidden=true;cur.noCont=true;$('anCont').hidden=true;/* Nov 27 (his screenshot: two big purple buttons, Siguiente línea + Siguiente): only one next button, in Siguiente's place */
     $('bPathNext').onclick=function(){X.items.splice(X.i+1,0,{t:'line',op:R.op,i:nx});X.i++;renderItem()}}
 }
 
