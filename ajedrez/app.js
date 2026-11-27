@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=129;
+var APP_VER=130;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -1842,6 +1842,11 @@ function gameNext(){
       done(ok3,ok3?'✓ '+t('gameQuietOk2',ev,'<b class="mono">'+esc(q.best)+'</b>',esc(tt(st.t))):'✗ '+t('gameQuietBad',ev,evalTxt(q.s),'<b class="mono">'+esc(q.best)+'</b>',esc(tt(st.t))),bestA?[bestA]:[],null,fold(t('stPlan',esc(q.best)),story(fen,q.pv,me,4)))});
   };
   var myPos=G.n;dclkStart(45,function(){if(!cur||cur.game!==G||G.n!==myPos||cur.answered)return;B.locked=true;B.onMove=null;G.n++;var T='⏱ '+t('timeOut')+' ';
+    /* Nov 27 (his screenshot: the clock hit 0:00.0 on a 'Tus partidas' position and the screen stayed empty — no solution, no Next):
+       'good' positions (moves he found in his own games) had no timeout branch and fell into the quiet one, which crashed */
+    try{
+    if(x.type==='good'){var g0=x.r,gm0='<b class="mono">'+esc(g0[2])+'</b>',ga0=arrowFor(fen,g0[2],'#0E9488');
+      pauseReview(fen,g0[3].split(' '),false,T+(g0[7]?t('gameSacBad',gm0,'<b class="mono">'+esc(g0[8])+'</b>'):t('gameGoodBad',gm0)),ga0?[ga0]:[],gameNext,fold(t('stBest',esc(g0[2])),story(fen,g0[3].split(' '),me,5)));return}
     if(x.type==='def'){var th=t(x.kind==='mate'?'defIsMate':'defIsHang',sanList(x.th)),ga=arrowFor(fen,x.good[0],'#0E9488');
       pauseReview(fen,[],false,T+t('gameWasDef')+' '+th+' '+t('defGoodWere',sanList(x.good)),x.th.slice(0,2).map(function(m){return {from:m.from,to:m.to,c:'#C0392B'}}).concat(ga?[ga]:[]),gameNext,fold(t('stThreat'),story(flipTurn(fen,me==='w'?'b':'w'),[x.th[0].san],me,1)));return}
     if(x.type==='tac'){var p=x.it.p,want=p.m[1],ar=arrowFor(fen,want,'#0E9488');
@@ -1849,7 +1854,8 @@ function gameNext(){
     if(x.type==='mine'){var c=x.c,ba2=arrowFor(fen,c.best,'#0E9488'),bd2=arrowFor(fen,c.played,'#C0392B');c.last=0;save();
       pauseReview(fen,[c.played].concat(c.pvBad),false,T+t('gameMineBad','<b class="mono">'+esc(c.played)+'</b>','<b class="mono">'+esc(c.best)+'</b>'),[ba2,bd2].filter(Boolean),gameNext,fold(t('stIf',esc(c.played)),story(fen,[c.played].concat(c.pvBad),me,4)));return}
     var q=x.p,bA=arrowFor(fen,q.best,'#0E9488');
-    pauseReview(fen,q.pv||[q.best],false,T+t('gameQuietBest0','<b class="mono">'+esc(q.best)+'</b>'),bA?[bA]:[],gameNext,fold(t('stPlan',esc(q.best)),story(fen,q.pv,me,4)))});
+    pauseReview(fen,q.pv||[q.best],false,T+t('gameQuietBest0','<b class="mono">'+esc(q.best)+'</b>'),bA?[bA]:[],gameNext,fold(t('stPlan',esc(q.best)),story(fen,q.pv,me,4)))
+    }catch(e){pauseReview(fen,[],false,T,[],gameNext,'')}});
 }
 function gameEnd(){dclkStop();
   var G=cur.game,gk=cur.it&&cur.it.f==='mygames'?'mygames':'game',sec=Math.round((now()-G.t0)/1000),s=S.drill[gk]||(S.drill[gk]={best:0,bestT:0,runs:0});s.runs++;addTot(gk,G.ok);var better=G.ok>s.best;if(better){s.best=G.ok;s.bestT=sec}save();
