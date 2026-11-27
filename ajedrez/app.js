@@ -122,7 +122,7 @@ function analyse(fen,ms){var c=new Chess(fen);
   return Engine.go(fen,ms||800).then(function(r){return r?{s:r.score,pv:uciPv(fen,r.pv||[])}:null})}
 
 /* ---------- board ---------- */
-var APP_VER=132;
+var APP_VER=133;
 var HINTS=(function(){try{return localStorage.getItem('taller-aperturas.hints')==='1'}catch(e){return false}})();
 var B={chess:null,flip:false,sel:null,targets:[],marks:{},onMove:null,onTap:null,locked:true,drag:null,arrows:[]};
 var boardEl=$('board'),arrowEl=$('arrows');
@@ -382,7 +382,12 @@ function gradeObj(o,ok){
 /* Nov 23 (he was asked to judge a forced move — the only legal reply to a check — and told it was 'a mistake'): a position is an
    exercise only if there is a real choice: not in check with 3+ legal moves (cached per FEN) */
 var RC={};function realChoice(fen){if(RC[fen]!=null)return RC[fen];var ok=false;try{var c=new Chess(fen);ok=!c.in_check()&&c.moves().length>=3}catch(e){}return RC[fen]=ok}
-function usable(c){return !c.hide&&visOf(c)!=='deep'&&!(c.kind==='mine'&&(c.s0||0)<-100)&&(!c.line||realChoice(fenOf(c.line)))}
+/* real-choice check from the position stored in the card id (first 4 FEN fields; only the en-passant field can differ):
+   replaying every card's game with chess.js on each call made the home screen take ~9 s to draw (Nov 27) */
+var UCC={};function cardChoice(c){var k=c.id||'';if(!k)return realChoice(fenOf(c.line));if(UCC[k]!=null)return UCC[k];
+  var f=k.indexOf('P|')===0?k.slice(2):k.split('|')[0];
+  return UCC[k]=f.split(' ').length===4?realChoice(f+' 0 1'):realChoice(fenOf(c.line))}
+function usable(c){return !c.hide&&visOf(c)!=='deep'&&!(c.kind==='mine'&&(c.s0||0)<-100)&&(!c.line||cardChoice(c))}
 function cardsOf(kind){return Object.keys(S.cards).map(function(k){return S.cards[k]}).filter(function(c){return c.kind===kind&&usable(c)})}
 function prio(c){return (c.rep?1e6:0)+(c.kind==='punish'?(c.mat>=1?2e5:0)+(c.missed?1e5:0):(c.trap?2e5:0)+(c.sev==='blunder'?1e5:0))+(c.count||1)*5e4+(c.date||0)/1e5}
 function dueList(kind,onlyRep){var sn=S.seen||{},rec=now()-20*36e5;
